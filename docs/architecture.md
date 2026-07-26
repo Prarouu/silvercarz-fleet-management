@@ -3,11 +3,13 @@
 Phase 1.5 locked the shared foundation every feature module builds on.
 Authentication and authorization (login UI, sessions, profiles, RBAC helpers)
 live in `@/lib/auth`, `features/auth`, `src/proxy.ts`, and
-`supabase/migrations` — still no bookings, vehicles, customers, or drivers.
+`supabase/migrations`. Phase 3.1 adds `vehicles` and `bookings` tables (schema
+only — no CRUD UI yet).
 
 See also:
 
 - [Authentication](./authentication.md) — login, profiles, roles, RLS, permissions
+- [Database](./database.md) — vehicles, bookings, ER diagram, indexes, RLS
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -182,8 +184,8 @@ unknown error
 ## What remains for later phases
 
 - API routes / domain server actions
-- Booking / vehicle / customer / driver logic
-- Feature CRUD UI
+- Booking / vehicle feature modules and CRUD UI
+- Customer / driver normalization (still denormalized on bookings for MVP)
 - Admin user-management UI (profiles list / role edits)
 
 Those arrive on top of this foundation.

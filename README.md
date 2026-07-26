@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 2.2 — profiles, roles, RLS, and authorization foundation. Ready for Phase 3 (booking database). No booking UI yet.
+> **Status:** Phase 3.1 — vehicles & bookings database schema, enums, constraints, indexes, and RLS. No booking/vehicle UI or CRUD yet.
 
 ## Tech Stack
 
@@ -88,8 +88,8 @@ src/
 ├── services/             # ApiResponse helpers + repository contracts
 ├── hooks/                # Shared generic React hooks
 └── providers/            # Theme, TanStack Query, AppProviders composition
-supabase/migrations/      # SQL migrations (profiles, RLS, triggers)
-docs/                     # Architecture + conventions
+supabase/migrations/      # SQL migrations (profiles, vehicles, bookings, RLS)
+docs/                     # Architecture, auth, database, conventions
 public/                   # Static assets (icons, manifest)
 ```
 
@@ -124,7 +124,8 @@ Rules for upcoming feature work:
 Deep dives:
 
 - [docs/architecture.md](./docs/architecture.md) — shared layer usage, module guide, error flow
-- [docs/authentication.md](./docs/authentication.md) — auth session flow, proxy, future login/RBAC
+- [docs/authentication.md](./docs/authentication.md) — auth session flow, proxy, roles, RLS
+- [docs/database.md](./docs/database.md) — vehicles & bookings schema, ER, indexes, RLS
 - [docs/conventions.md](./docs/conventions.md) — naming, git, imports, TypeScript
 - [src/features/README.md](./src/features/README.md) — feature folder layout
 
@@ -192,7 +193,7 @@ Server helpers for session, profiles, and RBAC. See [docs/authentication.md](./d
 | Errors        | `toAuthError`, inactive / missing profile / session-expired helpers                    |
 | Route helpers | `isPublicRoute`, `getRouteAccess`, `allowsRouteAccess`, …                              |
 
-Apply `supabase/migrations/20260726120000_create_profiles.sql` to your Supabase project before relying on profiles in production.
+Apply migrations under `supabase/migrations/` in order before relying on profiles or bookings in production (see [docs/database.md](./docs/database.md)).
 
 Usage rules for future modules:
 
@@ -200,7 +201,7 @@ Usage rules for future modules:
 - Create the server client **per request** — never cache it in a module-level variable.
 - Shared, runtime-agnostic helpers come from the barrel: `import { getErrorMessage } from '@/lib/supabase'`.
 - Authorize with `@/lib/auth` helpers — do not hardcode role checks in feature modules.
-- Database types live in `src/types/database.ts` (includes `profiles`). Regenerate with `supabase gen types typescript` after schema changes.
+- Database types live in `src/types/database.ts` (`profiles`, `vehicles`, `bookings`). Regenerate with `supabase gen types typescript` after schema changes.
 
 To verify connectivity after configuring `.env.local`, temporarily call `checkSupabaseConnection()` from any Server Component and check the returned status.
 

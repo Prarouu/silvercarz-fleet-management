@@ -35,8 +35,12 @@ src/
 
 supabase/
 └── migrations/
-    └── 20260726120000_create_profiles.sql
+    ├── 20260726120000_create_profiles.sql
+    └── 20260726140000_create_vehicles_and_bookings.sql
 ```
+
+Business tables (`vehicles`, `bookings`) are documented in
+[database.md](./database.md).
 
 ## Authentication flow
 
@@ -299,6 +303,7 @@ pnpm dlx supabase gen types typescript --project-id <project-id> --schema public
 
 ## Out of scope (later phases)
 
-- Booking, vehicles, customers, drivers, reports
+- Booking / vehicle CRUD UI and services (schema: [database.md](./database.md))
+- Customers / drivers as separate entities, reports
 - Admin user-management UI
 - Self-service password reset email flow

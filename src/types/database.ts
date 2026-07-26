@@ -50,6 +50,159 @@ export type Database = {
           },
         ];
       };
+      vehicles: {
+        Row: {
+          id: string;
+          vehicle_name: string;
+          vehicle_number: string;
+          fuel_type: Database['public']['Enums']['fuel_type'];
+          default_daily_rate: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          vehicle_name: string;
+          vehicle_number: string;
+          fuel_type: Database['public']['Enums']['fuel_type'];
+          default_daily_rate: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          vehicle_name?: string;
+          vehicle_number?: string;
+          fuel_type?: Database['public']['Enums']['fuel_type'];
+          default_daily_rate?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      bookings: {
+        Row: {
+          id: string;
+          invoice_number: string;
+          vehicle_id: string;
+          mode: Database['public']['Enums']['rental_mode'];
+          customer_name: string;
+          address: string | null;
+          city: string | null;
+          state: string | null;
+          zip_code: string | null;
+          place_to_visit: string | null;
+          document_submitted: boolean;
+          contact_number: string | null;
+          invoice_date: string;
+          delivery_date: string;
+          return_date: string;
+          driver_name: string | null;
+          daily_charge: number;
+          fuel_range: string | null;
+          start_odometer: number | null;
+          end_odometer: number | null;
+          total_kilometers: number | null;
+          duration: number | null;
+          kilometer_rate: number | null;
+          booking_amount: number;
+          caution_money: number;
+          payment_method: Database['public']['Enums']['payment_method'] | null;
+          total_amount: number;
+          status: Database['public']['Enums']['booking_status'];
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoice_number: string;
+          vehicle_id: string;
+          mode: Database['public']['Enums']['rental_mode'];
+          customer_name: string;
+          address?: string | null;
+          city?: string | null;
+          state?: string | null;
+          zip_code?: string | null;
+          place_to_visit?: string | null;
+          document_submitted?: boolean;
+          contact_number?: string | null;
+          invoice_date?: string;
+          delivery_date: string;
+          return_date: string;
+          driver_name?: string | null;
+          daily_charge: number;
+          fuel_range?: string | null;
+          start_odometer?: number | null;
+          end_odometer?: number | null;
+          total_kilometers?: number | null;
+          duration?: number | null;
+          kilometer_rate?: number | null;
+          booking_amount?: number;
+          caution_money?: number;
+          payment_method?: Database['public']['Enums']['payment_method'] | null;
+          total_amount?: number;
+          status?: Database['public']['Enums']['booking_status'];
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          invoice_number?: string;
+          vehicle_id?: string;
+          mode?: Database['public']['Enums']['rental_mode'];
+          customer_name?: string;
+          address?: string | null;
+          city?: string | null;
+          state?: string | null;
+          zip_code?: string | null;
+          place_to_visit?: string | null;
+          document_submitted?: boolean;
+          contact_number?: string | null;
+          invoice_date?: string;
+          delivery_date?: string;
+          return_date?: string;
+          driver_name?: string | null;
+          daily_charge?: number;
+          fuel_range?: string | null;
+          start_odometer?: number | null;
+          end_odometer?: number | null;
+          total_kilometers?: number | null;
+          duration?: number | null;
+          kilometer_rate?: number | null;
+          booking_amount?: number;
+          caution_money?: number;
+          payment_method?: Database['public']['Enums']['payment_method'] | null;
+          total_amount?: number;
+          status?: Database['public']['Enums']['booking_status'];
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bookings_vehicle_id_fkey';
+            columns: ['vehicle_id'];
+            isOneToOne: false;
+            referencedRelation: 'vehicles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'bookings_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -61,9 +214,17 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Database['public']['Tables']['profiles']['Row'];
       };
+      is_active_staff: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
     };
     Enums: {
       app_role: 'owner' | 'manager';
+      fuel_type: 'petrol' | 'diesel' | 'cng' | 'electric' | 'hybrid';
+      rental_mode: 'with_driver' | 'without_driver';
+      payment_method: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'other';
+      booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
     };
     CompositeTypes: Record<string, never>;
   };
