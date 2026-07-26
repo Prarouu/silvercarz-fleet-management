@@ -221,3 +221,4 @@ This project will be maintained by a small internal team. Before contributing:
 7. When adding UI primitives, use the shadcn CLI rather than hand-rolling Radix wrappers.
 
 Questions about structure should be resolved in favor of **feature isolation** and **thin routes**.
+Pr@roop19912
