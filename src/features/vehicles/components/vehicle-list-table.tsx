@@ -21,6 +21,7 @@ import {
 } from '@/features/vehicles/components/vehicle-availability-badge';
 import { VehicleRowActions } from '@/features/vehicles/components/vehicle-row-actions';
 import { VehicleStatusBadge } from '@/features/vehicles/components/vehicle-status-badge';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import {
   buildVehicleListSearchParams,
   type VehicleListUrlState,
@@ -285,49 +286,60 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
           return (
             <li key={vehicle.id}>
               <article className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/20">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <Link
-                      href={vehicleDetailPath(vehicle.id)}
-                      className="block truncate font-semibold underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                    >
-                      {vehicle.vehicle_name}
-                    </Link>
-                    <p className="truncate text-sm text-muted-foreground tabular-nums">
-                      {vehicle.vehicle_number}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <VehicleStatusBadge isActive={vehicle.is_active} />
-                    <VehicleRowActions vehicleId={vehicle.id} vehicleName={vehicle.vehicle_name} />
+                <div className="flex items-start gap-3">
+                  <VehicleThumbnail
+                    imagePath={vehicle.image_path}
+                    alt={`${vehicle.vehicle_name} thumbnail`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <Link
+                          href={vehicleDetailPath(vehicle.id)}
+                          className="block truncate font-semibold underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                        >
+                          {vehicle.vehicle_name}
+                        </Link>
+                        <p className="truncate text-sm text-muted-foreground tabular-nums">
+                          {vehicle.vehicle_number}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <VehicleStatusBadge isActive={vehicle.is_active} />
+                        <VehicleRowActions
+                          vehicleId={vehicle.id}
+                          vehicleName={vehicle.vehicle_name}
+                        />
+                      </div>
+                    </div>
+                    <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
+                      <div className="min-w-0">
+                        <dt className="text-xs text-muted-foreground">Fuel type</dt>
+                        <dd className="truncate">{FUEL_TYPE_LABELS[vehicle.fuel_type]}</dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-xs text-muted-foreground">Daily charge</dt>
+                        <dd className="font-medium tabular-nums">
+                          {formatCurrency(vehicle.default_daily_rate)}
+                        </dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-xs text-muted-foreground">Availability</dt>
+                        <dd>
+                          {availability ? (
+                            <VehicleAvailabilityBadge availability={availability} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="text-xs text-muted-foreground">Created</dt>
+                        <dd className="tabular-nums">{formatDate(vehicle.created_at)}</dd>
+                      </div>
+                    </dl>
                   </div>
                 </div>
-                <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
-                  <div className="min-w-0">
-                    <dt className="text-xs text-muted-foreground">Fuel type</dt>
-                    <dd className="truncate">{FUEL_TYPE_LABELS[vehicle.fuel_type]}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-xs text-muted-foreground">Daily charge</dt>
-                    <dd className="font-medium tabular-nums">
-                      {formatCurrency(vehicle.default_daily_rate)}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-xs text-muted-foreground">Availability</dt>
-                    <dd>
-                      {availability ? (
-                        <VehicleAvailabilityBadge availability={availability} />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-xs text-muted-foreground">Created</dt>
-                    <dd className="tabular-nums">{formatDate(vehicle.created_at)}</dd>
-                  </div>
-                </dl>
               </article>
             </li>
           );

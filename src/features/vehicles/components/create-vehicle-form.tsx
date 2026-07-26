@@ -56,6 +56,7 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
     control,
     register,
     handleSubmit,
+    reset,
     setError,
     clearErrors,
     formState: { errors, isSubmitting, isDirty },
@@ -83,12 +84,21 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [hasUnsavedChanges, isLoading]);
 
+  function goToFleetList() {
+    // Clear dirty state so navigation is never blocked after a successful save.
+    setImageFile(null);
+    setImageDirty(false);
+    reset(createVehicleFormDefaults());
+    router.replace(ROUTES.vehicles);
+    router.refresh();
+  }
+
   const handleCancel = () => {
     if (hasUnsavedChanges && !window.confirm(UNSAVED_CHANGES_MESSAGE)) {
       return;
     }
 
-    router.push(ROUTES.vehicles);
+    router.replace(ROUTES.vehicles);
   };
 
   const onSubmit = handleSubmit((values) => {
@@ -119,41 +129,43 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
           });
         }
 
+        // Stay on this page only when create failed — never redirect on error.
         return;
       }
 
+      let imageWarning: string | undefined;
+
       if (imageFile) {
-        const formData = new FormData();
-        formData.set('file', imageFile);
-        const uploadResult = await uploadVehicleImageAction(result.data.id, formData);
+        try {
+          const formData = new FormData();
+          formData.set('file', imageFile);
+          const uploadResult = await uploadVehicleImageAction(result.data.id, formData);
 
-        if (!uploadResult.success) {
-          toast.success('Vehicle created', {
-            description: `${result.data.vehicle_name} was saved, but the image could not be uploaded.`,
-          });
-          toast.error('Image upload failed', {
-            description: uploadResult.error.message,
-          });
-          router.push(ROUTES.vehicles);
-          router.refresh();
-          return;
-        }
-
-        if (uploadResult.data.skipped) {
-          toast.success('Vehicle created', {
-            description: `${result.data.vehicle_name} was added. Image storage is not enabled yet.`,
-          });
-          router.push(ROUTES.vehicles);
-          router.refresh();
-          return;
+          if (!uploadResult.success) {
+            imageWarning = uploadResult.error.message;
+          } else if (uploadResult.data.skipped) {
+            imageWarning = 'Image storage is not enabled yet.';
+          }
+        } catch {
+          imageWarning = 'Unable to upload the vehicle image. Please try again.';
         }
       }
 
-      toast.success('Vehicle created', {
-        description: `${result.data.vehicle_name} was added to the fleet.`,
-      });
-      router.push(ROUTES.vehicles);
-      router.refresh();
+      if (imageWarning) {
+        toast.success('Vehicle created', {
+          description: `${result.data.vehicle_name} was saved, but the image could not be uploaded.`,
+        });
+        toast.error('Image upload issue', {
+          description: imageWarning,
+        });
+      } else {
+        toast.success('Vehicle created', {
+          description: `${result.data.vehicle_name} was added to the fleet.`,
+        });
+      }
+
+      // Always return to Fleet Management after a successful create.
+      goToFleetList();
     });
   });
 

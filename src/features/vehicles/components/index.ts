@@ -8,4 +8,5 @@ export { VehicleImageField } from './vehicle-image-field';
 export { VehicleList } from './vehicle-list';
 export { VehicleListSkeleton } from './vehicle-list-skeleton';
 export { VehicleStatusBadge } from './vehicle-status-badge';
+export { VehicleThumbnail } from './vehicle-thumbnail';
 export type { VehicleFleetSummary } from './vehicle-summary-cards';
