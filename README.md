@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 1.1 — project foundation only. No business features are implemented yet.
+> **Status:** Phase 1.4 — shared project architecture in place. No business features are implemented yet.
 
 ## Tech Stack
 
@@ -70,18 +70,22 @@ src/
 │   ├── shared/           # Reusable business-agnostic composites
 │   └── layout/           # App shell components (sidebar, header, …)
 ├── features/             # Feature modules — each domain owns its UI + logic
-│   ├── dashboard/
-│   └── bookings/
+├── config/               # App identity, formatting defaults, navigation
+├── constants/            # Routes, storage keys, theme, pagination, table defaults
+├── types/                # Shared TypeScript contracts (API, pagination, entities)
 ├── lib/
 │   ├── supabase/         # Supabase infrastructure (clients, config, errors)
-│   └── utils.ts          # cn() and shared utilities
+│   ├── utils.ts          # cn() classname helper
+│   ├── format.ts         # Date / currency / number formatting
+│   ├── string.ts         # String helpers
+│   ├── debounce.ts       # Debounce helper
+│   ├── pagination.ts     # Pagination helpers
+│   └── errors.ts         # AppError + display-message helpers
+├── validations/          # Reusable Zod schemas and parse helpers
+├── services/             # ApiResponse helpers + repository contracts
 ├── hooks/                # Shared generic React hooks
-├── providers/            # App-level providers (theme, …)
-├── services/             # External service integrations
-├── types/                # Global TypeScript types
-├── constants/            # App-wide constants and enums
-└── config/               # Static app configuration
-docs/                     # Architecture docs and decision records
+└── providers/            # Theme, TanStack Query, AppProviders composition
+docs/                     # Architecture docs (see docs/architecture.md)
 public/                   # Static assets (icons, manifest)
 ```
 
@@ -89,8 +93,11 @@ Conventions:
 
 - **Feature isolation** — everything specific to one domain lives in its `features/<name>/` module. Anything used by two or more features is promoted to `components/shared/` or `lib/`.
 - **Thin routes** — files in `app/` only compose feature components; no business logic in pages.
+- **Centralized routes & config** — never hardcode paths or app defaults; use `@/constants` and `@/config`.
 - **`components/ui/` is CLI-managed** — add primitives with `pnpm dlx shadcn@latest add <component>`; never hand-edit business terms into them.
 - Global styles live in `src/app/globals.css` (Tailwind v4 configures theme tokens in CSS; there is no `tailwind.config.ts`).
+
+See [docs/architecture.md](./docs/architecture.md) for how future modules should use services, hooks, providers, types, and utilities.
 
 ## Coding Standards
 
@@ -113,6 +120,26 @@ All variables are documented in [`.env.example`](./.env.example). Never commit r
 Both values are found in your Supabase dashboard under **Project Settings → API**. They are client-safe by design — Row Level Security (added in a later phase) is the actual security boundary. Service role keys must **never** be added to this project.
 
 Environment validation is fail-fast: if a variable is missing, the app throws a descriptive error at startup instead of failing mysteriously at runtime.
+
+## Shared Architecture (Phase 1.4)
+
+| Layer       | Location           | Use for                                                       |
+| ----------- | ------------------ | ------------------------------------------------------------- |
+| Config      | `src/config/`      | App name, company, version, locale, currency, date formats    |
+| Constants   | `src/constants/`   | `ROUTES`, storage keys, theme, pagination/table defaults      |
+| Types       | `src/types/`       | `ApiResponse`, pagination, `BaseEntity`, table/select helpers |
+| Utilities   | `src/lib/`         | Formatting, strings, debounce, pagination, `AppError`         |
+| Validations | `src/validations/` | Shared Zod primitives (`emailSchema`, `paginationSchema`, …)  |
+| Services    | `src/services/`    | `ok` / `fail` / `fromPromise`, `Repository` contracts         |
+| Hooks       | `src/hooks/`       | Media query, debounce, local storage, window size, theme      |
+| Providers   | `src/providers/`   | `AppProviders` (theme + React Query + tooltips)               |
+
+Rules for upcoming feature work:
+
+- Return `ApiResponse<T>` from service methods; convert failures with `toAppError` / `fail`.
+- Put domain schemas under `features/<name>/validations`, composing shared primitives.
+- Import routes from `ROUTES` — do not hardcode path strings in features.
+- Keep `src/services/` generic; domain repositories and queries live with their feature.
 
 ## Supabase Infrastructure
 

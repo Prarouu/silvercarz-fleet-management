@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { appConfig } from '@/config/app';
-import { ThemeProvider } from '@/providers/theme-provider';
+import { AppProviders } from '@/providers/app-providers';
 
 import './globals.css';
 
@@ -38,15 +37,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TooltipProvider>{children}</TooltipProvider>
+        <AppProviders>
+          {children}
           <Toaster />
-        </ThemeProvider>
+        </AppProviders>
       </body>
     </html>
   );

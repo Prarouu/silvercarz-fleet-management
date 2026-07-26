@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 import { appConfig } from '@/config/app';
 import { mainNavItems, secondaryNavItems, type NavItem } from '@/config/navigation';
+import { ROUTES } from '@/constants/routes';
 
 function NavMenu({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();
@@ -50,7 +51,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip={appConfig.name}>
-              <Link href="/">
+              <Link href={ROUTES.home}>
                 <div
                   className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
                   aria-hidden="true"

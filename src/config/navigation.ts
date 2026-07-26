@@ -8,6 +8,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { ROUTES } from '@/constants/routes';
+
 export interface NavItem {
   readonly title: string;
   readonly href: string;
@@ -20,13 +22,13 @@ export interface NavItem {
  * no changes when pages arrive.
  */
 export const mainNavItems: readonly NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { title: 'Bookings', href: '/bookings', icon: CalendarRange },
-  { title: 'Vehicles', href: '/vehicles', icon: Car },
-  { title: 'Customers', href: '/customers', icon: Users },
-  { title: 'Drivers', href: '/drivers', icon: UserRound },
+  { title: 'Dashboard', href: ROUTES.dashboard, icon: LayoutDashboard },
+  { title: 'Bookings', href: ROUTES.bookings, icon: CalendarRange },
+  { title: 'Vehicles', href: ROUTES.vehicles, icon: Car },
+  { title: 'Customers', href: ROUTES.customers, icon: Users },
+  { title: 'Drivers', href: ROUTES.drivers, icon: UserRound },
 ];
 
 export const secondaryNavItems: readonly NavItem[] = [
-  { title: 'Settings', href: '/settings', icon: Settings },
+  { title: 'Settings', href: ROUTES.settings, icon: Settings },
 ];
