@@ -19,4 +19,4 @@ export type { ApiFailure, ApiResponse, ApiSuccess } from './api';
 
 export type { TableColumn, TableSortState } from './table';
 
-export type { Database, Json } from './database';
+export type { Database, Enums, Json, Tables, TablesInsert, TablesUpdate } from './database';

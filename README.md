@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 2.1a — authentication infrastructure (Supabase Auth session, proxy refresh, server guards). No login UI or business features yet. Next: Login UI & route enforcement.
+> **Status:** Phase 2.1c — profiles, roles, and authorization on top of login/session. No booking or fleet business features yet.
 
 ## Tech Stack
 
@@ -75,7 +75,7 @@ src/
 ├── constants/            # Routes, storage keys, theme, pagination, table defaults
 ├── types/                # Shared TypeScript contracts (API, pagination, entities)
 ├── lib/
-│   ├── auth/             # Auth session, guards, errors, sign-out, route helpers
+│   ├── auth/             # Session, profiles, RBAC helpers, guards, errors
 │   ├── supabase/         # Supabase infrastructure (clients, config, errors)
 │   ├── utils.ts          # cn() classname helper
 │   ├── format.ts         # Date / currency / number formatting
@@ -88,6 +88,7 @@ src/
 ├── services/             # ApiResponse helpers + repository contracts
 ├── hooks/                # Shared generic React hooks
 └── providers/            # Theme, TanStack Query, AppProviders composition
+supabase/migrations/      # SQL migrations (profiles, RLS, triggers)
 docs/                     # Architecture + conventions
 public/                   # Static assets (icons, manifest)
 ```
@@ -178,25 +179,28 @@ All Supabase access goes through `src/lib/supabase/`. **Never import from `@supa
 | `health.ts`     | Server only, temporary                            | `checkSupabaseConnection()` pings the auth health endpoint; safe to delete later |
 | `index.ts`      | Anywhere                                          | Barrel for runtime-agnostic exports (config, errors, `TypedSupabaseClient`)      |
 
-### Authentication (`src/lib/auth/`)
+### Authentication & authorization (`src/lib/auth/`)
 
-Server helpers for session and access control. See [docs/authentication.md](./docs/authentication.md).
+Server helpers for session, profiles, and RBAC. See [docs/authentication.md](./docs/authentication.md).
 
-| Concern       | API                                                                   |
-| ------------- | --------------------------------------------------------------------- |
-| Current user  | `getCurrentUser`, `getAuthState`, `isAuthenticated`                   |
-| Guards        | `requireUser` (throw), `requireAuth` (redirect to `ROUTES.login`)     |
-| Sign out      | `signOut`                                                             |
-| Errors        | `toAuthError`, `getAuthErrorMessage`                                  |
-| Route helpers | `isPublicRoute`, `isProtectedRoute`, `buildLoginRedirectPath`, …      |
-| Future roles  | `getCurrentUserRole` reads `app_metadata.role` (`owner` \| `manager`) |
+| Concern       | API                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------- |
+| Current user  | `getCurrentUser`, `getCurrentProfile`, `getAuthState`, `isAuthenticated`               |
+| Roles / RBAC  | `hasRole`, `isOwner`, `isManager`, `hasPermission`, `requireRole`, `requirePermission` |
+| Guards        | `requireUser` / `requireProfile` (throw), `requireAuth` (redirect)                     |
+| Sign out      | `signOut`                                                                              |
+| Errors        | `toAuthError`, inactive / missing profile / session-expired helpers                    |
+| Route helpers | `isPublicRoute`, `getRouteAccess`, `allowsRouteAccess`, …                              |
+
+Apply `supabase/migrations/20260726120000_create_profiles.sql` to your Supabase project before relying on profiles in production.
 
 Usage rules for future modules:
 
 - Server code imports `@/lib/supabase/server`; client code imports `@/lib/supabase/client`. The wrong import fails at build time (`server-only` guard / `use client` directive).
 - Create the server client **per request** — never cache it in a module-level variable.
 - Shared, runtime-agnostic helpers come from the barrel: `import { getErrorMessage } from '@/lib/supabase'`.
-- Database types live in `src/types/database.ts`. Once a schema exists, regenerate them with `supabase gen types typescript` — all clients are already typed against `Database`, so no restructuring is needed.
+- Authorize with `@/lib/auth` helpers — do not hardcode role checks in feature modules.
+- Database types live in `src/types/database.ts` (includes `profiles`). Regenerate with `supabase gen types typescript` after schema changes.
 
 To verify connectivity after configuring `.env.local`, temporarily call `checkSupabaseConnection()` from any Server Component and check the returned status.
 

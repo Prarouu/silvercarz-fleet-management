@@ -6,37 +6,41 @@ import 'server-only';
  * Prefer `getCurrentUser` / `getAuthState` for authorization checks — they
  * call `auth.getUser()`, which validates the JWT with Supabase Auth.
  * Do not rely on cookie contents alone for security decisions.
+ *
+ * Role and display name are loaded from `profiles` (not JWT claims alone).
  */
 
 import type { Session, User } from '@supabase/supabase-js';
 
-import type { AppRole, AuthState, AuthUser } from '@/lib/auth/types';
+import { getProfileById } from '@/lib/auth/profile';
+import { isAppRole, type AppRole } from '@/lib/auth/roles';
+import type { AuthState, AuthUser } from '@/lib/auth/types';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-const KNOWN_ROLES = new Set<AppRole>(['owner', 'manager']);
+/**
+ * Maps a Supabase `User` into a minimal `AuthUser` (no profile yet).
+ * Prefer `getCurrentUser`, which enriches from `profiles`.
+ */
+export function toAuthUser(
+  user: User,
+  extras?: { fullName?: string | null; role?: AppRole | null },
+): AuthUser {
+  const metadataRole = user.app_metadata?.role;
+  const fallbackRole =
+    typeof metadataRole === 'string' && isAppRole(metadataRole) ? metadataRole : null;
 
-function resolveRole(user: User): AppRole | null {
-  const rawRole = user.app_metadata?.role;
-
-  if (typeof rawRole !== 'string') {
-    return null;
-  }
-
-  return KNOWN_ROLES.has(rawRole as AppRole) ? (rawRole as AppRole) : null;
-}
-
-/** Maps a Supabase `User` into the app-facing `AuthUser` shape. */
-export function toAuthUser(user: User): AuthUser {
   return {
     id: user.id,
     email: user.email,
-    role: resolveRole(user),
+    fullName: extras?.fullName ?? null,
+    role: extras?.role ?? fallbackRole,
   };
 }
 
 /**
  * Returns the validated current user, or `null` when unauthenticated.
  * Uses `getUser()` so the token is verified with Supabase Auth.
+ * When a profile exists, role and full name come from `profiles`.
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const supabase = await createSupabaseServerClient();
@@ -47,6 +51,17 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   if (error || !user) {
     return null;
+  }
+
+  const profile = await getProfileById(user.id);
+
+  if (profile) {
+    return {
+      id: profile.id,
+      email: profile.email,
+      fullName: profile.fullName,
+      role: profile.role,
+    };
   }
 
   return toAuthUser(user);
@@ -74,18 +89,46 @@ export async function isAuthenticated(): Promise<boolean> {
 
 /** Bundled auth state for Server Components and Server Actions. */
 export async function getAuthState(): Promise<AuthState> {
-  const user = await getCurrentUser();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return {
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+    };
+  }
+
+  const profile = await getProfileById(user.id);
+
   return {
-    user,
-    isAuthenticated: user !== null,
+    user: profile
+      ? {
+          id: profile.id,
+          email: profile.email,
+          fullName: profile.fullName,
+          role: profile.role,
+        }
+      : toAuthUser(user),
+    profile,
+    isAuthenticated: true,
   };
 }
 
 /**
- * Future hook for role-based authorization.
- * Returns `null` until roles are assigned in Supabase `app_metadata`.
+ * Role for the current user from `profiles`.
+ * Returns `null` when unauthenticated, missing profile, or inactive.
  */
 export async function getCurrentUserRole(): Promise<AppRole | null> {
-  const user = await getCurrentUser();
-  return user?.role ?? null;
+  const profile = (await getAuthState()).profile;
+
+  if (!profile || !profile.isActive) {
+    return null;
+  }
+
+  return profile.role;
 }

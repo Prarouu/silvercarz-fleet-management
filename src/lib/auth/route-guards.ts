@@ -1,11 +1,12 @@
 /**
- * Route classification helpers for authentication.
+ * Route classification helpers for authentication and authorization.
  *
  * Path strings come from `ROUTES` — never hardcode auth paths at call sites.
- * Proxy and future layouts use these helpers to decide public vs protected.
+ * Proxy and layouts use these helpers to decide public vs protected access.
  */
 
 import { ROUTES, type AppRoute } from '@/constants/routes';
+import type { AppRole } from '@/lib/auth/roles';
 
 /** Auth-facing routes that must stay reachable without a session. */
 const PUBLIC_AUTH_ROUTES: readonly AppRoute[] = [
@@ -16,6 +17,12 @@ const PUBLIC_AUTH_ROUTES: readonly AppRoute[] = [
 
 /** Prefix for Auth callback / confirmation handlers (e.g. `/auth/callback`). */
 const AUTH_CALLBACK_PREFIX = '/auth';
+
+/** How a route may be accessed. Extend with `permission` when needed. */
+export type RouteAccess =
+  | { readonly type: 'public' }
+  | { readonly type: 'authenticated' }
+  | { readonly type: 'roles'; readonly roles: readonly AppRole[] };
 
 function normalizePathname(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -47,6 +54,37 @@ export function isPublicRoute(pathname: string): boolean {
 /** Inverse of `isPublicRoute` — prepared for proxy / layout guards. */
 export function isProtectedRoute(pathname: string): boolean {
   return !isPublicRoute(pathname);
+}
+
+/**
+ * Default access rule for a pathname.
+ * Role-specific maps can be added later without changing call sites.
+ */
+export function getRouteAccess(pathname: string): RouteAccess {
+  if (isPublicRoute(pathname)) {
+    return { type: 'public' };
+  }
+
+  return { type: 'authenticated' };
+}
+
+/**
+ * Evaluates whether `role` satisfies a route access rule.
+ * `null` role fails authenticated / role-restricted rules.
+ */
+export function allowsRouteAccess(access: RouteAccess, role: AppRole | null): boolean {
+  switch (access.type) {
+    case 'public':
+      return true;
+    case 'authenticated':
+      return role !== null;
+    case 'roles':
+      return role !== null && access.roles.includes(role);
+    default: {
+      const _exhaustive: never = access;
+      return _exhaustive;
+    }
+  }
 }
 
 /**

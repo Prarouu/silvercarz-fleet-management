@@ -16,6 +16,8 @@ export const AUTH_ERROR_CODES = {
   weakPassword: 'weak_password',
   overRequestRateLimit: 'over_request_rate_limit',
   sessionExpired: 'session_expired',
+  inactiveAccount: 'inactive_account',
+  missingProfile: 'missing_profile',
   unknown: ERROR_CODES.unknown,
 } as const;
 
@@ -36,6 +38,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   refresh_token_already_used: 'Your session has expired. Please sign in again.',
   user_not_found: 'No account was found for these credentials.',
   same_password: 'Choose a password that is different from your current one.',
+  inactive_account: 'Your account is inactive. Contact an administrator.',
+  missing_profile: 'Your account profile is missing. Contact an administrator.',
 };
 
 const FALLBACK_MESSAGE = 'Authentication failed. Please try again.';
@@ -109,4 +113,23 @@ export function createForbiddenError(
   message = 'You do not have permission to perform this action.',
 ): AppError {
   return new AppError(message, AUTH_ERROR_CODES.forbidden);
+}
+
+export function createInactiveAccountError(
+  message = AUTH_ERROR_MESSAGES.inactive_account,
+): AppError {
+  return new AppError(message, AUTH_ERROR_CODES.inactiveAccount);
+}
+
+export function createMissingProfileError(message = AUTH_ERROR_MESSAGES.missing_profile): AppError {
+  return new AppError(message, AUTH_ERROR_CODES.missingProfile);
+}
+
+export function createSessionExpiredError(message = AUTH_ERROR_MESSAGES.session_expired): AppError {
+  return new AppError(message, AUTH_ERROR_CODES.sessionExpired);
+}
+
+/** Safe message for a known auth error code (e.g. login `?reason=`). */
+export function getAuthErrorMessageForCode(code: string): string | undefined {
+  return AUTH_ERROR_MESSAGES[code];
 }

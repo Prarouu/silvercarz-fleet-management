@@ -14,7 +14,14 @@ import {
   signInCredentialsSchema,
   type SignInCredentials,
 } from '@/features/auth/validations/credentials';
-import { resolvePostLoginPath, toAuthError } from '@/lib/auth';
+import {
+  createInactiveAccountError,
+  createMissingProfileError,
+  getCurrentProfile,
+  resolvePostLoginPath,
+  signOut,
+  toAuthError,
+} from '@/lib/auth';
 import { ERROR_CODES } from '@/lib/errors';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { fail, failWith } from '@/services';
@@ -59,6 +66,18 @@ export async function signInAction(
 
     if (error) {
       return fail(toAuthError(error));
+    }
+
+    const profile = await getCurrentProfile();
+
+    if (!profile) {
+      await signOut().catch(() => undefined);
+      return fail(createMissingProfileError());
+    }
+
+    if (!profile.isActive) {
+      await signOut().catch(() => undefined);
+      return fail(createInactiveAccountError());
     }
   } catch (error) {
     if (isNetworkError(error)) {

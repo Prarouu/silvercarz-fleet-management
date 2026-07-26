@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { PageContainer } from '@/components/shared/page-container';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants';
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthState, toAuthUserFromProfile } from '@/lib/auth';
 
 function NotFoundContent() {
   return (
@@ -27,9 +27,9 @@ function NotFoundContent() {
 
 /** App-wide 404 page. Keep feature-specific empty states in their modules. */
 export default async function NotFound() {
-  const user = await getCurrentUser();
+  const { profile } = await getAuthState();
 
-  if (!user) {
+  if (!profile?.isActive) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center px-4">
         <NotFoundContent />
@@ -38,7 +38,7 @@ export default async function NotFound() {
   }
 
   return (
-    <AppShell user={user}>
+    <AppShell user={toAuthUserFromProfile(profile)}>
       <NotFoundContent />
     </AppShell>
   );

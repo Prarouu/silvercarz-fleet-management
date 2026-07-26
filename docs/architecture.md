@@ -1,13 +1,13 @@
 # Shared Architecture
 
 Phase 1.5 locked the shared foundation every feature module builds on.
-Authentication (login UI + session management) lives in `@/lib/auth`,
-`features/auth`, and `src/proxy.ts` — still no bookings, vehicles, customers,
-or drivers.
+Authentication and authorization (login UI, sessions, profiles, RBAC helpers)
+live in `@/lib/auth`, `features/auth`, `src/proxy.ts`, and
+`supabase/migrations` — still no bookings, vehicles, customers, or drivers.
 
 See also:
 
-- [Authentication](./authentication.md) — login flow, session lifecycle, proxy, RBAC prep
+- [Authentication](./authentication.md) — login, profiles, roles, RLS, permissions
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -87,7 +87,7 @@ Feature-specific types stay in `features/<name>/types`.
 | `debounce`   | generic debounce helper                                          |
 | `pagination` | `createPaginatedResult`, `normalizePaginationParams`, `toOffset` |
 | `errors`     | `AppError`, `toAppError`, `getDisplayErrorMessage`               |
-| `auth`       | session, requireAuth/requireUser, signOut, auth errors, routes   |
+| `auth`       | session, profiles, RBAC helpers, requireAuth/Role, signOut       |
 | `supabase`   | clients, config, Supabase-specific error normalization           |
 
 ### Services (`@/services`)
@@ -181,10 +181,9 @@ unknown error
 
 ## What remains for later phases
 
-- Login / logout UI and enforced proxy redirects
 - API routes / domain server actions
-- Database tables or SQL
 - Booking / vehicle / customer / driver logic
 - Feature CRUD UI
+- Admin user-management UI (profiles list / role edits)
 
 Those arrive on top of this foundation.

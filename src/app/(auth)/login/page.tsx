@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { LoginPanel } from '@/features/auth/components/login-panel';
-import { getCurrentUser, resolvePostLoginPath } from '@/lib/auth';
-import { AUTH_ERROR_CODES, getAuthErrorMessage } from '@/lib/auth/errors';
+import { getAuthState, resolvePostLoginPath } from '@/lib/auth';
+import { AUTH_ERROR_CODES, getAuthErrorMessageForCode } from '@/lib/auth/errors';
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -24,11 +24,16 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 }
 
 function resolveInitialError(reason: string | undefined): string | undefined {
-  if (reason === AUTH_ERROR_CODES.sessionExpired) {
-    return getAuthErrorMessage({
-      message: 'session expired',
-      code: AUTH_ERROR_CODES.sessionExpired,
-    });
+  if (!reason) {
+    return undefined;
+  }
+
+  if (
+    reason === AUTH_ERROR_CODES.sessionExpired ||
+    reason === AUTH_ERROR_CODES.inactiveAccount ||
+    reason === AUTH_ERROR_CODES.missingProfile
+  ) {
+    return getAuthErrorMessageForCode(reason);
   }
 
   return undefined;
@@ -39,8 +44,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const nextPath = firstParam(params.next);
   const reason = firstParam(params.reason);
 
-  const user = await getCurrentUser();
-  if (user) {
+  const { user, profile } = await getAuthState();
+  if (user && profile?.isActive) {
     redirect(resolvePostLoginPath(nextPath));
   }
 

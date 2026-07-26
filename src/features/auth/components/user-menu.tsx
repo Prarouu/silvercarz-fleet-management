@@ -11,7 +11,15 @@ import {
 import { signOutAction } from '@/features/auth/actions/sign-out';
 import type { AuthUser } from '@/lib/auth/types';
 
-function getInitials(email: string | undefined): string {
+function getInitials(fullName: string | null, email: string | undefined): string {
+  if (fullName) {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0]![0]!}${parts[1]![0]!}`.toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  }
+
   if (!email) {
     return 'SC';
   }
@@ -35,7 +43,8 @@ interface UserMenuProps {
  */
 export function UserMenu({ user }: UserMenuProps) {
   const email = user.email ?? 'Signed in';
-  const initials = getInitials(user.email);
+  const displayName = user.fullName?.trim() || 'Signed in';
+  const initials = getInitials(user.fullName, user.email);
 
   return (
     <DropdownMenu>
@@ -49,7 +58,7 @@ export function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="grid leading-tight">
-            <span className="font-medium">Signed in</span>
+            <span className="font-medium">{displayName}</span>
             <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
           </div>
         </DropdownMenuLabel>

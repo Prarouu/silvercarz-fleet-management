@@ -1,49 +1,126 @@
 import 'server-only';
 
 /**
- * Authentication guards for Server Components and Server Actions.
+ * Authentication and authorization guards for Server Components / Actions.
  *
- * `requireUser` throws a typed error (service/action boundaries).
- * `requireAuth` redirects to the login route (page/layout boundaries).
+ * - `requireUser` / `requireRole` / `requirePermission` throw typed errors
+ * - `requireAuth` redirects to login (page / layout boundaries)
  */
 
 import { redirect } from 'next/navigation';
 
 import { ROUTES } from '@/constants/routes';
-import { createUnauthenticatedError } from '@/lib/auth/errors';
-import { getCurrentUser } from '@/lib/auth/session';
-import type { AuthUser } from '@/lib/auth/types';
+import { can, hasRole } from '@/lib/auth/authorization';
+import {
+  AUTH_ERROR_CODES,
+  createForbiddenError,
+  createInactiveAccountError,
+  createMissingProfileError,
+  createUnauthenticatedError,
+} from '@/lib/auth/errors';
+import type { Permission } from '@/lib/auth/permissions';
+import { toAuthUserFromProfile } from '@/lib/auth/profile';
+import type { AppRole } from '@/lib/auth/roles';
+import { getAuthState } from '@/lib/auth/session';
+import { signOut } from '@/lib/auth/sign-out';
+import type { AuthUser, UserProfile } from '@/lib/auth/types';
+
+function buildLoginRedirect(nextPath?: string, reason?: string): string {
+  const loginUrl = new URL(ROUTES.login, 'http://localhost');
+
+  if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+    loginUrl.searchParams.set('next', nextPath);
+  }
+
+  if (reason) {
+    loginUrl.searchParams.set('reason', reason);
+  }
+
+  return `${loginUrl.pathname}${loginUrl.search}`;
+}
 
 /**
- * Returns the current user or throws an unauthenticated `AppError`.
- * Use in Server Actions and services that should fail closed.
+ * Loads the current profile or throws a typed auth error.
+ * Use in Server Actions / services that should fail closed.
  */
-export async function requireUser(): Promise<AuthUser> {
-  const user = await getCurrentUser();
+export async function requireProfile(): Promise<UserProfile> {
+  const { user, profile } = await getAuthState();
 
   if (!user) {
     throw createUnauthenticatedError();
   }
 
-  return user;
+  if (!profile) {
+    throw createMissingProfileError();
+  }
+
+  if (!profile.isActive) {
+    throw createInactiveAccountError();
+  }
+
+  return profile;
+}
+
+/**
+ * Returns the current user or throws an unauthenticated `AppError`.
+ * Ensures an active profile exists (role comes from `profiles`).
+ */
+export async function requireUser(): Promise<AuthUser> {
+  const profile = await requireProfile();
+  return toAuthUserFromProfile(profile);
 }
 
 /**
  * Returns the current user or redirects to the login page.
  * Use in Server Components / layouts that gate rendered UI.
  *
- * `next` is preserved as a query param for post-login return navigation.
+ * Signs out before redirecting when the profile is missing or inactive so
+ * the proxy does not bounce the user between `/login` and the app shell.
  */
 export async function requireAuth(nextPath?: string): Promise<AuthUser> {
-  const user = await getCurrentUser();
+  const { user, profile } = await getAuthState();
 
   if (!user) {
-    const loginUrl = new URL(ROUTES.login, 'http://localhost');
-    if (nextPath && nextPath.startsWith('/')) {
-      loginUrl.searchParams.set('next', nextPath);
-    }
-    redirect(`${loginUrl.pathname}${loginUrl.search}`);
+    redirect(buildLoginRedirect(nextPath));
   }
 
-  return user;
+  if (!profile) {
+    await signOut().catch(() => undefined);
+    redirect(buildLoginRedirect(nextPath, AUTH_ERROR_CODES.missingProfile));
+  }
+
+  if (!profile.isActive) {
+    await signOut().catch(() => undefined);
+    redirect(buildLoginRedirect(nextPath, AUTH_ERROR_CODES.inactiveAccount));
+  }
+
+  return toAuthUserFromProfile(profile);
+}
+
+/**
+ * Ensures the current user has one of `allowedRoles`.
+ * Throws forbidden / auth errors — use in Server Actions and services.
+ */
+export async function requireRole(...allowedRoles: AppRole[]): Promise<AuthUser> {
+  const profile = await requireProfile();
+
+  if (!hasRole(profile, allowedRoles)) {
+    throw createForbiddenError();
+  }
+
+  return toAuthUserFromProfile(profile);
+}
+
+/**
+ * Ensures the current user is granted `permission`.
+ * Throws forbidden / auth errors — prefer this over scattered role checks.
+ */
+export async function requirePermission(permission: Permission): Promise<AuthUser> {
+  const profile = await requireProfile();
+
+  if (!can(profile, permission)) {
+    throw createForbiddenError();
+  }
+
+  return toAuthUserFromProfile(profile);
 }

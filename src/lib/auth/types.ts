@@ -1,25 +1,38 @@
 /**
- * Authentication domain types.
+ * Authentication and authorization domain types.
  *
- * Slim, app-facing shapes derived from Supabase Auth. Feature code should
- * prefer these over importing `@supabase/supabase-js` types directly.
+ * Prefer these app-facing shapes over raw Supabase Auth / table rows.
  */
 
-/** Known application roles — populated once role assignment is wired up. */
-export type AppRole = 'owner' | 'manager';
+import type { AppRole } from '@/lib/auth/roles';
+
+export type { AppRole } from '@/lib/auth/roles';
 
 /**
  * Authenticated user as consumed by the application.
- * Role is optional until authorization metadata is introduced.
+ * Role and display name come from `profiles` when available.
  */
 export interface AuthUser {
   readonly id: string;
   readonly email: string | undefined;
+  readonly fullName: string | null;
   readonly role: AppRole | null;
+}
+
+/** Application profile row (camelCase) — source of truth for RBAC. */
+export interface UserProfile {
+  readonly id: string;
+  readonly email: string;
+  readonly fullName: string | null;
+  readonly role: AppRole;
+  readonly isActive: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string;
 }
 
 /** Result of resolving the current auth state on the server. */
 export interface AuthState {
   readonly user: AuthUser | null;
+  readonly profile: UserProfile | null;
   readonly isAuthenticated: boolean;
 }
