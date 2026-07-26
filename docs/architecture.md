@@ -8,6 +8,7 @@ only — no CRUD UI yet).
 
 See also:
 
+- [Design system](./design-system.md) — multi-portal tokens, themes, component guidelines
 - [Authentication](./authentication.md) — login, profiles, roles, RLS, permissions
 - [Database](./database.md) — vehicles, bookings, ER diagram, indexes, RLS
 - [Types & validation](./types-and-validation.md) — domain models, enums, Zod schemas
@@ -25,18 +26,19 @@ See also:
 src/
 ├── app/                 # Next.js routes, layouts, global CSS, error/loading UI
 ├── components/
-│   ├── ui/              # shadcn primitives (CLI-managed)
+│   ├── ui/              # shadcn primitives (CLI-managed, token-driven)
 │   ├── shared/          # Business-agnostic composites (EmptyState, PageHeader, …)
 │   └── layout/          # App shell (sidebar, header)
 ├── features/            # Domain modules (auth login UI; others as built)
-├── config/              # App identity, formatting defaults, navigation
-├── constants/           # Routes, storage keys, theme, pagination, table defaults
+├── config/              # App identity, portal theme, formatting, navigation
+├── constants/           # Routes, storage keys, color-mode, pagination, table defaults
+├── themes/              # Portal design tokens (admin / vendor / customer)
 ├── types/               # Shared TypeScript contracts
 ├── lib/                 # Utilities, auth, formatting, errors, Supabase infra
 ├── validations/         # Reusable Zod schemas and helpers
 ├── services/            # Service result helpers + repository contracts
 ├── hooks/               # Generic React hooks
-├── providers/           # Theme, TanStack Query, provider composition
+├── providers/           # Portal theme, TanStack Query, provider composition
 └── proxy.ts             # Next.js Proxy — session refresh + auth redirects
 ```
 

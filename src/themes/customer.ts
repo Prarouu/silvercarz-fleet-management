@@ -1,0 +1,59 @@
+import type { PortalThemeDefinition, SemanticColorTokens } from './tokens';
+
+/**
+ * Customer Portal — premium automotive marketing surface.
+ * Dark hero aesthetic with bright yellow CTAs.
+ * Preset only — no Customer pages in this phase.
+ */
+const customerDark: SemanticColorTokens = {
+  background: '#111111',
+  foreground: '#FFFFFF',
+  surface: '#1A1A1A',
+  surfaceForeground: '#FFFFFF',
+  surfaceSecondary: '#242424',
+  surfaceSecondaryForeground: '#FFFFFF',
+  popover: '#1A1A1A',
+  popoverForeground: '#FFFFFF',
+  primary: '#F4B400',
+  primaryForeground: '#111111',
+  secondary: '#242424',
+  secondaryForeground: '#FFFFFF',
+  muted: '#242424',
+  mutedForeground: '#CFCFCF',
+  accent: '#FFD54A',
+  accentForeground: '#111111',
+  success: '#34D399',
+  successForeground: '#052E1B',
+  warning: '#FFD54A',
+  warningForeground: '#111111',
+  danger: '#F87171',
+  dangerForeground: '#450A0A',
+  info: '#60A5FA',
+  infoForeground: '#172554',
+  border: 'rgb(255 255 255 / 0.12)',
+  input: 'rgb(255 255 255 / 0.16)',
+  ring: '#FFD54A',
+  overlay: 'rgb(0 0 0 / 0.65)',
+  sidebar: '#1A1A1A',
+  sidebarForeground: '#FFFFFF',
+  sidebarPrimary: '#F4B400',
+  sidebarPrimaryForeground: '#111111',
+  sidebarAccent: '#2A2410',
+  sidebarAccentForeground: '#FFD54A',
+  sidebarBorder: 'rgb(255 255 255 / 0.12)',
+  sidebarRing: '#FFD54A',
+  tableHeader: '#242424',
+  tableBorder: 'rgb(255 255 255 / 0.12)',
+  chart1: '#F4B400',
+  chart2: '#FFD54A',
+  chart3: '#CFCFCF',
+  chart4: '#60A5FA',
+  chart5: '#FFFFFF',
+};
+
+export const customerTheme: PortalThemeDefinition = {
+  id: 'customer',
+  name: 'Customer',
+  description: 'Premium dark automotive marketing theme with yellow CTAs.',
+  colors: customerDark,
+};

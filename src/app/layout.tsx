@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
-import { appConfig } from '@/config';
+import { appConfig, portalConfig } from '@/config';
 import { AppProviders } from '@/providers';
 
 import './globals.css';
@@ -34,6 +34,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
+      data-portal={portalConfig.theme}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

@@ -12,8 +12,8 @@ export function ContentSection({
     <section className="space-y-4">
       {title ? (
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+          <h2 className="text-subheading tracking-tight">{title}</h2>
+          {description ? <p className="text-body text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
       {children}

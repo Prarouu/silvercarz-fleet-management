@@ -59,7 +59,9 @@ export function AppSidebar() {
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-semibold">{appConfig.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">Rental Management</span>
+                  <span className="text-caption truncate text-muted-foreground">
+                    Rental Management
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>

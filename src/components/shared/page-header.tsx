@@ -14,9 +14,9 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+        <h1 className="text-heading text-balance">{title}</h1>
         {description ? (
-          <p className="max-w-2xl text-sm leading-relaxed text-pretty text-muted-foreground">
+          <p className="text-body max-w-2xl leading-relaxed text-pretty text-muted-foreground">
             {description}
           </p>
         ) : null}

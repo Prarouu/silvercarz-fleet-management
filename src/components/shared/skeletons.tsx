@@ -19,8 +19,8 @@ export function CardSkeleton() {
 /** Placeholder rows for tabular data while it loads. */
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="space-y-3 overflow-hidden rounded-xl border">
-      <div className="flex gap-3 border-b bg-muted/30 px-3 py-3">
+    <div className="space-y-3 overflow-hidden rounded-xl border border-border">
+      <div className="flex gap-3 border-b border-table-border bg-table-header px-3 py-3">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} className="h-4 flex-1" />
         ))}
