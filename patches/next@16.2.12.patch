@@ -1,0 +1,46 @@
+diff --git a/dist/client/dev/debug-channel.js b/dist/client/dev/debug-channel.js
+index b4f67e73025c9bdb2a25ba553cc7913f0f3dcde1..5ce6c5287b1e3a8858599c8b0c3d86ec76d030c4 100644
+--- a/dist/client/dev/debug-channel.js
++++ b/dist/client/dev/debug-channel.js	
+@@ -59,7 +59,17 @@ function wasServedFromCache() {
+     try {
+         // There is exactly one PerformanceNavigationTiming entry per page load.
+         const entry = performance.getEntriesByType('navigation')[0];
+-        return entry?.transferSize === 0;
++        if (!entry) {
++            return false;
++        }
++        // Firefox reports transferSize===0 while a streaming response body is
++        // still arriving. Treating that as an HTTP cache restore incorrectly
++        // triggers location.reload() and an infinite refresh loop on pages with
++        // loading.tsx / Suspense (see vercel/next.js#94128).
++        // Use signals that only fire on a real cache restore:
++        // - type==='back_forward' for history navigation / tab duplication
++        // - responseStart===0 && responseEnd>0 for Safari tab duplication
++        return entry.type === 'back_forward' || entry.responseStart === 0 && entry.responseEnd > 0;
+     } catch  {
+         return false;
+     }
+diff --git a/dist/esm/client/dev/debug-channel.js b/dist/esm/client/dev/debug-channel.js
+index 9c42c96e033a3f6efe49e784ccc0da9f1adbac21..20d39188fee6bc8df7691419cdcc5db0a111e6c4 100644
+--- a/dist/esm/client/dev/debug-channel.js
++++ b/dist/esm/client/dev/debug-channel.js	
+@@ -37,7 +37,17 @@ function wasServedFromCache() {
+     try {
+         // There is exactly one PerformanceNavigationTiming entry per page load.
+         const entry = performance.getEntriesByType('navigation')[0];
+-        return entry?.transferSize === 0;
++        if (!entry) {
++            return false;
++        }
++        // Firefox reports transferSize===0 while a streaming response body is
++        // still arriving. Treating that as an HTTP cache restore incorrectly
++        // triggers location.reload() and an infinite refresh loop on pages with
++        // loading.tsx / Suspense (see vercel/next.js#94128).
++        // Use signals that only fire on a real cache restore:
++        // - type==='back_forward' for history navigation / tab duplication
++        // - responseStart===0 && responseEnd>0 for Safari tab duplication
++        return entry.type === 'back_forward' || entry.responseStart === 0 && entry.responseEnd > 0;
+     } catch  {
+         return false;
+     }

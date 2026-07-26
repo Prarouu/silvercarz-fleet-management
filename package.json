@@ -63,5 +63,10 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "next@16.2.12": "patches/next@16.2.12.patch"
+    }
   }
 }

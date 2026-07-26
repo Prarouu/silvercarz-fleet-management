@@ -101,6 +101,8 @@ export function BookingForm(props: BookingFormProps) {
   const kilometerRate = useWatch({ control, name: 'kilometer_rate' });
   const duration = useWatch({ control, name: 'duration' });
   const totalKilometers = useWatch({ control, name: 'total_kilometers' });
+  const bookingAmountValue = useWatch({ control, name: 'booking_amount' });
+  const totalAmountValue = useWatch({ control, name: 'total_amount' });
 
   useEffect(() => {
     if (!deliveryDate || !returnDate) {
@@ -108,16 +110,23 @@ export function BookingForm(props: BookingFormProps) {
     }
 
     const nextDuration = calculateDurationDays(deliveryDate, returnDate);
-    setValue('duration', nextDuration > 0 ? nextDuration : null, {
+    const nextValue = nextDuration > 0 ? nextDuration : null;
+    if (nextValue === duration) {
+      return;
+    }
+    setValue('duration', nextValue, {
       shouldValidate: false,
       shouldDirty: false,
     });
-  }, [deliveryDate, returnDate, setValue]);
+  }, [deliveryDate, returnDate, duration, setValue]);
 
   useEffect(() => {
     const nextKm = calculateTotalKilometers(startOdometer, endOdometer);
+    if (nextKm === totalKilometers) {
+      return;
+    }
     setValue('total_kilometers', nextKm, { shouldValidate: false, shouldDirty: false });
-  }, [startOdometer, endOdometer, setValue]);
+  }, [startOdometer, endOdometer, totalKilometers, setValue]);
 
   useEffect(() => {
     if (dailyCharge == null || duration == null || duration <= 0) {
@@ -132,9 +141,21 @@ export function BookingForm(props: BookingFormProps) {
     });
     const totalAmount = calculateTotalAmount(bookingAmount);
 
-    setValue('booking_amount', bookingAmount, { shouldValidate: false, shouldDirty: false });
-    setValue('total_amount', totalAmount, { shouldValidate: false, shouldDirty: false });
-  }, [dailyCharge, duration, kilometerRate, totalKilometers, setValue]);
+    if (bookingAmount !== bookingAmountValue) {
+      setValue('booking_amount', bookingAmount, { shouldValidate: false, shouldDirty: false });
+    }
+    if (totalAmount !== totalAmountValue) {
+      setValue('total_amount', totalAmount, { shouldValidate: false, shouldDirty: false });
+    }
+  }, [
+    dailyCharge,
+    duration,
+    kilometerRate,
+    totalKilometers,
+    bookingAmountValue,
+    totalAmountValue,
+    setValue,
+  ]);
 
   const isLoading = isSubmitting || isPending;
   const formError = errors.root?.message;
@@ -497,8 +518,8 @@ export function BookingForm(props: BookingFormProps) {
               name="vehicle_id"
               render={({ field }) => (
                 <Select
-                  value={field.value || undefined}
-                  onValueChange={field.onChange}
+                  value={field.value ? field.value : undefined}
+                  onValueChange={(value) => field.onChange(value ?? '')}
                   disabled={isLoading || vehicles.length === 0}
                 >
                   <SelectTrigger
@@ -838,7 +859,9 @@ export function BookingForm(props: BookingFormProps) {
               render={({ field }) => (
                 <Select
                   value={field.value ?? undefined}
-                  onValueChange={(value) => field.onChange(value as PaymentMethodValue)}
+                  onValueChange={(value) =>
+                    field.onChange((value as PaymentMethodValue | null) ?? null)
+                  }
                   disabled={isLoading}
                 >
                   <SelectTrigger

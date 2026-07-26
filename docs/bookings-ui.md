@@ -94,3 +94,13 @@ layout shift.
 - No new business features (calendar, invoices, delete, date-range filtering)
 - No data-layer or validation rule changes
 - No Vehicle / Dashboard / Settings UI work
+
+## Dev-only: Firefox reload loop
+
+Next.js 16.2.x has a known Firefox bug where `loading.tsx` + slow Server
+Components can enter an infinite `location.reload()` loop in development
+([vercel/next.js#94128](https://github.com/vercel/next.js/pull/94128)).
+
+This repo pins a `pnpm` patch at `patches/next@16.2.12.patch` that fixes
+`wasServedFromCache()` detection. Remove the patch after upgrading past the
+upstream fix (Next.js 16.3+).
