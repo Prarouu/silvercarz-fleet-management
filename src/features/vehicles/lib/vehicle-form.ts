@@ -1,12 +1,17 @@
 /**
- * Add Vehicle form defaults, field helpers, and payload mapping.
+ * Shared Vehicle form defaults, field helpers, and payload mapping.
  *
- * Validation rules live in `@/validations` — this module only shapes UX values.
+ * Used by Create and Edit. Validation rules live in `@/validations` —
+ * this module only shapes UX values.
  */
 
-import type { FuelType, VehicleAvailabilityStatus } from '@/types';
+import type { FuelType, Vehicle, VehicleAvailabilityStatus } from '@/types';
 import { VEHICLE_AVAILABILITY_STATUSES } from '@/types';
-import { createVehicleSchema, type CreateVehicleValues } from '@/validations';
+import {
+  createVehicleSchema,
+  type CreateVehicleValues,
+  type UpdateVehicleValues,
+} from '@/validations';
 
 export type VehicleStatusValue = 'active' | 'inactive';
 
@@ -55,6 +60,26 @@ export function createVehicleFormDefaults(): VehicleFormValues {
     current_odometer: 0,
     availability_status: VEHICLE_AVAILABILITY_STATUSES.available,
     vehicle_status: 'active',
+  };
+}
+
+/** Map a persisted vehicle row into editable form values. */
+export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
+  return {
+    vehicle_name: vehicle.vehicle_name,
+    vehicle_number: vehicle.vehicle_number,
+    brand: vehicle.brand,
+    model: vehicle.model,
+    variant: vehicle.variant ?? '',
+    model_year: vehicle.model_year,
+    color: vehicle.color ?? '',
+    fuel_type: vehicle.fuel_type,
+    default_daily_rate: vehicle.default_daily_rate,
+    extra_kilometer_rate: vehicle.extra_kilometer_rate,
+    security_deposit: vehicle.security_deposit,
+    current_odometer: vehicle.current_odometer,
+    availability_status: vehicle.availability_status,
+    vehicle_status: vehicle.is_active ? 'active' : 'inactive',
   };
 }
 
@@ -114,6 +139,16 @@ export function toCreateVehicleInput(values: VehicleFormValues): unknown {
   };
 }
 
+/**
+ * Update payload omits `image_path` so field saves never wipe Storage paths.
+ * Image replace / remove is handled by dedicated Server Actions.
+ */
+export function toUpdateVehicleInput(values: VehicleFormValues): Record<string, unknown> {
+  const createInput = toCreateVehicleInput(values) as Record<string, unknown>;
+  const { image_path: _ignored, ...rest } = createInput;
+  return rest;
+}
+
 export function validateCreateVehicleForm(
   values: VehicleFormValues,
 ):
@@ -123,6 +158,36 @@ export function validateCreateVehicleForm(
 
   if (parsed.success) {
     return { success: true, data: parsed.data };
+  }
+
+  const fieldErrors = mapZodFieldErrors(parsed.error.issues);
+  const first = parsed.error.issues[0];
+
+  return {
+    success: false,
+    fieldErrors,
+    formError: first?.message ?? 'Please correct the highlighted fields.',
+  };
+}
+
+/**
+ * Full-form validation for edit (same field rules as create).
+ * Uses `createVehicleSchema` so partial update schema cannot skip required fields.
+ * `image_path` is stripped from the result — image changes use Storage actions.
+ */
+export function validateUpdateVehicleForm(
+  values: VehicleFormValues,
+):
+  | { success: true; data: UpdateVehicleValues }
+  | { success: false; fieldErrors: VehicleFormFieldErrors; formError: string } {
+  const parsed = createVehicleSchema.safeParse({
+    ...toUpdateVehicleInput(values),
+    image_path: null,
+  });
+
+  if (parsed.success) {
+    const { image_path: _omit, ...data } = parsed.data;
+    return { success: true, data };
   }
 
   const fieldErrors = mapZodFieldErrors(parsed.error.issues);

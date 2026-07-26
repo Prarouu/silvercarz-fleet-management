@@ -133,6 +133,7 @@ Deep dives:
 - [docs/vehicles-data-layer.md](./docs/vehicles-data-layer.md) — vehicle repository / service / actions
 - [docs/vehicles-list.md](./docs/vehicles-list.md) — fleet list UI
 - [docs/vehicles-create.md](./docs/vehicles-create.md) — add vehicle form UI
+- [docs/vehicles-edit.md](./docs/vehicles-edit.md) — edit vehicle form UI
 - [docs/conventions.md](./docs/conventions.md) — naming, git, imports, TypeScript
 - [src/features/README.md](./src/features/README.md) — feature folder layout
 

@@ -1,7 +1,7 @@
 # Create Vehicle UI
 
-Phase 5.2 adds the Add Vehicle screen at `/vehicles/new`. Edit Vehicle and
-Vehicle Details remain deferred.
+Phase 5.2 adds the Add Vehicle screen at `/vehicles/new`. It shares `VehicleForm`
+with Edit Vehicle (`mode="create" | "edit"`). Vehicle Details remain deferred.
 
 ## Architecture
 
@@ -9,23 +9,24 @@ Vehicle Details remain deferred.
 /vehicles/new (Server Component)
   → CreateVehiclePage
        ├── Breadcrumb + PageHeader
-       └── CreateVehicleForm (client)
+       └── VehicleForm mode="create" (client)
             → React Hook Form
             → createVehicleSchema (shared Zod)
             → createVehicle() Server Action
                  → Vehicle Service → Repository
             → uploadVehicleImageAction() (optional image)
                  → vehicle-image-storage → Supabase Storage
-                 → updateVehicle({ image_path })
+                 → setVehicleImagePath(...)
 ```
 
 Rules:
 
 1. The route is a thin Server Component; the client form owns UX state and submission.
-2. Validation reuses `@/validations` (`createVehicleSchema`) — no duplicated rules.
-3. UI never imports Supabase or the vehicle repository.
-4. On success, redirect to the Fleet List (`/vehicles`) with a success toast.
-5. Image upload is isolated in `vehicle-image-storage` so Storage can be toggled
+2. There is **one** form: `VehicleForm`. Create is `mode="create"`.
+3. Validation reuses `@/validations` (`createVehicleSchema`) — no duplicated rules.
+4. UI never imports Supabase or the vehicle repository.
+5. On success, redirect to the Fleet List (`/vehicles`) with a success toast.
+6. Image upload is isolated in `vehicle-image-storage` so Storage can be toggled
    without rewriting the form (`VEHICLE_IMAGE.uploadEnabled`).
 
 ## Route
@@ -123,8 +124,13 @@ src/features/vehicles/
 │   ├── create-vehicle.ts
 │   └── upload-vehicle-image.ts
 ├── components/
+│   ├── vehicle-form.tsx                 ← shared create/edit form
+│   ├── vehicle-basic-section.tsx
+│   ├── vehicle-rental-section.tsx
+│   ├── vehicle-operational-section.tsx
+│   ├── vehicle-image-section.tsx
 │   ├── create-vehicle-page.tsx
-│   ├── create-vehicle-form.tsx
+│   ├── create-vehicle-form.tsx          ← thin mode="create" wrapper
 │   ├── create-vehicle-skeleton.tsx
 │   ├── vehicle-breadcrumb.tsx
 │   └── vehicle-image-field.tsx
@@ -137,6 +143,7 @@ Shared form shells: `components/shared/form-field.tsx`, `form-section.tsx`.
 
 ## Related docs
 
+- [Edit Vehicle UI](./vehicles-edit.md)
 - [Vehicles list UI](./vehicles-list.md)
 - [Vehicles data layer](./vehicles-data-layer.md)
 - [Database schema](./database.md)

@@ -10,6 +10,7 @@
 import { VEHICLE_ERROR_CODES, createVehicleValidationError } from '@/features/vehicles/errors';
 import {
   isVehicleImageUploadEnabled,
+  removeVehicleImage,
   uploadVehicleImage,
 } from '@/features/vehicles/lib/vehicle-image-storage';
 import { getVehicleService } from '@/features/vehicles/service';
@@ -37,19 +38,32 @@ export async function uploadVehicleImageAction(
       return { path: '', skipped: true };
     }
 
+    const service = getVehicleService();
+    const existing = await service.getVehicle(vehicleId);
+    const previousPath = existing.success ? existing.data.image_path : null;
+
     const uploaded = await uploadVehicleImage({ vehicleId, file });
 
     if (!uploaded) {
       return { path: '', skipped: true };
     }
 
-    const updateResult = await getVehicleService().setVehicleImagePath(vehicleId, uploaded.path);
+    const updateResult = await service.setVehicleImagePath(vehicleId, uploaded.path);
 
     if (!updateResult.success) {
       throw new AppError(
         updateResult.error.message || 'Unable to save the vehicle image path.',
         updateResult.error.code || VEHICLE_ERROR_CODES.storageFailure,
       );
+    }
+
+    // Best-effort cleanup of the previous object after a successful replace.
+    if (previousPath && previousPath !== uploaded.path) {
+      try {
+        await removeVehicleImage({ path: previousPath });
+      } catch {
+        // Keep the new path; orphan cleanup can be handled later.
+      }
     }
 
     return { path: uploaded.path, skipped: false };

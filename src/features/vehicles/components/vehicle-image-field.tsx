@@ -10,7 +10,11 @@ import { cn } from '@/lib/utils';
 
 type VehicleImageFieldProps = {
   readonly file: File | null;
+  /** Public URL of the currently saved image (edit mode). */
+  readonly existingImageUrl?: string | null;
   readonly onChange: (file: File | null) => void;
+  /** Clears a persisted image when the user removes the preview with no new file. */
+  readonly onClearExisting?: () => void;
   readonly error?: string;
   readonly disabled?: boolean;
   readonly className?: string;
@@ -33,7 +37,9 @@ function validateLocalFile(file: File): string | null {
 
 export function VehicleImageField({
   file,
+  existingImageUrl,
   onChange,
+  onClearExisting,
   error,
   disabled = false,
   className,
@@ -42,16 +48,18 @@ export function VehicleImageField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | undefined>();
 
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const localPreviewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
       }
     };
-  }, [previewUrl]);
+  }, [localPreviewUrl]);
 
+  const previewUrl = localPreviewUrl ?? existingImageUrl ?? null;
+  const hasImage = Boolean(previewUrl);
   const displayError = error ?? localError;
   const description = 'JPG, PNG, or WEBP · max 5 MB. Preview updates before save.';
 
@@ -82,6 +90,7 @@ export function VehicleImageField({
   function removeImage() {
     setLocalError(undefined);
     onChange(null);
+    onClearExisting?.();
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -117,10 +126,10 @@ export function VehicleImageField({
       >
         <div className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-background sm:size-32">
           {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
+            // eslint-disable-next-line @next/next/no-img-element -- local object URL or Storage preview
             <img
               src={previewUrl}
-              alt="Selected vehicle preview"
+              alt={file ? 'Selected vehicle preview' : 'Current vehicle image'}
               className="size-full object-cover"
             />
           ) : (
@@ -133,7 +142,11 @@ export function VehicleImageField({
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <p className="truncate text-sm font-medium">
-            {file ? file.name : 'Add a photo of the vehicle (optional).'}
+            {file
+              ? file.name
+              : existingImageUrl
+                ? 'Current vehicle photo. Replace or remove before saving.'
+                : 'Add a photo of the vehicle (optional).'}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -143,7 +156,7 @@ export function VehicleImageField({
               disabled={disabled}
               onClick={openPicker}
             >
-              {file ? (
+              {hasImage ? (
                 <>
                   <Replace className="size-4" aria-hidden="true" />
                   Replace image
@@ -155,7 +168,7 @@ export function VehicleImageField({
                 </>
               )}
             </Button>
-            {file ? (
+            {hasImage ? (
               <Button
                 type="button"
                 variant="ghost"

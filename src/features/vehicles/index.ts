@@ -2,7 +2,7 @@
  * Vehicles feature public exports.
  *
  * Data layer (repository, service, Server Actions), Fleet List UI,
- * and Add Vehicle workflow. Edit / Details pages are deferred.
+ * Add Vehicle, and Edit Vehicle workflows. Details page is deferred.
  */
 
 export type {
@@ -56,9 +56,11 @@ export {
   getVehicle,
   getVehicleByNumber,
   listVehicles,
+  removeVehicleImageAction,
   searchVehicles,
   updateVehicle,
   uploadVehicleImageAction,
+  type RemoveVehicleImageResult,
   type UploadVehicleImageResult,
 } from './actions';
 
@@ -66,15 +68,22 @@ export {
   CreateVehicleForm,
   CreateVehiclePage,
   CreateVehicleSkeleton,
+  EditVehiclePage,
   VehicleAvailabilityBadge,
+  VehicleBasicSection,
   VehicleBreadcrumb,
+  VehicleForm,
   VehicleImageField,
+  VehicleImageSection,
   VehicleList,
   VehicleListSkeleton,
+  VehicleOperationalSection,
+  VehicleRentalSection,
   VehicleStatusBadge,
   resolveVehicleAvailability,
   type VehicleAvailability,
   type VehicleFleetSummary,
+  type VehicleFormProps,
 } from './components';
 
 export {

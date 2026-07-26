@@ -1,7 +1,7 @@
 import { PageContainer } from '@/components/shared/page-container';
 import { PageHeader } from '@/components/shared/page-header';
-import { CreateVehicleForm } from '@/features/vehicles/components/create-vehicle-form';
 import { VehicleBreadcrumb } from '@/features/vehicles/components/vehicle-breadcrumb';
+import { VehicleForm } from '@/features/vehicles/components/vehicle-form';
 
 export function CreateVehiclePage() {
   return (
@@ -14,7 +14,7 @@ export function CreateVehiclePage() {
         />
       </div>
 
-      <CreateVehicleForm />
+      <VehicleForm mode="create" />
     </PageContainer>
   );
 }

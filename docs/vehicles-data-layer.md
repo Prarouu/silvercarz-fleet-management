@@ -4,11 +4,13 @@ Phase 3.4 implements the vehicle backend stack (repository, service, Server
 Actions, and domain errors). Phase 5.1 adds the Fleet Management list UI at
 `/vehicles` — see [vehicles-list.md](./vehicles-list.md). Phase 5.2 adds
 Create Vehicle at `/vehicles/new` — see [vehicles-create.md](./vehicles-create.md).
+Phase 5.3 adds Edit Vehicle at `/vehicles/[id]/edit` — see
+[vehicles-edit.md](./vehicles-edit.md).
 
 ## Data flow
 
 ```
-UI (Fleet List — /vehicles, Add Vehicle — /vehicles/new)
+UI (Fleet List — /vehicles, Add — /vehicles/new, Edit — /vehicles/[id]/edit)
   → Server Actions   (@/features/vehicles/actions)
   → Vehicle Service  (@/features/vehicles/service)
     → Vehicle Repository (@/features/vehicles/repository)
@@ -157,13 +159,14 @@ UI should read `ApiResponse.error.message` only — never PostgREST payloads.
 5. **Fuel logs** — same orchestration point as maintenance.
 6. **Insurance / servicing reminders** — schedule helpers on the service layer.
 7. **Role divergence** — remove `'all'` from managers for `vehicles:delete` when needed.
-8. **UI** — Fleet List and Add Vehicle call Server Actions only; Edit / Details
-   pages are deferred.
+8. **UI** — Fleet List, Add Vehicle, and Edit Vehicle call Server Actions only;
+   Vehicle Details remains deferred.
 
 ## Related docs
 
 - [Vehicles list UI](./vehicles-list.md)
 - [Create Vehicle UI](./vehicles-create.md)
+- [Edit Vehicle UI](./vehicles-edit.md)
 - [Database schema](./database.md)
 - [Types & validation](./types-and-validation.md)
 - [Bookings data layer](./bookings-data-layer.md)
