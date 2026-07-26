@@ -1,6 +1,7 @@
 'use client';
 
 import { MoreHorizontal } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,12 +10,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { bookingEditPath } from '@/constants/routes';
 
 /**
- * Row actions menu — View / Edit / Delete are UI placeholders until
- * detail and mutate flows land in later phases.
+ * Row actions menu — View / Delete remain placeholders until detail
+ * and delete flows land. Edit navigates to the shared BookingForm.
  */
-export function BookingRowActions({ invoiceNumber }: { invoiceNumber: string }) {
+export function BookingRowActions({
+  bookingId,
+  invoiceNumber,
+}: {
+  bookingId: string;
+  invoiceNumber: string;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -24,7 +32,9 @@ export function BookingRowActions({ invoiceNumber }: { invoiceNumber: string }) 
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
         <DropdownMenuItem disabled>View</DropdownMenuItem>
-        <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={bookingEditPath(bookingId)}>Edit</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem disabled variant="destructive">
           Delete
         </DropdownMenuItem>

@@ -20,3 +20,8 @@ export const ROUTES = {
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
+
+/** Dynamic edit path for a booking id. */
+export function bookingEditPath(id: string): string {
+  return `${ROUTES.bookings}/${id}/edit`;
+}

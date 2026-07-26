@@ -13,6 +13,8 @@ See also:
 - [Types & validation](./types-and-validation.md) — domain models, enums, Zod schemas
 - [Bookings data layer](./bookings-data-layer.md) — repository, service, Server Actions
 - [Bookings list UI](./bookings-list.md) — `/bookings` table, search, filters, pagination
+- [Create Booking UI](./bookings-create.md) — `/bookings/new` shared `BookingForm`
+- [Edit Booking UI](./bookings-edit.md) — `/bookings/[id]/edit` reuses `BookingForm`
 - [Vehicles data layer](./vehicles-data-layer.md) — repository, service, Server Actions
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module

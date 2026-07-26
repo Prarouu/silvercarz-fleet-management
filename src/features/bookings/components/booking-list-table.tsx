@@ -166,7 +166,12 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         id: 'actions',
         header: () => <span className="sr-only">Actions</span>,
         enableSorting: false,
-        cell: ({ row }) => <BookingRowActions invoiceNumber={row.original.invoice_number} />,
+        cell: ({ row }) => (
+          <BookingRowActions
+            bookingId={row.original.id}
+            invoiceNumber={row.original.invoice_number}
+          />
+        ),
       },
     ],
     [],
@@ -282,7 +287,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <BookingStatusBadge status={booking.status} />
-                <BookingRowActions invoiceNumber={booking.invoice_number} />
+                <BookingRowActions bookingId={booking.id} invoiceNumber={booking.invoice_number} />
               </div>
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">

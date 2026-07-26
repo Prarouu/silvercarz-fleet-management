@@ -1,7 +1,7 @@
 # Create Booking UI
 
-Phase 4.2 adds the Create Booking screen at `/bookings/new`. Edit and detail
-flows are **not** included.
+Phase 4.2 adds the Create Booking screen at `/bookings/new`. Edit Booking reuses
+the same form — see [bookings-edit.md](./bookings-edit.md).
 
 ## Architecture
 
@@ -10,7 +10,7 @@ flows are **not** included.
   → listVehicles({ isActive, available }) + countBookings()
   → CreateBookingPage
        ├── Breadcrumb + PageHeader
-       └── CreateBookingForm (client)
+       └── BookingForm mode="create" (client)
             → React Hook Form
             → createBookingSchema (shared Zod)
             → createBooking() Server Action
@@ -24,6 +24,7 @@ Rules:
 3. Validation reuses `@/validations` (`createBookingSchema`) — no duplicated rules.
 4. UI never imports Supabase or the booking repository.
 5. On success, redirect to the Booking List (details route does not exist yet).
+6. Create and Edit share one `BookingForm` component; mode props control differences.
 
 ## Route
 
@@ -96,17 +97,20 @@ options. The select is disabled when none are available.
 ```
 src/features/bookings/
 ├── components/
-│   ├── create-booking-form.tsx
+│   ├── booking-form.tsx
 │   ├── create-booking-page.tsx
+│   ├── create-booking-form.tsx
 │   ├── create-booking-skeleton.tsx
 │   ├── booking-form-section.tsx
 │   └── booking-form-field.tsx
 └── lib/
+    ├── booking-form.ts
     └── create-booking-form.ts
 ```
 
 ## Related docs
 
+- [Edit Booking](./bookings-edit.md)
 - [Bookings list](./bookings-list.md)
 - [Bookings data layer](./bookings-data-layer.md)
 - [Types and validation](./types-and-validation.md)

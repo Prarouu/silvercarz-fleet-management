@@ -11,8 +11,8 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { ROUTES } from '@/constants/routes';
-import { CreateBookingForm } from '@/features/bookings/components/create-booking-form';
-import type { VehicleSelectOption } from '@/features/bookings/lib/create-booking-form';
+import { BookingForm } from '@/features/bookings/components/booking-form';
+import type { VehicleSelectOption } from '@/features/bookings/lib/booking-form';
 
 type CreateBookingPageProps = {
   readonly vehicles: readonly VehicleSelectOption[];
@@ -51,7 +51,11 @@ export function CreateBookingPage({
         </p>
       ) : null}
 
-      <CreateBookingForm vehicles={vehicles} suggestedInvoiceNumber={suggestedInvoiceNumber} />
+      <BookingForm
+        mode="create"
+        vehicles={vehicles}
+        suggestedInvoiceNumber={suggestedInvoiceNumber}
+      />
     </PageContainer>
   );
 }
