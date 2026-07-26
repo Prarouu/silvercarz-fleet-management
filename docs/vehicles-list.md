@@ -70,12 +70,12 @@ full roster unless Status narrows the set.
 
 ## Summary cards
 
-| Card               | Source                                     |
-| ------------------ | ------------------------------------------ |
-| Total Vehicles     | `countVehicles({ includeInactive: true })` |
-| Available Vehicles | `countVehicles({ available: true })`       |
-| Booked Vehicles    | `0` until booking-conflict summary lands   |
-| Inactive Vehicles  | `countVehicles({ isActive: false })`       |
+| Card               | Source                                              |
+| ------------------ | --------------------------------------------------- |
+| Total Vehicles     | `countVehicles({ includeInactive: true })`          |
+| Available Vehicles | `countVehicles({ available: true })`                |
+| Booked Vehicles    | Active vehicles with `availability_status = booked` |
+| Inactive Vehicles  | `countVehicles({ isActive: false })`                |
 
 Counts are fetched in parallel with the list and do not re-run the list query.
 

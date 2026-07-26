@@ -13,21 +13,22 @@ type VehiclesPageProps = {
 };
 
 async function loadFleetSummary(): Promise<VehicleFleetSummary | null> {
-  const [totalRes, availableRes, inactiveRes] = await Promise.all([
+  const [totalRes, availableRes, bookedRes, inactiveRes] = await Promise.all([
     countVehicles({ includeInactive: true }),
     countVehicles({ available: true }),
+    // Active vehicles marked booked on `availability_status`.
+    countVehicles({ availabilityStatus: 'booked' }),
     countVehicles({ isActive: false }),
   ]);
 
-  if (!totalRes.success || !availableRes.success || !inactiveRes.success) {
+  if (!totalRes.success || !availableRes.success || !bookedRes.success || !inactiveRes.success) {
     return null;
   }
 
   return {
     total: totalRes.data,
     available: availableRes.data,
-    // Booking-conflict availability lands with hire conflict detection.
-    booked: 0,
+    booked: bookedRes.data,
     inactive: inactiveRes.data,
   };
 }
