@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 1.5 — production-ready project foundation. No business features are implemented yet. Next: Phase 2 (Authentication & Security).
+> **Status:** Phase 2.1a — authentication infrastructure (Supabase Auth session, proxy refresh, server guards). No login UI or business features yet. Next: Login UI & route enforcement.
 
 ## Tech Stack
 
@@ -75,6 +75,7 @@ src/
 ├── constants/            # Routes, storage keys, theme, pagination, table defaults
 ├── types/                # Shared TypeScript contracts (API, pagination, entities)
 ├── lib/
+│   ├── auth/             # Auth session, guards, errors, sign-out, route helpers
 │   ├── supabase/         # Supabase infrastructure (clients, config, errors)
 │   ├── utils.ts          # cn() classname helper
 │   ├── format.ts         # Date / currency / number formatting
@@ -82,6 +83,7 @@ src/
 │   ├── debounce.ts       # Debounce helper
 │   ├── pagination.ts     # Pagination helpers
 │   └── errors.ts         # AppError + display-message helpers
+├── proxy.ts              # Next.js Proxy — Supabase session refresh
 ├── validations/          # Reusable Zod schemas and parse helpers
 ├── services/             # ApiResponse helpers + repository contracts
 ├── hooks/                # Shared generic React hooks
@@ -121,6 +123,7 @@ Rules for upcoming feature work:
 Deep dives:
 
 - [docs/architecture.md](./docs/architecture.md) — shared layer usage, module guide, error flow
+- [docs/authentication.md](./docs/authentication.md) — auth session flow, proxy, future login/RBAC
 - [docs/conventions.md](./docs/conventions.md) — naming, git, imports, TypeScript
 - [src/features/README.md](./src/features/README.md) — feature folder layout
 
@@ -169,11 +172,24 @@ All Supabase access goes through `src/lib/supabase/`. **Never import from `@supa
 | --------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `client.ts`     | Client Components only                            | Browser client (`createSupabaseBrowserClient`)                                   |
 | `server.ts`     | Server Components, Server Actions, Route Handlers | Per-request server client bound to cookies (`createSupabaseServerClient`)        |
-| `middleware.ts` | Next.js middleware (wired up in the auth phase)   | Session-refresh client for the Edge runtime                                      |
+| `middleware.ts` | Next.js Proxy (`src/proxy.ts`)                    | `updateSession()` — refresh auth cookies before the App Router runs              |
 | `config.ts`     | Anywhere                                          | Validated environment configuration (`supabaseConfig`)                           |
 | `errors.ts`     | Anywhere                                          | Error normalization — raw DB errors are never shown to users                     |
 | `health.ts`     | Server only, temporary                            | `checkSupabaseConnection()` pings the auth health endpoint; safe to delete later |
 | `index.ts`      | Anywhere                                          | Barrel for runtime-agnostic exports (config, errors, `TypedSupabaseClient`)      |
+
+### Authentication (`src/lib/auth/`)
+
+Server helpers for session and access control. See [docs/authentication.md](./docs/authentication.md).
+
+| Concern       | API                                                                   |
+| ------------- | --------------------------------------------------------------------- |
+| Current user  | `getCurrentUser`, `getAuthState`, `isAuthenticated`                   |
+| Guards        | `requireUser` (throw), `requireAuth` (redirect to `ROUTES.login`)     |
+| Sign out      | `signOut`                                                             |
+| Errors        | `toAuthError`, `getAuthErrorMessage`                                  |
+| Route helpers | `isPublicRoute`, `isProtectedRoute`, `buildLoginRedirectPath`, …      |
+| Future roles  | `getCurrentUserRole` reads `app_metadata.role` (`owner` \| `manager`) |
 
 Usage rules for future modules:
 

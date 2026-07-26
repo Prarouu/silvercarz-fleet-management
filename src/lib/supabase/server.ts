@@ -2,7 +2,7 @@ import 'server-only';
 
 /**
  * Supabase client for the server: Server Components, Server Actions, and
- * future Route Handlers.
+ * Route Handlers.
  *
  * Reads and writes the auth session from request cookies via `next/headers`.
  * A new client must be created per request (never cached in a module-level
@@ -27,13 +27,15 @@ export async function createSupabaseServerClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, _headers) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
         } catch {
           // `cookies().set` throws inside Server Components (read-only
-          // context). Safe to ignore: session refresh will be handled by
-          // middleware once authentication is wired up.
+          // context). Safe to ignore: session refresh is handled by the
+          // Next.js Proxy via `updateSession`.
         }
       },
     },

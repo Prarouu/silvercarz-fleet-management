@@ -1,13 +1,12 @@
 /**
- * Supabase client for Next.js middleware (Edge runtime).
+ * Supabase session helpers for the Next.js Proxy (formerly Middleware).
  *
- * Prepared for the authentication phase: middleware will use this to
- * refresh expired auth sessions and keep cookies in sync between the
- * request and response. It is intentionally not wired into a
- * `src/middleware.ts` yet — no auth logic exists in this phase.
+ * `updateSession` refreshes expired auth tokens and keeps cookies in sync
+ * between the request and response. It must be called from `src/proxy.ts`
+ * on matched requests so Server Components can read a valid session.
  *
- * Do NOT use outside middleware. Server code uses `@/lib/supabase/server`;
- * client code uses `@/lib/supabase/client`.
+ * Do NOT use outside the proxy entrypoint. Server code uses
+ * `@/lib/supabase/server`; client code uses `@/lib/supabase/client`.
  */
 
 import { createServerClient } from '@supabase/ssr';
@@ -24,20 +23,40 @@ export function createSupabaseMiddlewareClient(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        // Recreate the response so refreshed cookies propagate downstream.
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
         response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
-        );
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+        Object.entries(headers).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
       },
     },
   });
 
   return {
     supabase,
-    /** Always return this response from middleware so cookie updates are kept. */
+    /** Always return this response from the proxy so cookie updates are kept. */
     getResponse: () => response,
   };
+}
+
+/**
+ * Refreshes the Supabase auth session for the current request.
+ *
+ * Important: call `getUser()` immediately after creating the client — do not
+ * run other logic in between. Always return the response from
+ * `getResponse()` so refreshed cookies reach the browser.
+ */
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  const { supabase, getResponse } = createSupabaseMiddlewareClient(request);
+
+  // Validates the JWT and refreshes tokens when needed.
+  await supabase.auth.getUser();
+
+  return getResponse();
 }

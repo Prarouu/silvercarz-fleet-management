@@ -6,6 +6,10 @@
  */
 export const ROUTES = {
   home: '/',
+  login: '/login',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
+  authCallback: '/auth/callback',
   dashboard: '/dashboard',
   bookings: '/bookings',
   vehicles: '/vehicles',

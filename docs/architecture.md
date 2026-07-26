@@ -1,11 +1,12 @@
 # Shared Architecture
 
-Phase 1.5 locks the shared foundation every feature module builds on.
-This layer is intentionally **domain-agnostic** — no bookings, vehicles,
-customers, drivers, or authentication logic lives here.
+Phase 1.5 locked the shared foundation every feature module builds on.
+Authentication infrastructure (Phase 2.1a) lives in `@/lib/auth` and
+`src/proxy.ts` — still no bookings, vehicles, customers, or drivers.
 
 See also:
 
+- [Authentication](./authentication.md) — session flow, proxy, future login/RBAC
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -18,15 +19,16 @@ src/
 │   ├── ui/              # shadcn primitives (CLI-managed)
 │   ├── shared/          # Business-agnostic composites (EmptyState, PageHeader, …)
 │   └── layout/          # App shell (sidebar, header)
-├── features/            # Domain modules (added as features are built)
+├── features/            # Domain modules (auth schemas; others as built)
 ├── config/              # App identity, formatting defaults, navigation
 ├── constants/           # Routes, storage keys, theme, pagination, table defaults
 ├── types/               # Shared TypeScript contracts
-├── lib/                 # Utilities, formatting, errors, Supabase infra
+├── lib/                 # Utilities, auth, formatting, errors, Supabase infra
 ├── validations/         # Reusable Zod schemas and helpers
 ├── services/            # Service result helpers + repository contracts
 ├── hooks/               # Generic React hooks
-└── providers/           # Theme, TanStack Query, provider composition
+├── providers/           # Theme, TanStack Query, provider composition
+└── proxy.ts             # Next.js Proxy — Supabase session refresh
 ```
 
 ## Design principles
@@ -84,6 +86,7 @@ Feature-specific types stay in `features/<name>/types`.
 | `debounce`   | generic debounce helper                                          |
 | `pagination` | `createPaginatedResult`, `normalizePaginationParams`, `toOffset` |
 | `errors`     | `AppError`, `toAppError`, `getDisplayErrorMessage`               |
+| `auth`       | session, requireAuth/requireUser, signOut, auth errors, routes   |
 | `supabase`   | clients, config, Supabase-specific error normalization           |
 
 ### Services (`@/services`)
@@ -122,7 +125,9 @@ Today it wires:
 2. TanStack Query
 3. Tooltip provider
 
-Add future cross-cutting providers (e.g. auth) here — not ad hoc in layouts.
+Auth session state is cookie-based (Supabase SSR) — no client Auth provider
+is required for Server Components. Add a client auth provider here only if
+a future UI needs live `onAuthStateChange` subscriptions.
 
 ## Shared components — when to use
 
@@ -170,14 +175,15 @@ unknown error
   needs interactivity (hooks, event handlers, browser APIs).
 - Providers live under `src/providers/` and are composed once in the root layout.
 - Supabase: browser → `@/lib/supabase/client`; server → `@/lib/supabase/server`;
-  middleware (future) → `@/lib/supabase/middleware`.
+  proxy session refresh → `@/lib/supabase/middleware` (via `src/proxy.ts`).
+- Auth: server helpers → `@/lib/auth`; see [authentication.md](./authentication.md).
 
-## What this phase deliberately does not include
+## What remains for later phases
 
-- Authentication / middleware wiring
-- API routes / server actions
+- Login / logout UI and enforced proxy redirects
+- API routes / domain server actions
 - Database tables or SQL
 - Booking / vehicle / customer / driver logic
 - Feature CRUD UI
 
-Those arrive in later phases on top of this foundation.
+Those arrive on top of this foundation.

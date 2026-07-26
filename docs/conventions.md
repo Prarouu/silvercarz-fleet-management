@@ -85,6 +85,8 @@ export class BookingRepository implements Repository<Booking, CreateBooking, Upd
 3. **Do not** import a barrel from inside a module that the barrel re-exports in a way that creates a cycle. Files under `config/` / `constants/` that depend on each other should import specific files (e.g. `@/config/app`, `@/constants/routes`).
 4. Supabase clients are **not** re-exported from `@/lib/supabase` — import `@/lib/supabase/client` or `@/lib/supabase/server` explicitly.
 5. Never import `@supabase/supabase-js` or `@supabase/ssr` from feature code.
+6. Auth: server code imports `@/lib/auth`. Client code imports `@/lib/auth/errors`, `@/lib/auth/route-guards`, or `@/lib/auth/types` directly (the `@/lib/auth` barrel is `server-only`).
+7. Auth paths come from `ROUTES` / `@/lib/auth/route-guards` — never hardcode `/login` strings.
 
 ## Components
 
@@ -109,6 +111,7 @@ unknown → toAppError() / normalizeSupabaseError() → fail() → ApiResponse �
 
 - App-wide helpers: `@/lib/errors`
 - Supabase: `@/lib/supabase/errors`
+- Auth: `@/lib/auth/errors` (`toAuthError`)
 - Service boundary: `@/services` (`ok` / `fail` / `fromPromise`)
 - Route UI: `app/(app)/error.tsx` + `ErrorState`
 

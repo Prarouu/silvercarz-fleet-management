@@ -38,5 +38,10 @@ features/<name>/
 | Generic hooks (debounce, media query)  | Booking filters, vehicle selectors  |
 | Cross-cutting types (`ApiResponse`)    | `Booking`, `Vehicle`, domain DTOs   |
 
-Scaffold folders (`bookings/`, `dashboard/`) are reserved for upcoming phases.
-Do not add business logic here during infrastructure work.
+## Auth feature
+
+`features/auth/` holds feature-owned schemas for the upcoming login UI.
+Session infrastructure, guards, and sign-out live in `@/lib/auth` — import
+those from there, not from this folder.
+
+Scaffold folders for bookings/dashboard remain reserved for upcoming phases.

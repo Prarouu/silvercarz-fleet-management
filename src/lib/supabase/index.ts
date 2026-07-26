@@ -10,10 +10,12 @@
  *
  *   - Client Components:            '@/lib/supabase/client'
  *   - Server Components / Actions:  '@/lib/supabase/server'
- *   - Middleware (future):          '@/lib/supabase/middleware'
+ *   - Next.js Proxy (session):      '@/lib/supabase/middleware'
  *
  * Application code must never import from '@supabase/supabase-js' or
  * '@supabase/ssr' directly — all Supabase usage stays behind this layer.
+ *
+ * Authentication helpers live in `@/lib/auth` — not here.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
