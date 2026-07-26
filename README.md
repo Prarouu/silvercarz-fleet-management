@@ -73,7 +73,7 @@ src/
 │   ├── dashboard/
 │   └── bookings/
 ├── lib/
-│   ├── supabase/         # Supabase client factories (future phase)
+│   ├── supabase/         # Supabase infrastructure (clients, config, errors)
 │   └── utils.ts          # cn() and shared utilities
 ├── hooks/                # Shared generic React hooks
 ├── providers/            # App-level providers (theme, …)
@@ -109,6 +109,33 @@ All variables are documented in [`.env.example`](./.env.example). Never commit r
 | ------------------------------- | ----------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) API key |
+
+Both values are found in your Supabase dashboard under **Project Settings → API**. They are client-safe by design — Row Level Security (added in a later phase) is the actual security boundary. Service role keys must **never** be added to this project.
+
+Environment validation is fail-fast: if a variable is missing, the app throws a descriptive error at startup instead of failing mysteriously at runtime.
+
+## Supabase Infrastructure
+
+All Supabase access goes through `src/lib/supabase/`. **Never import from `@supabase/supabase-js` or `@supabase/ssr` directly** — this keeps every Supabase touchpoint centralized and swappable.
+
+| File            | Use it in                                         | Purpose                                                                          |
+| --------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `client.ts`     | Client Components only                            | Browser client (`createSupabaseBrowserClient`)                                   |
+| `server.ts`     | Server Components, Server Actions, Route Handlers | Per-request server client bound to cookies (`createSupabaseServerClient`)        |
+| `middleware.ts` | Next.js middleware (wired up in the auth phase)   | Session-refresh client for the Edge runtime                                      |
+| `config.ts`     | Anywhere                                          | Validated environment configuration (`supabaseConfig`)                           |
+| `errors.ts`     | Anywhere                                          | Error normalization — raw DB errors are never shown to users                     |
+| `health.ts`     | Server only, temporary                            | `checkSupabaseConnection()` pings the auth health endpoint; safe to delete later |
+| `index.ts`      | Anywhere                                          | Barrel for runtime-agnostic exports (config, errors, `TypedSupabaseClient`)      |
+
+Usage rules for future modules:
+
+- Server code imports `@/lib/supabase/server`; client code imports `@/lib/supabase/client`. The wrong import fails at build time (`server-only` guard / `use client` directive).
+- Create the server client **per request** — never cache it in a module-level variable.
+- Shared, runtime-agnostic helpers come from the barrel: `import { getErrorMessage } from '@/lib/supabase'`.
+- Database types live in `src/types/database.ts`. Once a schema exists, regenerate them with `supabase gen types typescript` — all clients are already typed against `Database`, so no restructuring is needed.
+
+To verify connectivity after configuring `.env.local`, temporarily call `checkSupabaseConnection()` from any Server Component and check the returned status.
 
 ## Deployment Notes
 
