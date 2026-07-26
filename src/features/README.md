@@ -31,12 +31,16 @@ features/<name>/
 
 ## When to share vs keep local
 
-| Promote to shared                      | Keep in the feature                 |
-| -------------------------------------- | ----------------------------------- |
-| Used by 2+ features                    | Used by one feature only            |
-| Pure UI shell (EmptyState, PageHeader) | Domain forms, tables, status badges |
-| Generic hooks (debounce, media query)  | Booking filters, vehicle selectors  |
-| Cross-cutting types (`ApiResponse`)    | `Booking`, `Vehicle`, domain DTOs   |
+| Promote to shared                                         | Keep in the feature                 |
+| --------------------------------------------------------- | ----------------------------------- |
+| Used by 2+ features                                       | Used by one feature only            |
+| Pure UI shell (EmptyState, PageHeader)                    | Domain forms, tables, status badges |
+| Generic hooks (debounce, media query)                     | Booking filters, vehicle selectors  |
+| Cross-cutting types (`ApiResponse`, `Booking`, `Vehicle`) | One-off view models / UI-only props |
+
+Shared booking/vehicle models and Zod schemas live in `@/types` and
+`@/validations`. Feature folders re-export them for convenience — see
+[docs/types-and-validation.md](../../docs/types-and-validation.md).
 
 ## Auth feature
 
@@ -44,4 +48,8 @@ features/<name>/
 credential schemas. Session infrastructure and route guards live in
 `@/lib/auth` — import those from there, not from this folder.
 
-Scaffold folders for bookings/dashboard remain reserved for upcoming phases.
+## Bookings & vehicles (types only)
+
+`features/bookings/` and `features/vehicles/` currently export shared types and
+validation schemas only. CRUD UI, services, and Server Actions arrive in later
+phases — do not add pages here yet.

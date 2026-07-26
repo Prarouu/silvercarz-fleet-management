@@ -10,6 +10,7 @@ See also:
 
 - [Authentication](./authentication.md) — login, profiles, roles, RLS, permissions
 - [Database](./database.md) — vehicles, bookings, ER diagram, indexes, RLS
+- [Types & validation](./types-and-validation.md) — domain models, enums, Zod schemas
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -70,14 +71,20 @@ const pageSize = PAGINATION.defaultPageSize;
 
 ### Types (`@/types`)
 
-Use shared contracts for list/API surfaces:
+Use shared contracts for list/API surfaces and domain models:
 
 - `ApiResponse<T>` — success/failure envelope
 - `PaginatedResult<T>` / `ListQueryParams` — list queries
 - `BaseEntity` / `TimestampFields` — persisted records
 - `SelectOption` / `SortOrder` / `TableColumn` — UI building blocks
+- `Vehicle` / `Booking` — aliases of generated Supabase table types
+- Enums — `FuelType`, `BookingStatus`, `PaymentMethod`, `RentalMode`, `UserRole`
 
-Feature-specific types stay in `features/<name>/types`.
+Generated schema types live in `database.ts`. See
+[types-and-validation.md](./types-and-validation.md).
+
+Feature modules re-export shared domain types from `features/<name>/types`
+for convenience; do not redefine the same interfaces there.
 
 ### Utilities (`@/lib`)
 
@@ -111,8 +118,10 @@ export async function getThing(id: string): Promise<ApiResponse<Thing>> {
 
 ### Validations (`@/validations`)
 
-Compose shared Zod primitives (`emailSchema`, `phoneSchema`,
-`paginationSchema`, …). Domain schemas go in `features/<name>/validations`.
+Compose shared Zod primitives (`emailSchema`, `phoneSchema`, `moneySchema`,
+`createBookingSchema`, …). Auth credential schemas stay in
+`features/auth/validations`. Prefer `@/validations` for booking/vehicle rules
+so forms, Server Actions, and API routes share one definition.
 
 ### Hooks (`@/hooks`)
 

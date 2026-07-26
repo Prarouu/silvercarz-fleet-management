@@ -6,8 +6,9 @@ import { PAGINATION } from '@/constants';
  * Reusable Zod schemas and validation helpers.
  *
  * Feature modules should compose these primitives instead of redefining
- * common field rules. Domain-specific schemas belong in
- * `features/<name>/validations`.
+ * common field rules. Booking/vehicle domain schemas live alongside these
+ * in `@/validations` (`booking.ts`, `vehicle.ts`, `shared.ts`).
+ * Auth credential schemas stay in `features/auth/validations`.
  */
 
 export const nonEmptyStringSchema = z.string().trim().min(1, 'This field is required.');
