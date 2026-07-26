@@ -12,6 +12,7 @@ export const VEHICLE_ERROR_CODES = {
   inactive: 'inactive_vehicle',
   unauthorized: 'unauthorized_vehicle_access',
   databaseFailure: 'database_failure',
+  storageFailure: 'storage_failure',
   validation: ERROR_CODES.validation,
 } as const;
 
@@ -47,6 +48,14 @@ export function createVehicleDatabaseFailureError(cause?: unknown): AppError {
   return new AppError(
     'Unable to complete the vehicle operation. Please try again.',
     VEHICLE_ERROR_CODES.databaseFailure,
+    { cause },
+  );
+}
+
+export function createVehicleStorageFailureError(message?: string, cause?: unknown): AppError {
+  return new AppError(
+    message ?? 'Unable to upload the vehicle image. Please try again.',
+    VEHICLE_ERROR_CODES.storageFailure,
     { cause },
   );
 }

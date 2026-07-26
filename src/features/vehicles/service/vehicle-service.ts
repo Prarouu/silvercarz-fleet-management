@@ -296,9 +296,9 @@ export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleServ
           throw createVehicleNotFoundError();
         }
 
-        // Architecture only: active check today.
+        // Active roster + available status today.
         // Future: honor deliveryDate / returnDate / excludeBookingId for conflicts.
-        if (!vehicle.is_active) {
+        if (!vehicle.is_active || vehicle.availability_status !== 'available') {
           return false;
         }
 

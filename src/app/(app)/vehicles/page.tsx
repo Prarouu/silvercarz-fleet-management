@@ -15,7 +15,7 @@ type VehiclesPageProps = {
 async function loadFleetSummary(): Promise<VehicleFleetSummary | null> {
   const [totalRes, availableRes, inactiveRes] = await Promise.all([
     countVehicles({ includeInactive: true }),
-    countVehicles({ isActive: true }),
+    countVehicles({ available: true }),
     countVehicles({ isActive: false }),
   ]);
 

@@ -1,19 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import type { Vehicle, VehicleAvailabilityStatus } from '@/types';
+import { VEHICLE_AVAILABILITY_STATUS_LABELS } from '@/types';
 
 /**
  * Fleet availability states.
  *
- * Today active vehicles resolve to `available`. `booked` and `maintenance`
- * are reserved for booking-conflict and workshop workflows.
+ * Persisted on `vehicles.availability_status`. Inactive vehicles hide
+ * availability in the list (status badge covers retirement).
  */
-export type VehicleAvailability = 'available' | 'booked' | 'maintenance';
+export type VehicleAvailability = VehicleAvailabilityStatus;
 
-export const VEHICLE_AVAILABILITY_LABELS: Record<VehicleAvailability, string> = {
-  available: 'Available',
-  booked: 'Booked',
-  maintenance: 'Maintenance',
-};
+export const VEHICLE_AVAILABILITY_LABELS = VEHICLE_AVAILABILITY_STATUS_LABELS;
 
 const AVAILABILITY_CLASS: Record<VehicleAvailability, string> = {
   available: 'border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300',
@@ -22,13 +20,19 @@ const AVAILABILITY_CLASS: Record<VehicleAvailability, string> = {
 };
 
 /** Resolves display availability from the current vehicle row model. */
-export function resolveVehicleAvailability(isActive: boolean): VehicleAvailability | null {
-  if (!isActive) {
+export function resolveVehicleAvailability(
+  vehicle: Pick<Vehicle, 'is_active' | 'availability_status'> | boolean,
+): VehicleAvailability | null {
+  // Backward-compatible overload used by older call sites (is_active only).
+  if (typeof vehicle === 'boolean') {
+    return vehicle ? 'available' : null;
+  }
+
+  if (!vehicle.is_active) {
     return null;
   }
 
-  // Future: inspect booking conflicts / maintenance flags.
-  return 'available';
+  return vehicle.availability_status;
 }
 
 export function VehicleAvailabilityBadge({

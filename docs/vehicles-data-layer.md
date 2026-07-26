@@ -2,17 +2,20 @@
 
 Phase 3.4 implements the vehicle backend stack (repository, service, Server
 Actions, and domain errors). Phase 5.1 adds the Fleet Management list UI at
-`/vehicles` — see [vehicles-list.md](./vehicles-list.md).
+`/vehicles` — see [vehicles-list.md](./vehicles-list.md). Phase 5.2 adds
+Create Vehicle at `/vehicles/new` — see [vehicles-create.md](./vehicles-create.md).
 
 ## Data flow
 
 ```
-UI (Fleet List — /vehicles)
+UI (Fleet List — /vehicles, Add Vehicle — /vehicles/new)
   → Server Actions   (@/features/vehicles/actions)
   → Vehicle Service  (@/features/vehicles/service)
     → Vehicle Repository (@/features/vehicles/repository)
       → Supabase client (@/lib/supabase/server)
         → PostgreSQL (RLS + constraints)
+  → vehicle-image-storage (optional)
+      → Supabase Storage (vehicle-images bucket)
 ```
 
 Rules:
@@ -59,14 +62,15 @@ future keyset pagination.
 
 ### Filters
 
-| Filter                      | Behavior                                             |
-| --------------------------- | ---------------------------------------------------- |
-| `fuelType`                  | Exact `fuel_type` match                              |
-| `isActive`                  | Exact active flag                                    |
-| `includeInactive`           | When true and `isActive` unset, include retired rows |
-| `available`                 | Architecture: currently requires `is_active = true`  |
-| `createdFrom` / `createdTo` | Inclusive created-date window                        |
-| `search`                    | Free-text OR across name / number / fuel / status    |
+| Filter                      | Behavior                                                 |
+| --------------------------- | -------------------------------------------------------- |
+| `fuelType`                  | Exact `fuel_type` match                                  |
+| `isActive`                  | Exact active flag                                        |
+| `includeInactive`           | When true and `isActive` unset, include retired rows     |
+| `available`                 | `is_active = true` and `availability_status = available` |
+| `availabilityStatus`        | Exact `availability_status` match                        |
+| `createdFrom` / `createdTo` | Inclusive created-date window                            |
+| `search`                    | Free-text OR across name / number / fuel / status        |
 
 ### Sorting
 
@@ -93,16 +97,17 @@ errors.
 
 ## Server Actions
 
-| Action               | Service method         |
-| -------------------- | ---------------------- |
-| `createVehicle`      | `createVehicle`        |
-| `updateVehicle`      | `updateVehicle`        |
-| `deleteVehicle`      | `deleteVehicle` (soft) |
-| `getVehicle`         | `getVehicle`           |
-| `getVehicleByNumber` | `getVehicleByNumber`   |
-| `listVehicles`       | `listVehicles`         |
-| `searchVehicles`     | `searchVehicles`       |
-| `countVehicles`      | `countVehicles`        |
+| Action                     | Service method                               |
+| -------------------------- | -------------------------------------------- |
+| `createVehicle`            | `createVehicle`                              |
+| `updateVehicle`            | `updateVehicle`                              |
+| `deleteVehicle`            | `deleteVehicle` (soft)                       |
+| `getVehicle`               | `getVehicle`                                 |
+| `getVehicleByNumber`       | `getVehicleByNumber`                         |
+| `listVehicles`             | `listVehicles`                               |
+| `searchVehicles`           | `searchVehicles`                             |
+| `countVehicles`            | `countVehicles`                              |
+| `uploadVehicleImageAction` | Storage upload + `updateVehicle(image_path)` |
 
 Import from `@/features/vehicles` or `@/features/vehicles/actions`.
 
@@ -121,14 +126,15 @@ later without changing service call sites (`requirePermission(...)`).
 
 Domain codes in `VEHICLE_ERROR_CODES`:
 
-| Code                          | When                          |
-| ----------------------------- | ----------------------------- |
-| `vehicle_not_found`           | Missing id / number           |
-| `duplicate_vehicle_number`    | Unique registration conflict  |
-| `inactive_vehicle`            | Active vehicle required       |
-| `unauthorized_vehicle_access` | Reserved for finer ACL        |
-| `database_failure`            | Unexpected persistence errors |
-| `validation`                  | Zod / input failures          |
+| Code                          | When                           |
+| ----------------------------- | ------------------------------ |
+| `vehicle_not_found`           | Missing id / number            |
+| `duplicate_vehicle_number`    | Unique registration conflict   |
+| `inactive_vehicle`            | Active vehicle required        |
+| `unauthorized_vehicle_access` | Reserved for finer ACL         |
+| `database_failure`            | Unexpected persistence errors  |
+| `storage_failure`             | Image upload / remove failures |
+| `validation`                  | Zod / input failures           |
 
 UI should read `ApiResponse.error.message` only — never PostgREST payloads.
 
@@ -151,12 +157,13 @@ UI should read `ApiResponse.error.message` only — never PostgREST payloads.
 5. **Fuel logs** — same orchestration point as maintenance.
 6. **Insurance / servicing reminders** — schedule helpers on the service layer.
 7. **Role divergence** — remove `'all'` from managers for `vehicles:delete` when needed.
-8. **UI** — Fleet List calls Server Actions only; Add / Edit / Details pages
-   are deferred.
+8. **UI** — Fleet List and Add Vehicle call Server Actions only; Edit / Details
+   pages are deferred.
 
 ## Related docs
 
 - [Vehicles list UI](./vehicles-list.md)
+- [Create Vehicle UI](./vehicles-create.md)
 - [Database schema](./database.md)
 - [Types & validation](./types-and-validation.md)
 - [Bookings data layer](./bookings-data-layer.md)

@@ -48,13 +48,14 @@ pnpm dlx supabase gen types typescript --project-id <project-id> --schema public
 
 Import from `@/types` or `@/types/enums`:
 
-| Type            | Postgres enum    | Constants                  |
-| --------------- | ---------------- | -------------------------- |
-| `FuelType`      | `fuel_type`      | `FUEL_TYPES`               |
-| `RentalMode`    | `rental_mode`    | `RENTAL_MODES`             |
-| `PaymentMethod` | `payment_method` | `PAYMENT_METHODS`          |
-| `BookingStatus` | `booking_status` | `BOOKING_STATUSES`         |
-| `UserRole`      | `app_role`       | `USER_ROLES` (`APP_ROLES`) |
+| Type                        | Postgres enum          | Constants                       |
+| --------------------------- | ---------------------- | ------------------------------- |
+| `FuelType`                  | `fuel_type`            | `FUEL_TYPES`                    |
+| `VehicleAvailabilityStatus` | `vehicle_availability` | `VEHICLE_AVAILABILITY_STATUSES` |
+| `RentalMode`                | `rental_mode`          | `RENTAL_MODES`                  |
+| `PaymentMethod`             | `payment_method`       | `PAYMENT_METHODS`               |
+| `BookingStatus`             | `booking_status`       | `BOOKING_STATUSES`              |
+| `UserRole`                  | `app_role`             | `USER_ROLES` (`APP_ROLES`)      |
 
 Each enum exposes `*_VALUES`, `*_LABELS`, `*_OPTIONS` (`SelectOption[]`), and
 an `is*` type guard. Prefer constants over raw strings in UI and services.

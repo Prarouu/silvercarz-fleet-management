@@ -1,5 +1,10 @@
 export { VehicleAvailabilityBadge, resolveVehicleAvailability } from './vehicle-availability-badge';
 export type { VehicleAvailability } from './vehicle-availability-badge';
+export { CreateVehicleForm } from './create-vehicle-form';
+export { CreateVehiclePage } from './create-vehicle-page';
+export { CreateVehicleSkeleton } from './create-vehicle-skeleton';
+export { VehicleBreadcrumb } from './vehicle-breadcrumb';
+export { VehicleImageField } from './vehicle-image-field';
 export { VehicleList } from './vehicle-list';
 export { VehicleListSkeleton } from './vehicle-list-skeleton';
 export { VehicleStatusBadge } from './vehicle-status-badge';

@@ -1,8 +1,8 @@
 /**
  * Vehicles feature public exports.
  *
- * Data layer (repository, service, Server Actions) plus Fleet List UI.
- * Add / Edit / Details pages are deferred to later phases.
+ * Data layer (repository, service, Server Actions), Fleet List UI,
+ * and Add Vehicle workflow. Edit / Details pages are deferred.
  */
 
 export type {
@@ -31,6 +31,7 @@ export {
   createUnauthorizedVehicleAccessError,
   createVehicleDatabaseFailureError,
   createVehicleNotFoundError,
+  createVehicleStorageFailureError,
   createVehicleValidationError,
   type VehicleErrorCode,
 } from './errors';
@@ -57,10 +58,17 @@ export {
   listVehicles,
   searchVehicles,
   updateVehicle,
+  uploadVehicleImageAction,
+  type UploadVehicleImageResult,
 } from './actions';
 
 export {
+  CreateVehicleForm,
+  CreateVehiclePage,
+  CreateVehicleSkeleton,
   VehicleAvailabilityBadge,
+  VehicleBreadcrumb,
+  VehicleImageField,
   VehicleList,
   VehicleListSkeleton,
   VehicleStatusBadge,

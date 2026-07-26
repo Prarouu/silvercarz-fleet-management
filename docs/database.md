@@ -32,12 +32,13 @@ Text relationships:
 
 ## Enums
 
-| Enum             | Values                                                    | Used on                   |
-| ---------------- | --------------------------------------------------------- | ------------------------- |
-| `fuel_type`      | `petrol`, `diesel`, `cng`, `electric`, `hybrid`           | `vehicles.fuel_type`      |
-| `rental_mode`    | `with_driver`, `without_driver`                           | `bookings.mode`           |
-| `payment_method` | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other` | `bookings.payment_method` |
-| `booking_status` | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled` | `bookings.status`         |
+| Enum                   | Values                                                    | Used on                        |
+| ---------------------- | --------------------------------------------------------- | ------------------------------ |
+| `fuel_type`            | `petrol`, `diesel`, `cng`, `electric`, `hybrid`           | `vehicles.fuel_type`           |
+| `vehicle_availability` | `available`, `booked`, `maintenance`                      | `vehicles.availability_status` |
+| `rental_mode`          | `with_driver`, `without_driver`                           | `bookings.mode`                |
+| `payment_method`       | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other` | `bookings.payment_method`      |
+| `booking_status`       | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled` | `bookings.status`              |
 
 Extend enums with `ALTER TYPE … ADD VALUE`. Never rename or reorder existing
 values in production.
@@ -48,16 +49,26 @@ values in production.
 
 Fleet inventory. One row per physical vehicle.
 
-| Column               | Type            | Notes                                  |
-| -------------------- | --------------- | -------------------------------------- |
-| `id`                 | `uuid` PK       | `gen_random_uuid()`                    |
-| `vehicle_name`       | `text`          | Display name (non-blank)               |
-| `vehicle_number`     | `text` UNIQUE   | Registration / plate (non-blank)       |
-| `fuel_type`          | `fuel_type`     | Required enum                          |
-| `default_daily_rate` | `numeric(12,2)` | ≥ 0; INR default daily hire            |
-| `is_active`          | `boolean`       | Soft-retire without deleting history   |
-| `created_at`         | `timestamptz`   | UTC                                    |
-| `updated_at`         | `timestamptz`   | Maintained by `set_updated_at` trigger |
+| Column                 | Type                   | Notes                                   |
+| ---------------------- | ---------------------- | --------------------------------------- |
+| `id`                   | `uuid` PK              | `gen_random_uuid()`                     |
+| `vehicle_name`         | `text`                 | Display name (non-blank)                |
+| `vehicle_number`       | `text` UNIQUE          | Registration / plate (non-blank)        |
+| `brand`                | `text`                 | Manufacturer (non-blank)                |
+| `model`                | `text`                 | Model name (non-blank)                  |
+| `variant`              | `text`                 | Optional trim / variant                 |
+| `model_year`           | `integer`              | Optional; 1980–2100                     |
+| `color`                | `text`                 | Optional exterior color                 |
+| `fuel_type`            | `fuel_type`            | Required enum                           |
+| `default_daily_rate`   | `numeric(12,2)`        | ≥ 0; INR default daily hire             |
+| `extra_kilometer_rate` | `numeric(12,2)`        | Optional ≥ 0                            |
+| `security_deposit`     | `numeric(12,2)`        | Optional ≥ 0                            |
+| `current_odometer`     | `numeric(12,2)`        | ≥ 0; default `0`                        |
+| `availability_status`  | `vehicle_availability` | Default `available`                     |
+| `image_path`           | `text`                 | Storage object path in `vehicle-images` |
+| `is_active`            | `boolean`              | Soft-retire without deleting history    |
+| `created_at`           | `timestamptz`          | UTC                                     |
+| `updated_at`           | `timestamptz`          | Maintained by `set_updated_at` trigger  |
 
 ### `public.bookings`
 
@@ -155,10 +166,11 @@ Triggers:
 
 ## Migration notes
 
-| File                                              | Purpose                          |
-| ------------------------------------------------- | -------------------------------- |
-| `20260726120000_create_profiles.sql`              | Profiles, roles, auth RLS        |
-| `20260726140000_create_vehicles_and_bookings.sql` | Vehicles, bookings, business RLS |
+| File                                              | Purpose                                      |
+| ------------------------------------------------- | -------------------------------------------- |
+| `20260726120000_create_profiles.sql`              | Profiles, roles, auth RLS                    |
+| `20260726140000_create_vehicles_and_bookings.sql` | Vehicles, bookings, business RLS             |
+| `20260727090000_extend_vehicles_for_creation.sql` | Vehicle profile fields, availability, images |
 
 Apply order matters: profiles migration first (for `created_by` FK and
 `current_user_role()`).

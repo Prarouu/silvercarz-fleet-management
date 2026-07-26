@@ -9,6 +9,7 @@ import type { SelectOption } from '@/types/common';
 import type { Enums } from '@/types/database';
 
 export type FuelType = Enums<'fuel_type'>;
+export type VehicleAvailabilityStatus = Enums<'vehicle_availability'>;
 export type RentalMode = Enums<'rental_mode'>;
 export type PaymentMethod = Enums<'payment_method'>;
 export type BookingStatus = Enums<'booking_status'>;
@@ -38,6 +39,24 @@ export const FUEL_TYPE_LABELS: Record<FuelType, string> = {
   cng: 'CNG',
   electric: 'Electric',
   hybrid: 'Hybrid',
+};
+
+export const VEHICLE_AVAILABILITY_STATUSES = {
+  available: 'available',
+  booked: 'booked',
+  maintenance: 'maintenance',
+} as const satisfies Record<string, VehicleAvailabilityStatus>;
+
+export const VEHICLE_AVAILABILITY_STATUS_VALUES = [
+  VEHICLE_AVAILABILITY_STATUSES.available,
+  VEHICLE_AVAILABILITY_STATUSES.booked,
+  VEHICLE_AVAILABILITY_STATUSES.maintenance,
+] as const;
+
+export const VEHICLE_AVAILABILITY_STATUS_LABELS: Record<VehicleAvailabilityStatus, string> = {
+  available: 'Available',
+  booked: 'Booked',
+  maintenance: 'Maintenance',
 };
 
 export const RENTAL_MODES = {
@@ -120,6 +139,12 @@ export const FUEL_TYPE_OPTIONS: SelectOption<FuelType>[] = FUEL_TYPE_VALUES.map(
   label: FUEL_TYPE_LABELS[value],
 }));
 
+export const VEHICLE_AVAILABILITY_STATUS_OPTIONS: SelectOption<VehicleAvailabilityStatus>[] =
+  VEHICLE_AVAILABILITY_STATUS_VALUES.map((value) => ({
+    value,
+    label: VEHICLE_AVAILABILITY_STATUS_LABELS[value],
+  }));
+
 export const RENTAL_MODE_OPTIONS: SelectOption<RentalMode>[] = RENTAL_MODE_VALUES.map((value) => ({
   value,
   label: RENTAL_MODE_LABELS[value],
@@ -140,12 +165,17 @@ export const BOOKING_STATUS_OPTIONS: SelectOption<BookingStatus>[] = BOOKING_STA
 );
 
 const FUEL_TYPE_SET = new Set<string>(FUEL_TYPE_VALUES);
+const VEHICLE_AVAILABILITY_STATUS_SET = new Set<string>(VEHICLE_AVAILABILITY_STATUS_VALUES);
 const RENTAL_MODE_SET = new Set<string>(RENTAL_MODE_VALUES);
 const PAYMENT_METHOD_SET = new Set<string>(PAYMENT_METHOD_VALUES);
 const BOOKING_STATUS_SET = new Set<string>(BOOKING_STATUS_VALUES);
 
 export function isFuelType(value: unknown): value is FuelType {
   return typeof value === 'string' && FUEL_TYPE_SET.has(value);
+}
+
+export function isVehicleAvailabilityStatus(value: unknown): value is VehicleAvailabilityStatus {
+  return typeof value === 'string' && VEHICLE_AVAILABILITY_STATUS_SET.has(value);
 }
 
 export function isRentalMode(value: unknown): value is RentalMode {

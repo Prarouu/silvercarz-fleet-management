@@ -6,7 +6,7 @@
  */
 
 import type { PaginationParams, SortParams } from '@/types/pagination';
-import type { FuelType } from '@/types/enums';
+import type { FuelType, VehicleAvailabilityStatus } from '@/types/enums';
 import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 /** Persisted vehicle row (`public.vehicles`). */
@@ -34,10 +34,12 @@ export interface VehicleListFilters {
   readonly includeInactive?: boolean;
   /**
    * Architecture-ready availability flag.
-   * Today: equivalent to requiring `is_active = true`.
+   * Today: active vehicles with `availability_status = available`.
    * Future: also exclude vehicles with booking conflicts in a date window.
    */
   readonly available?: boolean;
+  /** Exact match on `availability_status`. */
+  readonly availabilityStatus?: VehicleAvailabilityStatus;
   readonly createdFrom?: string;
   readonly createdTo?: string;
   /**

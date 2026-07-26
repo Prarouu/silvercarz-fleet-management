@@ -151,11 +151,15 @@ function applyNonSearchFilters(
     next = next.eq('fuel_type', filters.fuelType);
   }
 
+  if (filters?.availabilityStatus) {
+    next = next.eq('availability_status', filters.availabilityStatus);
+  }
+
   if (filters?.isActive !== undefined) {
     next = next.eq('is_active', filters.isActive);
   } else if (filters?.available === true) {
-    // Architecture: available today means active; booking conflicts come later.
-    next = next.eq('is_active', true);
+    // Active roster + available status. Booking-window conflicts come later.
+    next = next.eq('is_active', true).eq('availability_status', 'available');
   } else if (!filters?.includeInactive) {
     next = next.eq('is_active', true);
   }

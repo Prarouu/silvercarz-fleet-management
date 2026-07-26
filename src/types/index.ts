@@ -28,6 +28,7 @@ export type {
   RentalMode,
   UserRole,
   AppRole,
+  VehicleAvailabilityStatus,
 } from './enums';
 
 export {
@@ -44,6 +45,7 @@ export {
   isPaymentMethod,
   isRentalMode,
   isUserRole,
+  isVehicleAvailabilityStatus,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_OPTIONS,
@@ -55,6 +57,10 @@ export {
   USER_ROLES,
   USER_ROLE_LABELS,
   USER_ROLE_VALUES,
+  VEHICLE_AVAILABILITY_STATUSES,
+  VEHICLE_AVAILABILITY_STATUS_LABELS,
+  VEHICLE_AVAILABILITY_STATUS_OPTIONS,
+  VEHICLE_AVAILABILITY_STATUS_VALUES,
 } from './enums';
 
 export type {

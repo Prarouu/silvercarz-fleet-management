@@ -34,6 +34,7 @@ export {
   refineOdometerRange,
   rentalModeSchema,
   requiredString,
+  vehicleAvailabilityStatusSchema,
   vehicleNumberSchema,
   zipCodeSchema,
 } from './shared';

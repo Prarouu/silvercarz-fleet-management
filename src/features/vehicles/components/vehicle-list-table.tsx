@@ -124,7 +124,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
         header: 'Availability',
         enableSorting: false,
         cell: ({ row }) => {
-          const availability = resolveVehicleAvailability(row.original.is_active);
+          const availability = resolveVehicleAvailability(row.original);
           if (!availability) {
             return <span className="text-muted-foreground">—</span>;
           }
@@ -280,7 +280,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
         aria-label="Vehicles"
       >
         {data.map((vehicle) => {
-          const availability = resolveVehicleAvailability(vehicle.is_active);
+          const availability = resolveVehicleAvailability(vehicle);
 
           return (
             <li key={vehicle.id}>

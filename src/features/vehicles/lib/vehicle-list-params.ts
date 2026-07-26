@@ -119,22 +119,19 @@ export function parseVehicleListUrlState(
 }
 
 /**
- * True when the availability filter is reserved for a future backend
- * (booking conflicts / maintenance) and cannot be queried yet.
+ * Previously reserved for future availability backends. Kept for call-site
+ * compatibility — all availability filters are queryable via
+ * `availability_status` now.
  */
-export function isFutureAvailabilityFilter(state: VehicleListUrlState): boolean {
-  return (
-    state.availability === VEHICLE_AVAILABILITY_FILTERS.booked ||
-    state.availability === VEHICLE_AVAILABILITY_FILTERS.maintenance
-  );
+export function isFutureAvailabilityFilter(_state: VehicleListUrlState): boolean {
+  return false;
 }
 
 /**
  * Maps URL state to the vehicle service list query.
  *
  * Fleet list always opts into inactive rows (`includeInactive`) unless a
- * status filter narrows to active/inactive explicitly. Callers should skip
- * the list request when `isFutureAvailabilityFilter(state)` is true.
+ * status filter narrows to active/inactive explicitly.
  */
 export function toVehicleListQuery(state: VehicleListUrlState): VehicleListQuery {
   const fuelType: FuelType | undefined =
@@ -150,19 +147,29 @@ export function toVehicleListQuery(state: VehicleListUrlState): VehicleListQuery
     includeInactive: true,
   };
 
-  if (state.status === VEHICLE_STATUS_FILTERS.active) {
-    return { ...base, isActive: true };
-  }
+  let query: VehicleListQuery = base;
 
-  if (state.status === VEHICLE_STATUS_FILTERS.inactive) {
-    return { ...base, isActive: false };
+  if (state.status === VEHICLE_STATUS_FILTERS.active) {
+    query = { ...query, isActive: true };
+  } else if (state.status === VEHICLE_STATUS_FILTERS.inactive) {
+    query = { ...query, isActive: false };
   }
 
   if (state.availability === VEHICLE_AVAILABILITY_FILTERS.available) {
-    return { ...base, available: true };
+    return { ...query, available: true };
   }
 
-  return base;
+  if (
+    state.availability === VEHICLE_AVAILABILITY_FILTERS.booked ||
+    state.availability === VEHICLE_AVAILABILITY_FILTERS.maintenance
+  ) {
+    return {
+      ...query,
+      availabilityStatus: state.availability,
+    };
+  }
+
+  return query;
 }
 
 /** True when any user-facing filter/search is active (for empty-state copy). */

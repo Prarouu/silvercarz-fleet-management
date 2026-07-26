@@ -1,8 +1,8 @@
 # Vehicles list UI (Fleet Management)
 
-Phase 5.1 adds the primary fleet working screen at `/vehicles`. Add Vehicle,
-Edit Vehicle, and Vehicle Details are intentionally deferred — the list links
-to those routes, but the pages are not implemented yet.
+Phase 5.1 adds the primary fleet working screen at `/vehicles`. Phase 5.2
+implements Add Vehicle at `/vehicles/new` — see [vehicles-create.md](./vehicles-create.md).
+Edit Vehicle and Vehicle Details remain deferred.
 
 ## Architecture
 
@@ -28,7 +28,7 @@ Rules:
    the Bookings list (shared table architecture — no second table system).
 5. Row **View** / **Edit** navigate to `/vehicles/[id]` and
    `/vehicles/[id]/edit`. Deactivate and Delete remain placeholders.
-6. **Add Vehicle** navigates to `/vehicles/new` (page not built in this phase).
+6. **Add Vehicle** navigates to `/vehicles/new` (implemented in Phase 5.2).
 
 ## Route
 
@@ -68,12 +68,12 @@ full roster unless Status narrows the set.
 
 ## Summary cards
 
-| Card               | Source                                        |
-| ------------------ | --------------------------------------------- |
-| Total Vehicles     | `countVehicles({ includeInactive: true })`    |
-| Available Vehicles | `countVehicles({ isActive: true })`           |
-| Booked Vehicles    | `0` until booking-conflict availability lands |
-| Inactive Vehicles  | `countVehicles({ isActive: false })`          |
+| Card               | Source                                     |
+| ------------------ | ------------------------------------------ |
+| Total Vehicles     | `countVehicles({ includeInactive: true })` |
+| Available Vehicles | `countVehicles({ available: true })`       |
+| Booked Vehicles    | `0` until booking-conflict summary lands   |
+| Inactive Vehicles  | `countVehicles({ isActive: false })`       |
 
 Counts are fetched in parallel with the list and do not re-run the list query.
 
@@ -82,16 +82,16 @@ Counts are fetched in parallel with the list and do not re-run the list query.
 TanStack Table (manual sorting) + shadcn table primitives — same architecture
 as Bookings.
 
-| Column         | Sortable (server) | Source field          |
-| -------------- | ----------------- | --------------------- |
-| Vehicle Name   | Yes               | `vehicle_name`        |
-| Vehicle Number | Yes               | `vehicle_number`      |
-| Fuel Type      | Yes               | `fuel_type`           |
-| Daily Charge   | No                | `default_daily_rate`  |
-| Availability   | No                | derived (`is_active`) |
-| Status         | No                | `is_active`           |
-| Created Date   | Yes               | `created_at`          |
-| Actions        | —                 | —                     |
+| Column         | Sortable (server) | Source field                                 |
+| -------------- | ----------------- | -------------------------------------------- |
+| Vehicle Name   | Yes               | `vehicle_name`                               |
+| Vehicle Number | Yes               | `vehicle_number`                             |
+| Fuel Type      | Yes               | `fuel_type`                                  |
+| Daily Charge   | No                | `default_daily_rate`                         |
+| Availability   | No                | `availability_status` (hidden when inactive) |
+| Status         | No                | `is_active`                                  |
+| Created Date   | Yes               | `created_at`                                 |
+| Actions        | —                 | —                                            |
 
 Desktop: sticky header inside a vertically scrollable region.  
 Mobile (`md` and below): stacked cards with the same fields.

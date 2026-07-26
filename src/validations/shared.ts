@@ -12,6 +12,7 @@ import {
   FUEL_TYPE_VALUES,
   PAYMENT_METHOD_VALUES,
   RENTAL_MODE_VALUES,
+  VEHICLE_AVAILABILITY_STATUS_VALUES,
 } from '@/types/enums';
 
 import { phoneSchema, uuidSchema } from '@/validations/common';
@@ -32,6 +33,7 @@ export const VALIDATION_MESSAGES = {
   invoiceNumber: 'Enter a valid invoice number.',
   vehicleNumber: 'Enter a valid vehicle registration number.',
   fuelType: 'Select a valid fuel type.',
+  vehicleAvailability: 'Select a valid availability status.',
   rentalMode: 'Select a valid rental mode.',
   paymentMethod: 'Select a valid payment method.',
   bookingStatus: 'Select a valid booking status.',
@@ -111,6 +113,10 @@ export const vehicleNumberSchema = requiredString(VALIDATION_MESSAGES.vehicleNum
 
 export const fuelTypeSchema = z.enum(FUEL_TYPE_VALUES, {
   error: VALIDATION_MESSAGES.fuelType,
+});
+
+export const vehicleAvailabilityStatusSchema = z.enum(VEHICLE_AVAILABILITY_STATUS_VALUES, {
+  error: VALIDATION_MESSAGES.vehicleAvailability,
 });
 
 export const rentalModeSchema = z.enum(RENTAL_MODE_VALUES, {
