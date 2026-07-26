@@ -8,6 +8,8 @@ import type { FuelType, VehicleAvailabilityStatus } from '@/types';
 import { VEHICLE_AVAILABILITY_STATUSES } from '@/types';
 import { createVehicleSchema, type CreateVehicleValues } from '@/validations';
 
+export type VehicleStatusValue = 'active' | 'inactive';
+
 /** Form field values before Zod parse (empty strings for optional text). */
 export type VehicleFormValues = {
   vehicle_name: string;
@@ -23,15 +25,19 @@ export type VehicleFormValues = {
   security_deposit: number | null;
   current_odometer: number | null;
   availability_status: VehicleAvailabilityStatus;
-  is_active: boolean;
+  /** UI string — mapped to `is_active` boolean for the API/DB. */
+  vehicle_status: VehicleStatusValue;
 };
 
 export type VehicleFormFieldErrors = Partial<Record<keyof VehicleFormValues, string>>;
 
-export const VEHICLE_STATUS_OPTIONS = [
+export const VEHICLE_STATUS_OPTIONS: ReadonlyArray<{
+  readonly value: VehicleStatusValue;
+  readonly label: string;
+}> = [
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
-] as const;
+];
 
 export function createVehicleFormDefaults(): VehicleFormValues {
   return {
@@ -48,7 +54,7 @@ export function createVehicleFormDefaults(): VehicleFormValues {
     security_deposit: null,
     current_odometer: 0,
     availability_status: VEHICLE_AVAILABILITY_STATUSES.available,
-    is_active: true,
+    vehicle_status: 'active',
   };
 }
 
@@ -69,7 +75,18 @@ function mapZodFieldErrors(
 
   for (const issue of issues) {
     const key = issue.path[0];
-    if (typeof key === 'string' && !(key in fieldErrors)) {
+    if (typeof key !== 'string') {
+      continue;
+    }
+
+    if (key === 'is_active') {
+      if (!fieldErrors.vehicle_status) {
+        fieldErrors.vehicle_status = issue.message;
+      }
+      continue;
+    }
+
+    if (!(key in fieldErrors)) {
       fieldErrors[key as keyof VehicleFormValues] = issue.message;
     }
   }
@@ -93,7 +110,7 @@ export function toCreateVehicleInput(values: VehicleFormValues): unknown {
     current_odometer: values.current_odometer,
     availability_status: values.availability_status,
     image_path: null,
-    is_active: values.is_active,
+    is_active: values.vehicle_status === 'active',
   };
 }
 

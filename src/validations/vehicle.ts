@@ -35,6 +35,13 @@ const optionalNullableModelYearSchema = z.union([
   z.undefined().transform(() => null),
 ]);
 
+/**
+ * Shared vehicle field shapes without create-only defaults.
+ *
+ * Defaults must NOT live on this object — `updateVehicleSchema` is `.partial()` of
+ * these fields, and Zod `.default()` would re-inject values (e.g. `is_active: true`)
+ * on partial updates like `{ image_path }`, wiping the saved status.
+ */
 const vehicleFieldsSchema = z.object({
   vehicle_name: requiredString('Vehicle name is required.').max(
     120,
@@ -51,13 +58,18 @@ const vehicleFieldsSchema = z.object({
   extra_kilometer_rate: optionalNullableMoneySchema,
   security_deposit: optionalNullableMoneySchema,
   current_odometer: odometerSchema,
-  availability_status: vehicleAvailabilityStatusSchema.default('available'),
+  availability_status: vehicleAvailabilityStatusSchema,
   image_path: optionalNullableStringSchema,
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 });
 
+/**
+ * Create requires explicit status fields from the form/API.
+ * Defaults live in the Add Vehicle form only — not on update/partial schemas.
+ */
 export const createVehicleSchema = vehicleFieldsSchema;
 
+/** Update: only patch provided keys — never re-default omitted status fields. */
 export const updateVehicleSchema = vehicleFieldsSchema.partial();
 
 /** Form-friendly vehicle filters (camelCase query params). */

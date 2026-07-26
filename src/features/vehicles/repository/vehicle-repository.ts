@@ -41,6 +41,11 @@ const DEFAULT_SORT: VehicleSortField = 'created_at';
 export interface VehicleRepository {
   create(input: VehicleCreateInput): Promise<Vehicle>;
   update(id: string, input: VehicleUpdateInput): Promise<Vehicle>;
+  /**
+   * Patch only `image_path` — used after Storage upload so status fields cannot
+   * be rewritten by a broader update payload / schema defaults.
+   */
+  updateImagePath(id: string, imagePath: string | null): Promise<Vehicle>;
   /** Permanent delete. Prefer `softDelete` for application flows. */
   delete(id: string): Promise<void>;
   softDelete(id: string): Promise<Vehicle>;
@@ -204,6 +209,10 @@ export function createVehicleRepository(client: TypedSupabaseClient): VehicleRep
       }
 
       return data;
+    },
+
+    async updateImagePath(id, imagePath) {
+      return repository.update(id, { image_path: imagePath });
     },
 
     async delete(id) {

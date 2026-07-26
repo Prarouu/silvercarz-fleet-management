@@ -3,11 +3,11 @@
 /**
  * Upload a vehicle image and persist `image_path` on the vehicle row.
  *
- * Storage details live in `vehicle-image-storage` so the form can stay stable
- * when the bucket is provisioned or toggled.
+ * Uses `setVehicleImagePath` (not `updateVehicle`) so create-time status fields
+ * cannot be rewritten by update-schema defaults.
  */
 
-import { createVehicleValidationError } from '@/features/vehicles/errors';
+import { VEHICLE_ERROR_CODES, createVehicleValidationError } from '@/features/vehicles/errors';
 import {
   isVehicleImageUploadEnabled,
   uploadVehicleImage,
@@ -43,14 +43,12 @@ export async function uploadVehicleImageAction(
       return { path: '', skipped: true };
     }
 
-    const updateResult = await getVehicleService().updateVehicle(vehicleId, {
-      image_path: uploaded.path,
-    });
+    const updateResult = await getVehicleService().setVehicleImagePath(vehicleId, uploaded.path);
 
     if (!updateResult.success) {
       throw new AppError(
         updateResult.error.message || 'Unable to save the vehicle image path.',
-        updateResult.error.code || 'storage_failure',
+        updateResult.error.code || VEHICLE_ERROR_CODES.storageFailure,
       );
     }
 

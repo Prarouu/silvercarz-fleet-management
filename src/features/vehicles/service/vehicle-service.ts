@@ -51,6 +51,11 @@ export interface VehicleServiceDeps {
 export interface VehicleService {
   createVehicle(input: unknown): Promise<ApiResponse<Vehicle>>;
   updateVehicle(id: string, input: unknown): Promise<ApiResponse<Vehicle>>;
+  /**
+   * Persist Storage object path only — never runs the full update Zod schema
+   * (avoids accidental status field rewrites).
+   */
+  setVehicleImagePath(id: string, imagePath: string | null): Promise<ApiResponse<Vehicle>>;
   /** Soft-delete (`is_active → false`). Preferred application delete. */
   deleteVehicle(id: string): Promise<ApiResponse<Vehicle>>;
   /** Permanent delete — reserved for trusted admin flows. */
@@ -114,18 +119,42 @@ async function ensureVehicleNumberUnique(
 
 function toCreatePayload(values: CreateVehicleValues): VehicleCreateInput {
   return {
-    ...values,
+    vehicle_name: values.vehicle_name,
     vehicle_number: normalizeVehicleNumber(values.vehicle_number),
+    brand: values.brand,
+    model: values.model,
+    variant: values.variant ?? null,
+    model_year: values.model_year ?? null,
+    color: values.color ?? null,
+    fuel_type: values.fuel_type,
+    default_daily_rate: values.default_daily_rate,
+    extra_kilometer_rate: values.extra_kilometer_rate ?? null,
+    security_deposit: values.security_deposit ?? null,
+    current_odometer: values.current_odometer,
+    // Explicit — never rely on DB column defaults for roster status.
+    availability_status: values.availability_status,
+    image_path: values.image_path ?? null,
+    is_active: values.is_active,
   };
 }
 
 function toUpdatePayload(values: UpdateVehicleValues): VehicleUpdateInput {
-  return {
+  const payload: VehicleUpdateInput = {
     ...values,
     ...(values.vehicle_number !== undefined
       ? { vehicle_number: normalizeVehicleNumber(values.vehicle_number) }
       : {}),
   };
+
+  // Drop keys Zod may materialize as explicit `undefined` so Supabase does not
+  // clear unrelated columns on partial updates.
+  for (const key of Object.keys(payload) as Array<keyof VehicleUpdateInput>) {
+    if (payload[key] === undefined) {
+      delete payload[key];
+    }
+  }
+
+  return payload;
 }
 
 export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleService {
@@ -175,6 +204,21 @@ export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleServ
         }
 
         return repository.update(id, payload);
+      });
+    },
+
+    setVehicleImagePath(id, imagePath) {
+      return fromPromise(async () => {
+        await requirePerm(PERMISSIONS.vehiclesWrite);
+        const repository = await getRepository();
+        const existing = await repository.findById(id);
+
+        if (!existing) {
+          throw createVehicleNotFoundError();
+        }
+
+        const trimmed = imagePath?.trim() ?? null;
+        return repository.updateImagePath(id, trimmed && trimmed.length > 0 ? trimmed : null);
       });
     },
 

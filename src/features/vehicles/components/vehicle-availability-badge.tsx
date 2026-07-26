@@ -6,8 +6,7 @@ import { VEHICLE_AVAILABILITY_STATUS_LABELS } from '@/types';
 /**
  * Fleet availability states.
  *
- * Persisted on `vehicles.availability_status`. Inactive vehicles hide
- * availability in the list (status badge covers retirement).
+ * Persisted on `vehicles.availability_status` (independent of Active/Inactive).
  */
 export type VehicleAvailability = VehicleAvailabilityStatus;
 
@@ -28,11 +27,7 @@ export function resolveVehicleAvailability(
     return vehicle ? 'available' : null;
   }
 
-  if (!vehicle.is_active) {
-    return null;
-  }
-
-  return vehicle.availability_status;
+  return vehicle.availability_status ?? null;
 }
 
 export function VehicleAvailabilityBadge({

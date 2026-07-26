@@ -29,6 +29,7 @@ import {
   parseOptionalNumber,
   validateCreateVehicleForm,
   type VehicleFormValues,
+  type VehicleStatusValue,
 } from '@/features/vehicles/lib/vehicle-form';
 import { cn } from '@/lib/utils';
 import {
@@ -37,6 +38,17 @@ import {
   type FuelType,
   type VehicleAvailabilityStatus,
 } from '@/types';
+
+/** Ignore Select clear/null events so values are never reset to form defaults. */
+function applySelectValue<T extends string>(
+  next: string | null | undefined,
+  onChange: (value: T) => void,
+) {
+  if (next == null || next === '') {
+    return;
+  }
+  onChange(next as T);
+}
 
 const UNSAVED_CHANGES_MESSAGE =
   'You have unsaved changes. Leave this page? Your edits will be lost.';
@@ -51,12 +63,13 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
   const [isPending, startTransition] = useTransition();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageDirty, setImageDirty] = useState(false);
+  /** Prevents duplicate Server Action calls from double-submit. */
+  const [hasStartedSave, setHasStartedSave] = useState(false);
 
   const {
     control,
     register,
     handleSubmit,
-    reset,
     setError,
     clearErrors,
     formState: { errors, isSubmitting, isDirty },
@@ -66,12 +79,13 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
     reValidateMode: 'onChange',
   });
 
-  const isLoading = isSubmitting || isPending;
+  const isLoading = isSubmitting || isPending || hasStartedSave;
   const formError = errors.root?.message;
   const hasUnsavedChanges = isDirty || imageDirty;
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Skip while saving — a successful create navigates away with a full load.
       if (!hasUnsavedChanges || isLoading) {
         return;
       }
@@ -85,12 +99,9 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
   }, [hasUnsavedChanges, isLoading]);
 
   function goToFleetList() {
-    // Clear dirty state so navigation is never blocked after a successful save.
-    setImageFile(null);
-    setImageDirty(false);
-    reset(createVehicleFormDefaults());
-    router.replace(ROUTES.vehicles);
-    router.refresh();
+    // Full page navigation avoids App Router soft-nav + loading.tsx reload loops
+    // seen after create (especially with the slow fleet list RSC).
+    window.location.assign(ROUTES.vehicles);
   }
 
   const handleCancel = () => {
@@ -98,10 +109,14 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
       return;
     }
 
-    router.replace(ROUTES.vehicles);
+    router.push(ROUTES.vehicles);
   };
 
   const onSubmit = handleSubmit((values) => {
+    if (hasStartedSave) {
+      return;
+    }
+
     clearErrors('root');
 
     const validated = validateCreateVehicleForm(values);
@@ -116,10 +131,13 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
       return;
     }
 
+    setHasStartedSave(true);
+
     startTransition(async () => {
       const result = await createVehicle(validated.data);
 
       if (!result.success) {
+        setHasStartedSave(false);
         setError('root', { type: 'server', message: result.error.message });
 
         if (result.error.code === 'duplicate_vehicle_number') {
@@ -338,7 +356,7 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
               render={({ field }) => (
                 <Select
                   value={field.value || undefined}
-                  onValueChange={(value) => field.onChange((value ?? '') as FuelType | '')}
+                  onValueChange={(value) => applySelectValue<FuelType>(value, field.onChange)}
                   disabled={isLoading}
                 >
                   <SelectTrigger
@@ -503,7 +521,7 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
                 <Select
                   value={field.value}
                   onValueChange={(value) =>
-                    field.onChange((value ?? 'available') as VehicleAvailabilityStatus)
+                    applySelectValue<VehicleAvailabilityStatus>(value, field.onChange)
                   }
                   disabled={isLoading}
                 >
@@ -530,26 +548,28 @@ export function CreateVehicleForm({ className }: CreateVehicleFormProps) {
           </FormField>
 
           <FormField
-            id="is_active"
+            id="vehicle_status"
             label="Vehicle Status"
             required
-            error={errors.is_active?.message}
+            error={errors.vehicle_status?.message}
           >
             <Controller
               control={control}
-              name="is_active"
+              name="vehicle_status"
               render={({ field }) => (
                 <Select
-                  value={field.value ? 'active' : 'inactive'}
-                  onValueChange={(value) => field.onChange(value === 'active')}
+                  value={field.value}
+                  onValueChange={(value) =>
+                    applySelectValue<VehicleStatusValue>(value, field.onChange)
+                  }
                   disabled={isLoading}
                 >
                   <SelectTrigger
                     className="w-full"
                     {...fieldAriaProps({
-                      id: 'is_active',
+                      id: 'vehicle_status',
                       required: true,
-                      error: errors.is_active?.message,
+                      error: errors.vehicle_status?.message,
                     })}
                   >
                     <SelectValue placeholder="Select status" />
