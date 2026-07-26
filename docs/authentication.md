@@ -1,32 +1,59 @@
 # Authentication architecture
 
-Phase 2.1a establishes the Supabase Auth foundation for Silver Carz RMS.
-This phase covers **infrastructure only** — no login UI, no role enforcement
-UI, and no business modules.
+Silver Carz RMS uses Supabase Auth (email + password) with cookie-based
+sessions via `@supabase/ssr`. Accounts are created manually by the Owner or
+in the Supabase Dashboard — there is no public registration.
 
 ## Goals
 
-- Email & password authentication (ready for Server Actions)
-- Cookie-based session persistence via `@supabase/ssr`
-- Works with Server Components, Client Components, Server Actions, and Proxy
-- Typed session / user helpers with room for roles and password reset
+- Email & password login UI (internal staff only)
+- Cookie-based session persistence and refresh
+- Proxy + layout protection for application routes
+- Typed session helpers with room for roles and password reset
 - Safe, mapped auth errors (never raw Supabase Auth messages)
 
 ## Folder layout
 
 ```
 src/
-├── proxy.ts                    # Next.js Proxy — session refresh entrypoint
+├── proxy.ts                      # Session refresh + route redirects
+├── app/
+│   ├── (auth)/                   # Login / forgot-password (no app shell)
+│   └── (app)/                    # Authenticated shell (`requireAuth`)
 ├── lib/
-│   ├── auth/                   # Session, guards, errors, sign-out, route helpers
-│   └── supabase/               # Clients (browser / server / proxy)
+│   ├── auth/                     # Session, guards, errors, sign-out helper
+│   └── supabase/                 # Clients (browser / server / proxy)
 ├── features/
-│   └── auth/                   # Feature-owned Zod schemas (login UI later)
+│   └── auth/                     # Login UI, Server Actions, Zod schemas
 └── constants/
-    └── routes.ts               # ROUTES.login, forgot/reset password, callback
+    └── routes.ts                 # ROUTES.login, forgot/reset password, …
 ```
 
-## Session flow
+## Login flow
+
+```
+Unauthenticated user visits a protected page
+  → Proxy detects no valid user
+  → Redirect to /login?next=<intended-path>
+  → User submits email + password (React Hook Form + Zod)
+  → signInAction validates, calls signInWithPassword
+  → Session cookies written
+  → Redirect to resolvePostLoginPath(next) (defaults to home)
+  → (app) layout requireAuth + AppShell render with current user
+```
+
+Key pieces:
+
+| Piece             | Location                                                      |
+| ----------------- | ------------------------------------------------------------- |
+| Login page        | `app/(auth)/login/page.tsx`                                   |
+| Login UI          | `features/auth/components/login-panel.tsx` + `login-form.tsx` |
+| Sign-in action    | `features/auth/actions/sign-in.ts`                            |
+| Credential schema | `features/auth/validations/credentials.ts`                    |
+
+Authenticated users who open `/login` are redirected home (proxy + page guard).
+
+## Session lifecycle
 
 ```
 Browser request
@@ -34,10 +61,12 @@ Browser request
       → updateSession()  (@/lib/supabase/middleware)
           → createServerClient + auth.getUser()
           → refresh tokens / write Set-Cookie when needed
+          → redirect unauthenticated users off protected routes
+          → redirect authenticated users off auth screens
   → Server Component / Server Action
       → createSupabaseServerClient()
       → getCurrentUser() / requireAuth() / requireUser()
-  → Client Component (when needed)
+  → Client Component (only when needed)
       → createSupabaseBrowserClient()
 ```
 
@@ -46,26 +75,41 @@ Browser request
 1. **Always use `getUser()` for access control** — it validates the JWT with
    Supabase Auth. Do not authorize from `getSession()` alone.
 2. **Create the server client per request** — never cache it at module scope.
-3. **Return the proxy response** from `updateSession` so refreshed cookies
-   reach the browser.
+3. **Return the proxy response** (or a redirect that copies its cookies) so
+   refreshed tokens reach the browser.
 4. **No service-role key** — only the anon key; RLS remains the data boundary.
+5. **Prefer server session** — pass `AuthUser` from layouts into the shell.
+   Avoid a client AuthProvider that re-fetches the session on every mount.
 
-## Proxy purpose
+Sessions persist across browser refresh via Auth cookies. The proxy restores
+and refreshes them on matched navigations.
 
-Next.js 16 renames Middleware → **Proxy** (`src/proxy.ts`).
+## Sign out
 
-Current responsibility:
+```
+User chooses Sign out in the header menu
+  → signOutAction  (features/auth/actions/sign-out.ts)
+  → lib/auth signOut() clears Supabase cookies
+  → Redirect to ROUTES.login
+```
 
-- Refresh expired sessions on matched routes
-- Stay lightweight (no domain logic, no hardcoded path strings)
+## Protected route behavior
 
-Prepared but not yet enforced:
+Route classification is centralized in `@/lib/auth/route-guards`
+(path strings from `ROUTES` only):
 
-- Route classification via `@/lib/auth/route-guards`
-  (`isPublicRoute`, `isProtectedRoute`, `buildLoginRedirectPath`, …)
-- Redirect unauthenticated users to `ROUTES.login` once the Login UI exists
+| Helper                   | Behavior                                       |
+| ------------------------ | ---------------------------------------------- |
+| `isPublicRoute`          | Auth screens + `/auth/*` callbacks             |
+| `isProtectedRoute`       | Everything else                                |
+| `buildLoginRedirectPath` | `/login?next=…` with open-redirect protection  |
+| `resolvePostLoginPath`   | Safe post-login destination (defaults to home) |
 
-Matcher excludes static assets (`_next/static`, images, favicon).
+Enforcement layers:
+
+1. **Proxy** — optimistic redirects before the page renders
+2. **`(app)/layout`** — `requireAuth()` before the app shell
+3. **Login page** — redirects away when already signed in
 
 ## Server helpers (`@/lib/auth`)
 
@@ -74,25 +118,27 @@ Matcher excludes static assets (`_next/static`, images, favicon).
 | `getCurrentUser`     | Need the user or `null`                            |
 | `getAuthState`       | Need `{ user, isAuthenticated }`                   |
 | `isAuthenticated`    | Boolean check                                      |
-| `getCurrentSession`  | Need session metadata (not for authorization)      |
+| `getCurrentSession`  | Session metadata only (not for authorization)      |
 | `getCurrentUserRole` | Future RBAC (`app_metadata.role`)                  |
 | `requireUser`        | Server Actions / services — throws if signed out   |
 | `requireAuth`        | Pages / layouts — redirects to login if signed out |
-| `signOut`            | Server Action sign-out                             |
+| `signOut`            | Clears cookies (called from `signOutAction`)       |
 | `toAuthError`        | Map Auth failures to safe `AppError` messages      |
 
-Import from `@/lib/auth`. Session/guard modules are `server-only`.
+Import from `@/lib/auth` in server code. Client code must import shared
+utilities from specific modules (`errors`, `route-guards`, `types`) because
+the `@/lib/auth` barrel is `server-only`.
 
-## Future login flow
+## Error handling
 
-1. Add `app/(auth)/login/page.tsx` composing `features/auth` UI.
-2. Server Action validates with `signInCredentialsSchema`, then
-   `supabase.auth.signInWithPassword`.
-3. Map failures with `toAuthError` → toast / form errors.
-4. On success, redirect via `resolvePostLoginPath(next)`.
-5. Enable proxy redirects for `isProtectedRoute` using `ROUTES` helpers.
+UI messages come from `toAuthError` / `getAuthErrorMessage`. Examples:
 
-Credential schemas already live in `features/auth/validations`.
+- Invalid email/password
+- Session expired (`?reason=session_expired` on the login page)
+- Rate limiting
+- Network / unexpected failures
+
+Never display raw Supabase Auth API strings.
 
 ## Future authorization flow
 
@@ -105,7 +151,7 @@ Credential schemas already live in `features/auth/validations`.
 
 Routes are reserved in `ROUTES`:
 
-- `forgotPassword` → `/forgot-password`
+- `forgotPassword` → `/forgot-password` (MVP: contact administrator)
 - `resetPassword` → `/reset-password`
 - `authCallback` → `/auth/callback`
 
@@ -118,10 +164,11 @@ Schemas: `resetPasswordRequestSchema`, `updatePasswordSchema`.
 - Auth errors normalized before UI display
 - Open-redirect protection in `resolvePostLoginPath` / login redirect builders
 - Cookie writes include cache-control headers from `@supabase/ssr` `setAll`
+- No public signup / social / magic-link providers in the MVP
 
-## What this phase does not include
+## Out of scope (later phases)
 
-- Login / logout UI
-- Enforced route redirects in the proxy
-- Profiles, booking, vehicles, customers, invoices
-- Database business tables
+- Role-based authorization UI/enforcement
+- Profiles, settings, admin user management
+- Booking, vehicles, customers, drivers, reports
+- Self-service password reset email flow

@@ -40,8 +40,8 @@ features/<name>/
 
 ## Auth feature
 
-`features/auth/` holds feature-owned schemas for the upcoming login UI.
-Session infrastructure, guards, and sign-out live in `@/lib/auth` — import
-those from there, not from this folder.
+`features/auth/` owns the login UI, sign-in / sign-out Server Actions, and
+credential schemas. Session infrastructure and route guards live in
+`@/lib/auth` — import those from there, not from this folder.
 
 Scaffold folders for bookings/dashboard remain reserved for upcoming phases.

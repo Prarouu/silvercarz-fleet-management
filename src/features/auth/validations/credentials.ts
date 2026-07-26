@@ -1,7 +1,7 @@
 /**
- * Credential validation schemas for future login / password flows.
+ * Credential validation schemas for login and password flows.
  *
- * No UI is wired in this phase — schemas are ready for Server Actions.
+ * Used by the login UI (React Hook Form) and sign-in Server Action.
  */
 
 import { z } from 'zod';

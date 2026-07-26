@@ -30,6 +30,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   weak_password: 'Password does not meet the security requirements.',
   over_request_rate_limit: 'Too many attempts. Please wait a moment and try again.',
   over_email_send_rate_limit: 'Too many email requests. Please wait a moment and try again.',
+  session_expired: 'Your session has expired. Please sign in again.',
   session_not_found: 'Your session has expired. Please sign in again.',
   refresh_token_not_found: 'Your session has expired. Please sign in again.',
   refresh_token_already_used: 'Your session has expired. Please sign in again.',

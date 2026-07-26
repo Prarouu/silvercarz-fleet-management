@@ -1,12 +1,13 @@
 # Shared Architecture
 
 Phase 1.5 locked the shared foundation every feature module builds on.
-Authentication infrastructure (Phase 2.1a) lives in `@/lib/auth` and
-`src/proxy.ts` — still no bookings, vehicles, customers, or drivers.
+Authentication (login UI + session management) lives in `@/lib/auth`,
+`features/auth`, and `src/proxy.ts` — still no bookings, vehicles, customers,
+or drivers.
 
 See also:
 
-- [Authentication](./authentication.md) — session flow, proxy, future login/RBAC
+- [Authentication](./authentication.md) — login flow, session lifecycle, proxy, RBAC prep
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -19,7 +20,7 @@ src/
 │   ├── ui/              # shadcn primitives (CLI-managed)
 │   ├── shared/          # Business-agnostic composites (EmptyState, PageHeader, …)
 │   └── layout/          # App shell (sidebar, header)
-├── features/            # Domain modules (auth schemas; others as built)
+├── features/            # Domain modules (auth login UI; others as built)
 ├── config/              # App identity, formatting defaults, navigation
 ├── constants/           # Routes, storage keys, theme, pagination, table defaults
 ├── types/               # Shared TypeScript contracts
@@ -28,7 +29,7 @@ src/
 ├── services/            # Service result helpers + repository contracts
 ├── hooks/               # Generic React hooks
 ├── providers/           # Theme, TanStack Query, provider composition
-└── proxy.ts             # Next.js Proxy — Supabase session refresh
+└── proxy.ts             # Next.js Proxy — session refresh + auth redirects
 ```
 
 ## Design principles

@@ -1,11 +1,14 @@
 import { AppShell } from '@/components/layout/app-shell';
+import { requireAuth } from '@/lib/auth';
 
 /**
- * Layout for the application area.
+ * Layout for the authenticated application area.
  *
- * Session refresh runs in `src/proxy.ts`. Page-level auth guards
- * (`requireAuth`) and proxy redirects land with the Login UI phase.
+ * Proxy (`src/proxy.ts`) performs optimistic redirects. `requireAuth`
+ * is the server-side guarantee before rendering the app shell.
  */
-export default function AppAreaLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+export default async function AppAreaLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireAuth();
+
+  return <AppShell user={user}>{children}</AppShell>;
 }

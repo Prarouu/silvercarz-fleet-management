@@ -1,14 +1,12 @@
 /**
- * Next.js Proxy — authentication session refresh.
+ * Next.js Proxy — authentication session refresh and route guards.
  *
- * Runs before matched requests reach the App Router. Responsibilities in
- * this phase:
+ * Runs before matched requests reach the App Router. Responsibilities:
  *   1. Refresh Supabase Auth cookies via `updateSession`
- *   2. Keep the proxy lightweight (no business logic)
+ *   2. Redirect unauthenticated users away from protected routes
+ *   3. Redirect authenticated users away from auth screens (e.g. /login)
  *
- * Route protection helpers live in `@/lib/auth/route-guards`. Enforcement
- * (redirect unauthenticated users to login) lands with the Login UI phase
- * so the app remains usable before those screens exist.
+ * Route classification lives in `@/lib/auth/route-guards` (via `ROUTES`).
  */
 
 import type { NextRequest } from 'next/server';

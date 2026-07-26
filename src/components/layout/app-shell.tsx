@@ -1,18 +1,18 @@
 import { AppHeader } from '@/components/layout/app-header';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import type { AuthUser } from '@/lib/auth/types';
 
 /**
  * The application shell: sidebar + header + scrollable main area.
- * Every (future) authenticated page renders inside this via the route
- * group layout — never compose sidebar/header manually elsewhere.
+ * Authenticated pages render inside this via the `(app)` route group layout.
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ user, children }: { user: AuthUser; children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <AppHeader />
+        <AppHeader user={user} />
         <main className="flex flex-1 flex-col">{children}</main>
       </SidebarInset>
     </SidebarProvider>

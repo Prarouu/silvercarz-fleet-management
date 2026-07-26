@@ -1,9 +1,8 @@
 /**
  * Supabase session helpers for the Next.js Proxy (formerly Middleware).
  *
- * `updateSession` refreshes expired auth tokens and keeps cookies in sync
- * between the request and response. It must be called from `src/proxy.ts`
- * on matched requests so Server Components can read a valid session.
+ * `updateSession` refreshes expired auth tokens, keeps cookies in sync,
+ * and enforces public vs protected route redirects.
  *
  * Do NOT use outside the proxy entrypoint. Server code uses
  * `@/lib/supabase/server`; client code uses `@/lib/supabase/client`.
@@ -12,6 +11,12 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  buildLoginRedirectPath,
+  isAuthRoute,
+  isProtectedRoute,
+  resolvePostLoginPath,
+} from '@/lib/auth/route-guards';
 import { supabaseConfig } from '@/lib/supabase/config';
 import type { Database } from '@/types/database';
 
@@ -45,18 +50,45 @@ export function createSupabaseMiddlewareClient(request: NextRequest) {
   };
 }
 
+function copySessionCookies(from: NextResponse, to: NextResponse): NextResponse {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie.name, cookie.value);
+  });
+  return to;
+}
+
+function redirectWithSession(request: NextRequest, sessionResponse: NextResponse, href: string) {
+  const redirectResponse = NextResponse.redirect(new URL(href, request.url));
+  return copySessionCookies(sessionResponse, redirectResponse);
+}
+
 /**
- * Refreshes the Supabase auth session for the current request.
+ * Refreshes the Supabase auth session and applies auth route redirects.
  *
  * Important: call `getUser()` immediately after creating the client — do not
- * run other logic in between. Always return the response from
+ * run other logic in between. Always return a response derived from
  * `getResponse()` so refreshed cookies reach the browser.
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const { supabase, getResponse } = createSupabaseMiddlewareClient(request);
 
   // Validates the JWT and refreshes tokens when needed.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return getResponse();
+  const sessionResponse = getResponse();
+  const { pathname, search } = request.nextUrl;
+
+  if (!user && isProtectedRoute(pathname)) {
+    const nextPath = `${pathname}${search}`;
+    return redirectWithSession(request, sessionResponse, buildLoginRedirectPath(nextPath));
+  }
+
+  if (user && isAuthRoute(pathname)) {
+    const nextParam = request.nextUrl.searchParams.get('next');
+    return redirectWithSession(request, sessionResponse, resolvePostLoginPath(nextParam));
+  }
+
+  return sessionResponse;
 }
