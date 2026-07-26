@@ -8,6 +8,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useTransition } from 'react';
 
@@ -19,6 +20,7 @@ import {
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
+import { bookingDetailPath } from '@/constants/routes';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { BookingSortField, BookingWithVehicle } from '@/types';
@@ -52,7 +54,7 @@ function SortIcon({
   }
 
   if (sortBy !== field) {
-    return <ArrowUpDown className="size-3.5 text-muted-foreground" aria-hidden="true" />;
+    return <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />;
   }
 
   return sortOrder === 'asc' ? (
@@ -79,7 +81,12 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'invoice_number',
         header: 'Invoice',
         cell: ({ row }) => (
-          <span className="font-medium tabular-nums">{row.original.invoice_number}</span>
+          <Link
+            href={bookingDetailPath(row.original.id)}
+            className="font-medium text-foreground tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            {row.original.invoice_number}
+          </Link>
         ),
       },
       {
@@ -87,7 +94,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'customer_name',
         header: 'Customer',
         cell: ({ row }) => (
-          <div className="min-w-0">
+          <div className="max-w-[12rem] min-w-[9rem]">
             <p className="truncate font-medium">{row.original.customer_name}</p>
             {row.original.contact_number ? (
               <p className="truncate text-xs text-muted-foreground">
@@ -103,7 +110,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         header: 'Vehicle',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="min-w-0">
+          <div className="max-w-[11rem] min-w-[8rem]">
             <p className="truncate font-medium">{row.original.vehicle.vehicle_name}</p>
             <p className="truncate text-xs text-muted-foreground tabular-nums">
               {row.original.vehicle.vehicle_number}
@@ -116,7 +123,9 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'mode',
         header: 'Mode',
         enableSorting: false,
-        cell: ({ row }) => RENTAL_MODE_LABELS[row.original.mode],
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{RENTAL_MODE_LABELS[row.original.mode]}</span>
+        ),
       },
       {
         id: 'delivery_date',
@@ -167,10 +176,12 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         header: () => <span className="sr-only">Actions</span>,
         enableSorting: false,
         cell: ({ row }) => (
-          <BookingRowActions
-            bookingId={row.original.id}
-            invoiceNumber={row.original.invoice_number}
-          />
+          <div className="flex justify-end">
+            <BookingRowActions
+              bookingId={row.original.id}
+              invoiceNumber={row.original.invoice_number}
+            />
+          </div>
         ),
       },
     ],
@@ -213,28 +224,38 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
       {/* Desktop / tablet table */}
       <div
         className={cn(
-          'hidden overflow-hidden rounded-lg border md:block',
-          isPending && 'opacity-80',
+          'hidden overflow-hidden rounded-xl border bg-card md:block',
+          isPending && 'pointer-events-none opacity-70',
         )}
         aria-busy={isPending}
       >
         <div className="max-h-[min(70vh,44rem)] overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <TableHeader className="sticky top-0 z-10 bg-background">
+          <table className="w-full min-w-[56rem] caption-bottom text-sm">
+            <TableHeader className="sticky top-0 z-10 border-b bg-card/95 shadow-[0_1px_0_0_var(--border)] backdrop-blur supports-backdrop-filter:bg-card/80">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                <TableRow key={headerGroup.id} className="border-0 hover:bg-transparent">
                   {headerGroup.headers.map((header) => {
                     const sortable = Boolean(SORTABLE_COLUMNS[header.column.id]);
                     const label = flexRender(header.column.columnDef.header, header.getContext());
+                    const isActions = header.column.id === 'actions';
 
                     return (
-                      <TableHead key={header.id} scope="col">
+                      <TableHead
+                        key={header.id}
+                        scope="col"
+                        className={cn(
+                          'h-11 bg-transparent px-3',
+                          isActions && 'w-12 text-right',
+                          header.column.id === 'total_amount' && 'text-right',
+                          header.column.id === 'status' && 'w-[7.5rem]',
+                        )}
+                      >
                         {header.isPlaceholder ? null : sortable ? (
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="-ml-2 h-8 gap-1 px-2 font-medium"
+                            className="-ml-2 h-8 gap-1.5 px-2 font-medium text-foreground"
                             onClick={() => onSort(header.column.id)}
                             aria-label={`Sort by ${typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : header.column.id}`}
                           >
@@ -256,9 +277,16 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className="hover:bg-muted/40">
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        'px-3 py-2.5',
+                        cell.column.id === 'total_amount' && 'text-right',
+                        cell.column.id === 'actions' && 'text-right',
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -271,43 +299,55 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
 
       {/* Mobile stacked cards */}
       <ul
-        className={cn('space-y-3 md:hidden', isPending && 'opacity-80')}
+        className={cn('space-y-3 md:hidden', isPending && 'pointer-events-none opacity-70')}
         aria-busy={isPending}
         aria-label="Bookings"
       >
         {data.map((booking) => (
-          <li key={booking.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1">
-                <p className="truncate font-semibold tabular-nums">{booking.invoice_number}</p>
-                <p className="truncate text-sm">{booking.customer_name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
-                </p>
+          <li key={booking.id}>
+            <article className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/20">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    href={bookingDetailPath(booking.id)}
+                    className="block truncate font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    {booking.invoice_number}
+                  </Link>
+                  <p className="truncate text-sm font-medium">{booking.customer_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <BookingStatusBadge status={booking.status} />
+                  <BookingRowActions
+                    bookingId={booking.id}
+                    invoiceNumber={booking.invoice_number}
+                  />
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <BookingStatusBadge status={booking.status} />
-                <BookingRowActions bookingId={booking.id} invoiceNumber={booking.invoice_number} />
-              </div>
-            </div>
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">Mode</dt>
-                <dd>{RENTAL_MODE_LABELS[booking.mode]}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Total</dt>
-                <dd className="font-medium tabular-nums">{formatCurrency(booking.total_amount)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Delivery</dt>
-                <dd className="tabular-nums">{formatDate(booking.delivery_date)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Return</dt>
-                <dd className="tabular-nums">{formatDate(booking.return_date)}</dd>
-              </div>
-            </dl>
+              <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">Mode</dt>
+                  <dd className="truncate">{RENTAL_MODE_LABELS[booking.mode]}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">Total</dt>
+                  <dd className="font-medium tabular-nums">
+                    {formatCurrency(booking.total_amount)}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">Delivery</dt>
+                  <dd className="tabular-nums">{formatDate(booking.delivery_date)}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">Return</dt>
+                  <dd className="tabular-nums">{formatDate(booking.return_date)}</dd>
+                </div>
+              </dl>
+            </article>
           </li>
         ))}
       </ul>

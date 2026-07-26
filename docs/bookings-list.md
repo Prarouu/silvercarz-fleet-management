@@ -3,7 +3,8 @@
 Phase 4.1 adds the primary working screen at `/bookings`. Create Booking is
 covered in [bookings-create.md](./bookings-create.md). Edit Booking is covered
 in [bookings-edit.md](./bookings-edit.md). Booking Details is covered in
-[bookings-details.md](./bookings-details.md).
+[bookings-details.md](./bookings-details.md). UI polish and responsive guidance
+live in [bookings-ui.md](./bookings-ui.md).
 
 ## Architecture
 
@@ -130,5 +131,6 @@ src/features/bookings/
 
 ## Related docs
 
+- [Booking Module UI](./bookings-ui.md)
 - [Bookings data layer](./bookings-data-layer.md)
 - [Architecture](./architecture.md)

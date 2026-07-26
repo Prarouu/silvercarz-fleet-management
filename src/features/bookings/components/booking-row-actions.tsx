@@ -30,12 +30,12 @@ export function BookingRowActions({
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-36">
+      <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuItem asChild>
-          <Link href={bookingDetailPath(bookingId)}>View</Link>
+          <Link href={bookingDetailPath(bookingId)}>View details</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={bookingEditPath(bookingId)}>Edit</Link>
+          <Link href={bookingEditPath(bookingId)}>Edit booking</Link>
         </DropdownMenuItem>
         <DropdownMenuItem disabled variant="destructive">
           Delete

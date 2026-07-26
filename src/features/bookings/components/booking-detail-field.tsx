@@ -17,8 +17,8 @@ export function BookingDetailField({ label, value, className }: BookingDetailFie
 
   return (
     <div className={cn('min-w-0 space-y-1', className)}>
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="text-sm break-words">{display}</dd>
+      <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</dt>
+      <dd className="text-sm leading-snug break-words">{display}</dd>
     </div>
   );
 }

@@ -25,18 +25,21 @@ export function BookingFormField({
   const errorId = error ? `${id}-error` : undefined;
 
   return (
-    <div className={cn('grid gap-2', className)}>
-      <Label htmlFor={id}>
+    <div className={cn('grid gap-1.5', className)}>
+      <Label htmlFor={id} className="gap-1">
         {label}
         {required ? (
-          <span className="text-destructive" aria-hidden="true">
-            *
-          </span>
+          <>
+            <span className="text-destructive" aria-hidden="true">
+              *
+            </span>
+            <span className="sr-only">(required)</span>
+          </>
         ) : null}
       </Label>
       {children}
       {description ? (
-        <p id={descriptionId} className="text-xs text-muted-foreground">
+        <p id={descriptionId} className="text-xs leading-relaxed text-muted-foreground">
           {description}
         </p>
       ) : null}
@@ -53,6 +56,7 @@ export function fieldAriaProps(params: {
   readonly error?: string;
   readonly description?: string;
   readonly id: string;
+  readonly required?: boolean;
 }) {
   const describedBy = [
     params.description ? `${params.id}-description` : null,
@@ -64,6 +68,7 @@ export function fieldAriaProps(params: {
   return {
     id: params.id,
     'aria-invalid': params.error ? true : undefined,
+    'aria-required': params.required ? true : undefined,
     'aria-describedby': describedBy || undefined,
   } as const;
 }

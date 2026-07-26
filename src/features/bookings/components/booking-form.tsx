@@ -267,7 +267,7 @@ export function BookingForm(props: BookingFormProps) {
     <form
       onSubmit={onSubmit}
       noValidate
-      className={cn('space-y-6 pb-24', className)}
+      className={cn('space-y-5 sm:space-y-6', className)}
       aria-describedby={formError ? formErrorId : undefined}
     >
       {formError ? (
@@ -296,6 +296,7 @@ export function BookingForm(props: BookingFormProps) {
               disabled={isLoading}
               {...fieldAriaProps({
                 id: 'invoice_number',
+                required: true,
                 error: errors.invoice_number?.message,
                 description: 'Manual for now — automatic sequence generation will use this field.',
               })}
@@ -311,7 +312,11 @@ export function BookingForm(props: BookingFormProps) {
                 <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
                   <SelectTrigger
                     className="w-full"
-                    {...fieldAriaProps({ id: 'mode', error: errors.mode?.message })}
+                    {...fieldAriaProps({
+                      id: 'mode',
+                      required: true,
+                      error: errors.mode?.message,
+                    })}
                   >
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
@@ -336,7 +341,11 @@ export function BookingForm(props: BookingFormProps) {
             <Input
               type="date"
               disabled={isLoading}
-              {...fieldAriaProps({ id: 'invoice_date', error: errors.invoice_date?.message })}
+              {...fieldAriaProps({
+                id: 'invoice_date',
+                required: true,
+                error: errors.invoice_date?.message,
+              })}
               {...register('invoice_date')}
             />
           </BookingFormField>
@@ -358,7 +367,11 @@ export function BookingForm(props: BookingFormProps) {
               autoComplete="name"
               placeholder="Customer full name"
               disabled={isLoading}
-              {...fieldAriaProps({ id: 'customer_name', error: errors.customer_name?.message })}
+              {...fieldAriaProps({
+                id: 'customer_name',
+                required: true,
+                error: errors.customer_name?.message,
+              })}
               {...register('customer_name')}
             />
           </BookingFormField>
@@ -434,7 +447,7 @@ export function BookingForm(props: BookingFormProps) {
             />
           </BookingFormField>
 
-          <div className="flex items-start gap-3 rounded-lg border border-border/70 px-3 py-3 sm:col-span-2">
+          <div className="flex items-start gap-3 rounded-lg border border-border/70 bg-muted/20 px-3 py-3 sm:col-span-2">
             <Controller
               control={control}
               name="document_submitted"
@@ -445,6 +458,7 @@ export function BookingForm(props: BookingFormProps) {
                   onCheckedChange={(checked) => field.onChange(checked === true)}
                   disabled={isLoading}
                   aria-invalid={errors.document_submitted ? true : undefined}
+                  className="mt-0.5"
                 />
               )}
             />
@@ -452,7 +466,7 @@ export function BookingForm(props: BookingFormProps) {
               <Label htmlFor="document_submitted" className="font-medium">
                 Document Submitted
               </Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 Confirm that customer ID / license documents were collected.
               </p>
               {errors.document_submitted?.message ? (
@@ -491,6 +505,7 @@ export function BookingForm(props: BookingFormProps) {
                     className="w-full"
                     {...fieldAriaProps({
                       id: 'vehicle_id',
+                      required: true,
                       error: errors.vehicle_id?.message,
                       description: 'Only active vehicles are listed.',
                     })}
@@ -550,7 +565,11 @@ export function BookingForm(props: BookingFormProps) {
             <Input
               type="date"
               disabled={isLoading}
-              {...fieldAriaProps({ id: 'delivery_date', error: errors.delivery_date?.message })}
+              {...fieldAriaProps({
+                id: 'delivery_date',
+                required: true,
+                error: errors.delivery_date?.message,
+              })}
               {...register('delivery_date')}
             />
           </BookingFormField>
@@ -564,7 +583,11 @@ export function BookingForm(props: BookingFormProps) {
             <Input
               type="date"
               disabled={isLoading}
-              {...fieldAriaProps({ id: 'return_date', error: errors.return_date?.message })}
+              {...fieldAriaProps({
+                id: 'return_date',
+                required: true,
+                error: errors.return_date?.message,
+              })}
               {...register('return_date')}
             />
           </BookingFormField>
@@ -596,7 +619,11 @@ export function BookingForm(props: BookingFormProps) {
                   value={field.value ?? ''}
                   onBlur={field.onBlur}
                   onChange={(event) => field.onChange(parseOptionalNumber(event.target.value))}
-                  {...fieldAriaProps({ id: 'daily_charge', error: errors.daily_charge?.message })}
+                  {...fieldAriaProps({
+                    id: 'daily_charge',
+                    required: true,
+                    error: errors.daily_charge?.message,
+                  })}
                 />
               )}
             />
@@ -612,8 +639,10 @@ export function BookingForm(props: BookingFormProps) {
               type="number"
               inputMode="numeric"
               readOnly
+              tabIndex={-1}
               disabled={isLoading}
               value={duration ?? ''}
+              className="bg-muted/40"
               {...fieldAriaProps({
                 id: 'duration',
                 error: errors.duration?.message,
@@ -695,8 +724,10 @@ export function BookingForm(props: BookingFormProps) {
               type="number"
               inputMode="decimal"
               readOnly
+              tabIndex={-1}
               disabled={isLoading}
               value={totalKilometers ?? ''}
+              className="bg-muted/40"
               {...fieldAriaProps({
                 id: 'total_kilometers',
                 error: errors.total_kilometers?.message,
@@ -874,15 +905,26 @@ export function BookingForm(props: BookingFormProps) {
         </BookingFormField>
       </BookingFormSection>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-end gap-2 px-4 py-3 md:px-6 lg:px-8">
-          <Button type="button" variant="outline" disabled={isLoading} onClick={handleCancel}>
+      <div className="sticky bottom-0 z-20 -mx-4 mt-2 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-backdrop-filter:bg-background/80 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-9 min-w-24 sm:min-h-8"
+            disabled={isLoading}
+            onClick={handleCancel}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading} aria-busy={isLoading}>
+          <Button
+            type="submit"
+            className="min-h-9 min-w-32 sm:min-h-8"
+            disabled={isLoading}
+            aria-busy={isLoading}
+          >
             {isLoading ? (
               <>
-                <Loader2 className="animate-spin" aria-hidden="true" />
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 {submittingLabel}
               </>
             ) : (

@@ -103,6 +103,7 @@ Shared helpers:
 
 ## Related docs
 
+- [Booking Module UI](./bookings-ui.md)
 - [Edit Booking](./bookings-edit.md)
 - [Create Booking](./bookings-create.md)
 - [Bookings list](./bookings-list.md)

@@ -64,14 +64,12 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
 
   return (
     <div
-      className={cn(
-        'flex flex-col gap-3 rounded-lg border bg-card p-3 sm:p-4',
-        isPending && 'opacity-80',
-        className,
-      )}
+      className={cn('rounded-xl border bg-card p-3 sm:p-4', isPending && 'opacity-80', className)}
       aria-busy={isPending}
+      role="search"
+      aria-label="Filter bookings"
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
         <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
             <Label htmlFor="booking-search">Search</Label>
@@ -85,9 +83,26 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Invoice, customer, contact, vehicle…"
-                className="pl-8"
+                className={cn('pl-8', searchInput && 'pr-8')}
                 autoComplete="off"
+                enterKeyHint="search"
               />
+              {searchInput ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute top-1/2 right-1.5 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => {
+                    setSearchInput('');
+                    setPrevUrlSearch('');
+                    navigate({ search: '', page: 1 });
+                  }}
+                  aria-label="Clear search"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -141,7 +156,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             </Select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="hidden space-y-1.5 sm:block">
             <Label htmlFor="booking-date-range">Date range</Label>
             <Button
               id="booking-date-range"
@@ -158,11 +173,12 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
           <Button
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-8 flex-1 sm:flex-initial"
             onClick={() => {
               startTransition(() => {
                 router.refresh();
@@ -177,6 +193,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             type="button"
             variant="ghost"
             size="sm"
+            className="min-h-8 flex-1 sm:flex-initial"
             disabled={!hasFilters}
             onClick={() => {
               setSearchInput('');

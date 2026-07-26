@@ -14,15 +14,19 @@ type BookingDetailActionsProps = {
  */
 export function BookingDetailActions({ bookingId }: BookingDetailActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Booking actions">
-      <Button asChild size="sm">
+    <div
+      className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
+      role="toolbar"
+      aria-label="Booking actions"
+    >
+      <Button asChild size="sm" className="min-h-9 sm:min-h-8">
         <Link href={bookingEditPath(bookingId)}>
           <Pencil className="size-4" aria-hidden="true" />
           Edit Booking
         </Link>
       </Button>
 
-      <Button asChild variant="outline" size="sm">
+      <Button asChild variant="outline" size="sm" className="min-h-9 sm:min-h-8">
         <Link href={ROUTES.bookings}>
           <ArrowLeft className="size-4" aria-hidden="true" />
           Back to Bookings
@@ -33,6 +37,7 @@ export function BookingDetailActions({ bookingId }: BookingDetailActionsProps) {
         type="button"
         variant="outline"
         size="sm"
+        className="min-h-9 sm:min-h-8"
         disabled
         aria-disabled="true"
         title="Invoice printing will be available in a future release"
@@ -45,6 +50,7 @@ export function BookingDetailActions({ bookingId }: BookingDetailActionsProps) {
         type="button"
         variant="outline"
         size="sm"
+        className="min-h-9 text-destructive sm:min-h-8"
         disabled
         aria-disabled="true"
         title="Delete booking will be available in a future release"

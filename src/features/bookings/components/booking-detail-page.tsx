@@ -4,16 +4,10 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageContainer } from '@/components/shared/page-container';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ROUTES } from '@/constants/routes';
+import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadcrumb';
 import { BookingDetailActions } from '@/features/bookings/components/booking-detail-actions';
 import { BookingDetailField } from '@/features/bookings/components/booking-detail-field';
 import { BookingDetailSection } from '@/features/bookings/components/booking-detail-section';
@@ -58,21 +52,9 @@ function formatDuration(days: number | null | undefined): string {
 export function BookingDetailPage({ booking, createdByLabel, loadError }: BookingDetailPageProps) {
   if (loadError || !booking) {
     return (
-      <PageContainer>
+      <PageContainer className="max-w-5xl">
         <div className="space-y-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={ROUTES.bookings}>Bookings</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Booking Details</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <BookingBreadcrumb current="Booking Details" />
         </div>
 
         {loadError ? (
@@ -80,7 +62,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <AlertTitle>Unable to load booking</AlertTitle>
             <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span>{loadError}</span>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="shrink-0">
                 <Link href={ROUTES.bookings}>Back to Bookings</Link>
               </Button>
             </AlertDescription>
@@ -105,41 +87,49 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
   const paymentMethodLabel = booking.payment_method
     ? PAYMENT_METHOD_LABELS[booking.payment_method]
     : null;
+  const totalLabel = formatOptionalCurrency(booking.total_amount);
 
   return (
-    <PageContainer>
+    <PageContainer className="max-w-5xl">
       <div className="space-y-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={ROUTES.bookings}>Bookings</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{booking.invoice_number}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <BookingBreadcrumb current={booking.invoice_number} />
 
-        <header className="space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-3">
+        <header className="space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl font-semibold tracking-tight tabular-nums">
                   {booking.invoice_number}
                 </h1>
                 <BookingStatusBadge status={booking.status} />
               </div>
               <p className="text-base font-medium">{booking.customer_name}</p>
-              <p className="text-sm text-muted-foreground">Booking Details</p>
+              <p className="text-sm text-muted-foreground">
+                {RENTAL_MODE_LABELS[booking.mode]}
+                <span className="mx-1.5 text-border" aria-hidden="true">
+                  ·
+                </span>
+                <span className="tabular-nums">{formatDate(booking.delivery_date)}</span>
+                <span className="mx-1 text-muted-foreground/70" aria-hidden="true">
+                  →
+                </span>
+                <span className="tabular-nums">{formatDate(booking.return_date)}</span>
+              </p>
+            </div>
+
+            <div className="shrink-0 rounded-xl border bg-muted/30 px-4 py-3 sm:min-w-[10rem] sm:text-right">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Total amount
+              </p>
+              <p className="mt-1 text-xl font-semibold tracking-tight tabular-nums">{totalLabel}</p>
             </div>
           </div>
 
           <BookingDetailActions bookingId={booking.id} />
         </header>
       </div>
+
+      <Separator className="my-1" />
 
       <BookingDetailSection
         title="Booking Summary"
@@ -156,7 +146,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
         </dl>
       </BookingDetailSection>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
         <BookingDetailSection title="Customer Information">
           <dl className="grid gap-4 sm:grid-cols-2">
             <BookingDetailField label="Customer Name" value={booking.customer_name} />
@@ -251,7 +241,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <BookingDetailField
               label="Total Amount"
               value={
-                <span className="font-medium tabular-nums">
+                <span className="font-semibold tabular-nums">
                   {formatOptionalCurrency(booking.total_amount)}
                 </span>
               }
@@ -264,7 +254,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
         {notes ? (
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{notes}</p>
         ) : (
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-8 text-center">
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-4 py-8 text-center">
             <StickyNote className="size-5 text-muted-foreground" aria-hidden="true" />
             <div className="space-y-1">
               <p className="text-sm font-medium">No notes</p>
@@ -277,8 +267,12 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
       </BookingDetailSection>
 
       <BookingDetailSection title="Timeline" description="Audit metadata for this booking.">
-        <ol className="space-y-4" aria-label="Booking timeline">
-          <li className="relative border-l-2 border-border pl-4">
+        <ol className="space-y-0" aria-label="Booking timeline">
+          <li className="relative border-l-2 border-border py-1 pl-4">
+            <span
+              className="absolute top-2.5 -left-[5px] size-2 rounded-full bg-foreground"
+              aria-hidden="true"
+            />
             <p className="text-sm font-medium">Created</p>
             <p className="text-sm text-muted-foreground tabular-nums">
               {formatDateTime(booking.created_at)}
@@ -287,7 +281,11 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
               <p className="text-sm text-muted-foreground">by {createdByLabel}</p>
             ) : null}
           </li>
-          <li className="relative border-l-2 border-border pl-4">
+          <li className="relative border-l-2 border-border py-1 pl-4">
+            <span
+              className="absolute top-2.5 -left-[5px] size-2 rounded-full bg-muted-foreground"
+              aria-hidden="true"
+            />
             <p className="text-sm font-medium">Last updated</p>
             <p className="text-sm text-muted-foreground tabular-nums">
               {formatDateTime(booking.updated_at)}

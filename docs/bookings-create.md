@@ -23,7 +23,7 @@ Rules:
 2. The client form owns UX state, derived calculations, and submission.
 3. Validation reuses `@/validations` (`createBookingSchema`) — no duplicated rules.
 4. UI never imports Supabase or the booking repository.
-5. On success, redirect to the Booking List (details route does not exist yet).
+5. On success, redirect to the Booking List.
 6. Create and Edit share one `BookingForm` component; mode props control differences.
 
 ## Route
@@ -45,7 +45,7 @@ List entry point: **New Booking** on `/bookings` links to `ROUTES.bookingsNew`.
 5. **Payment** — booking amount, caution money, payment method, total amount
 6. **Notes** — optional multi-line notes
 
-Sticky action bar: **Cancel** | **Save Booking**.
+Sticky action bar (in-flow, safe-area aware): **Cancel** | **Save Booking**.
 
 ## Validation flow
 
@@ -110,6 +110,7 @@ src/features/bookings/
 
 ## Related docs
 
+- [Booking Module UI](./bookings-ui.md)
 - [Edit Booking](./bookings-edit.md)
 - [Bookings list](./bookings-list.md)
 - [Bookings data layer](./bookings-data-layer.md)

@@ -1,3 +1,4 @@
+export { BookingBreadcrumb } from './booking-breadcrumb';
 export { BookingDetailActions } from './booking-detail-actions';
 export { BookingDetailPage } from './booking-detail-page';
 export { BookingDetailSkeleton } from './booking-detail-skeleton';

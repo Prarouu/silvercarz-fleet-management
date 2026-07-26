@@ -67,13 +67,14 @@ export function BookingListPagination({ state, meta, className }: BookingListPag
   const to = Math.min(meta.page * meta.pageSize, meta.totalItems);
 
   return (
-    <div
+    <nav
       className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-col gap-3 rounded-xl border bg-card px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4',
         isPending && 'opacity-80',
         className,
       )}
       aria-busy={isPending}
+      aria-label="Bookings pagination"
     >
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {meta.totalItems === 0
@@ -81,9 +82,14 @@ export function BookingListPagination({ state, meta, className }: BookingListPag
           : `Showing ${from}–${to} of ${meta.totalItems} bookings`}
       </p>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
         <div className="flex items-center gap-2">
-          <span className="text-sm whitespace-nowrap text-muted-foreground">Rows per page</span>
+          <span
+            className="text-sm whitespace-nowrap text-muted-foreground"
+            id="rows-per-page-label"
+          >
+            Rows per page
+          </span>
           <Select
             value={String(state.pageSize)}
             onValueChange={(value) =>
@@ -93,7 +99,7 @@ export function BookingListPagination({ state, meta, className }: BookingListPag
               })
             }
           >
-            <SelectTrigger size="sm" className="w-[4.5rem]" aria-label="Rows per page">
+            <SelectTrigger size="sm" className="w-[4.5rem]" aria-labelledby="rows-per-page-label">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -118,30 +124,37 @@ export function BookingListPagination({ state, meta, className }: BookingListPag
             <ChevronLeft className="size-4" />
           </Button>
 
-          {pageNumbers.map((page, index) => {
-            const previous = pageNumbers[index - 1];
-            const showEllipsis = previous !== undefined && page - previous > 1;
+          {/* Compact page indicator on small screens */}
+          <span className="px-2 text-sm text-muted-foreground tabular-nums sm:hidden">
+            {meta.page} / {Math.max(meta.totalPages, 1)}
+          </span>
 
-            return (
-              <div key={page} className="flex items-center gap-1">
-                {showEllipsis ? (
-                  <span className="px-1 text-sm text-muted-foreground" aria-hidden="true">
-                    …
-                  </span>
-                ) : null}
-                <Button
-                  type="button"
-                  variant={page === meta.page ? 'default' : 'outline'}
-                  size="icon-sm"
-                  onClick={() => navigate({ page })}
-                  aria-label={`Page ${page}`}
-                  aria-current={page === meta.page ? 'page' : undefined}
-                >
-                  {page}
-                </Button>
-              </div>
-            );
-          })}
+          <div className="hidden items-center gap-1 sm:flex">
+            {pageNumbers.map((page, index) => {
+              const previous = pageNumbers[index - 1];
+              const showEllipsis = previous !== undefined && page - previous > 1;
+
+              return (
+                <div key={page} className="flex items-center gap-1">
+                  {showEllipsis ? (
+                    <span className="px-1 text-sm text-muted-foreground" aria-hidden="true">
+                      …
+                    </span>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant={page === meta.page ? 'default' : 'outline'}
+                    size="icon-sm"
+                    onClick={() => navigate({ page })}
+                    aria-label={`Page ${page}`}
+                    aria-current={page === meta.page ? 'page' : undefined}
+                  >
+                    {page}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
 
           <Button
             type="button"
@@ -155,6 +168,6 @@ export function BookingListPagination({ state, meta, className }: BookingListPag
           </Button>
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

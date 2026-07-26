@@ -3,16 +3,9 @@ import Link from 'next/link';
 import { PageContainer } from '@/components/shared/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants/routes';
+import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadcrumb';
 import { BookingForm } from '@/features/bookings/components/booking-form';
 import {
   bookingToFormValues,
@@ -36,20 +29,7 @@ export function EditBookingPage({
   return (
     <PageContainer className="max-w-5xl">
       <div className="space-y-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={ROUTES.bookings}>Bookings</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Edit Booking</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
+        <BookingBreadcrumb current="Edit Booking" />
         <PageHeader
           title="Edit Booking"
           description={
@@ -65,7 +45,7 @@ export function EditBookingPage({
           <AlertTitle>Booking unavailable</AlertTitle>
           <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>{loadError}</span>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="shrink-0">
               <Link href={ROUTES.bookings}>Back to Bookings</Link>
             </Button>
           </AlertDescription>
@@ -73,9 +53,12 @@ export function EditBookingPage({
       ) : null}
 
       {vehiclesError ? (
-        <p className="text-sm text-destructive" role="alert">
-          {vehiclesError}
-        </p>
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Vehicles unavailable</AlertTitle>
+          <AlertDescription>
+            {vehiclesError} The current vehicle remains selectable when possible.
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {booking && !loadError ? (

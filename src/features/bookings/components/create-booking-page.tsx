@@ -1,16 +1,7 @@
-import Link from 'next/link';
-
 import { PageContainer } from '@/components/shared/page-container';
 import { PageHeader } from '@/components/shared/page-header';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { ROUTES } from '@/constants/routes';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadcrumb';
 import { BookingForm } from '@/features/bookings/components/booking-form';
 import type { VehicleSelectOption } from '@/features/bookings/lib/booking-form';
 
@@ -28,27 +19,21 @@ export function CreateBookingPage({
   return (
     <PageContainer className="max-w-5xl">
       <div className="space-y-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={ROUTES.bookings}>Bookings</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Create Booking</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        <PageHeader title="Create Booking" description="Create a new vehicle rental booking." />
+        <BookingBreadcrumb current="Create Booking" />
+        <PageHeader
+          title="Create Booking"
+          description="Create a new vehicle rental booking for the Silver Carz fleet."
+        />
       </div>
 
       {vehiclesError ? (
-        <p className="text-sm text-destructive" role="alert">
-          {vehiclesError}
-        </p>
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Vehicles unavailable</AlertTitle>
+          <AlertDescription>
+            {vehiclesError} You can still fill the form, but vehicle selection may be limited until
+            this is resolved.
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <BookingForm

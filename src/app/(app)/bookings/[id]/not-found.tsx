@@ -8,7 +8,7 @@ import { ROUTES } from '@/constants/routes';
 
 export default function BookingDetailNotFound() {
   return (
-    <PageContainer>
+    <PageContainer className="max-w-5xl">
       <EmptyState
         icon={FileQuestion}
         title="Booking not found"

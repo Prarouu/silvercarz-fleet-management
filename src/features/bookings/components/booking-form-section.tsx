@@ -9,7 +9,7 @@ type BookingFormSectionProps = {
   readonly contentClassName?: string;
 };
 
-/** Card section used by the Create Booking form. */
+/** Card section used by Create / Edit Booking forms. */
 export function BookingFormSection({
   title,
   description,
@@ -18,10 +18,12 @@ export function BookingFormSection({
   contentClassName,
 }: BookingFormSectionProps) {
   return (
-    <Card className={className}>
-      <CardHeader className="border-b">
+    <Card className={className} size="default">
+      <CardHeader className="border-b pb-(--card-spacing)">
         <CardTitle>{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
+        {description ? (
+          <CardDescription className="text-pretty">{description}</CardDescription>
+        ) : null}
       </CardHeader>
       <CardContent className={cn('pt-(--card-spacing)', contentClassName)}>{children}</CardContent>
     </Card>

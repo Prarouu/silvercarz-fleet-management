@@ -100,6 +100,7 @@ src/features/bookings/
 
 ## Related docs
 
+- [Booking Module UI](./bookings-ui.md)
 - [Booking Details](./bookings-details.md)
 - [Create Booking](./bookings-create.md)
 - [Bookings list](./bookings-list.md)

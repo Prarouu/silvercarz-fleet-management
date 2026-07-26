@@ -46,35 +46,37 @@ export function BookingList({ state, result, errorMessage }: BookingListProps) {
         <NewBookingButton />
       </PageHeader>
 
-      <BookingListToolbar state={state} />
+      <div className="space-y-4">
+        <BookingListToolbar state={state} />
 
-      {errorMessage ? <BookingListError description={errorMessage} /> : null}
+        {errorMessage ? <BookingListError description={errorMessage} /> : null}
 
-      {!errorMessage && result && result.data.length === 0 ? (
-        <EmptyState
-          icon={CalendarPlus}
-          title={filtersActive ? 'No matching bookings' : 'No bookings yet'}
-          description={
-            filtersActive
-              ? 'Try adjusting your search or filters to find what you need.'
-              : 'When you create a booking, it will show up here for the team to manage.'
-          }
-          action={
-            filtersActive ? (
-              <BookingListRefreshButton label="Clear filters" clearFilters />
-            ) : (
-              <NewBookingButton />
-            )
-          }
-        />
-      ) : null}
+        {!errorMessage && result && result.data.length === 0 ? (
+          <EmptyState
+            icon={CalendarPlus}
+            title={filtersActive ? 'No matching bookings' : 'No bookings yet'}
+            description={
+              filtersActive
+                ? 'Try adjusting your search or filters to find what you need.'
+                : 'When you create a booking, it will show up here for the team to manage.'
+            }
+            action={
+              filtersActive ? (
+                <BookingListRefreshButton label="Clear filters" clearFilters />
+              ) : (
+                <NewBookingButton />
+              )
+            }
+          />
+        ) : null}
 
-      {!errorMessage && result && result.data.length > 0 ? (
-        <div className="space-y-4">
-          <BookingListTable data={result.data} state={state} />
-          <BookingListPagination state={state} meta={result.meta} />
-        </div>
-      ) : null}
+        {!errorMessage && result && result.data.length > 0 ? (
+          <div className="space-y-4">
+            <BookingListTable data={result.data} state={state} />
+            <BookingListPagination state={state} meta={result.meta} />
+          </div>
+        ) : null}
+      </div>
     </PageContainer>
   );
 }
