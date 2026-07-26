@@ -1,8 +1,8 @@
 # Bookings list UI
 
-Phase 4.1 adds the primary working screen at `/bookings`. Create, edit, and
-detail flows are **not** included — only the list table, toolbar, and
-pagination.
+Phase 4.1 adds the primary working screen at `/bookings`. Create Booking is
+covered in [bookings-create.md](./bookings-create.md). Edit and detail flows
+are **not** included here — only the list table, toolbar, and pagination.
 
 ## Architecture
 
@@ -24,6 +24,7 @@ Rules:
 2. The Server Component fetches; client widgets only navigate / refresh.
 3. No repository or Supabase imports in UI components.
 4. Row actions (View / Edit / Delete) are disabled placeholders.
+5. **New Booking** navigates to `/bookings/new`.
 
 ## Route
 

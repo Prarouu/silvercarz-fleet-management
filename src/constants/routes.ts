@@ -12,6 +12,7 @@ export const ROUTES = {
   authCallback: '/auth/callback',
   dashboard: '/dashboard',
   bookings: '/bookings',
+  bookingsNew: '/bookings/new',
   vehicles: '/vehicles',
   customers: '/customers',
   drivers: '/drivers',

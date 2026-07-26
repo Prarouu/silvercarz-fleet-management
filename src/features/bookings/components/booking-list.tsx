@@ -1,9 +1,11 @@
 import { CalendarPlus, Plus } from 'lucide-react';
+import Link from 'next/link';
 
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageContainer } from '@/components/shared/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/constants/routes';
 import { BookingListError } from '@/features/bookings/components/booking-list-error';
 import { BookingListPagination } from '@/features/bookings/components/booking-list-pagination';
 import { BookingListRefreshButton } from '@/features/bookings/components/booking-list-refresh-button';
@@ -23,9 +25,11 @@ type BookingListProps = {
 
 function NewBookingButton() {
   return (
-    <Button type="button" title="Create booking coming soon">
-      <Plus data-icon="inline-start" />
-      New Booking
+    <Button asChild>
+      <Link href={ROUTES.bookingsNew}>
+        <Plus data-icon="inline-start" />
+        New Booking
+      </Link>
     </Button>
   );
 }
