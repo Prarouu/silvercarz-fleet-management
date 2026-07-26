@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { appConfig } from '@/config/app';
 import { ThemeProvider } from '@/providers/theme-provider';
 
 import './globals.css';
@@ -17,10 +20,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Silver Carz RMS',
-    template: '%s | Silver Carz RMS',
+    default: appConfig.title,
+    template: `%s | ${appConfig.title}`,
   },
-  description: 'Internal rental and fleet management system for Silver Carz.',
+  description: appConfig.description,
 };
 
 export default function RootLayout({
@@ -41,7 +44,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
