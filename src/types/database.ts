@@ -57,6 +57,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Database['public']['Enums']['app_role'];
       };
+      ensure_own_profile: {
+        Args: Record<PropertyKey, never>;
+        Returns: Database['public']['Tables']['profiles']['Row'];
+      };
     };
     Enums: {
       app_role: 'owner' | 'manager';

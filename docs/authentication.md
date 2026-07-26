@@ -91,11 +91,16 @@ Rules:
 | Existing users at migrate | Backfill `INSERT … ON CONFLICT DO NOTHING`                               |
 | `auth.users.email` UPDATE | Trigger syncs `profiles.email`                                           |
 | `auth.users` DELETE       | `ON DELETE CASCADE` removes the profile                                  |
+| Missing row after login   | `ensure_own_profile` RPC via `ensureCurrentProfile()` (Dashboard safety) |
 | Client UPDATE             | May update own `full_name` only; role / `is_active` / `id` are protected |
 
 Default role for new users is `manager`. Set `app_metadata.role` to
 `owner` (or update the row with the service role) when creating the first
 Owner account.
+
+Prefer the database trigger for synchronization. Application code only calls
+`ensureCurrentProfile()` as a safety net when a row is missing (e.g. users
+created before the migration). Do not duplicate insert/update logic in the UI.
 
 ## Role system
 
@@ -207,28 +212,30 @@ Migration: `supabase/migrations/20260726120000_create_profiles.sql`
 | `profiles_update_own`   | UPDATE  | Own row; privileged columns blocked by trigger |
 
 No INSERT / DELETE policies for `authenticated`. Inserts use the
-`handle_new_user` SECURITY DEFINER trigger. Role / `is_active` changes
-require the **service role** (Dashboard SQL or a future admin API).
+`handle_new_user` SECURITY DEFINER trigger or `ensure_own_profile` RPC.
+Role / `is_active` changes require the **service role** (Dashboard SQL or a
+future admin API).
 
 `current_user_role()` is SECURITY DEFINER so RLS policies can read the
 caller’s role without recursive policy checks.
 
 ## Server helpers (`@/lib/auth`)
 
-| Helper               | Use when                                           |
-| -------------------- | -------------------------------------------------- |
-| `getCurrentUser`     | Need the user or `null` (enriched from profile)    |
-| `getCurrentProfile`  | Need the profile row or `null`                     |
-| `getAuthState`       | Need `{ user, profile, isAuthenticated }`          |
-| `isAuthenticated`    | Boolean check                                      |
-| `getCurrentSession`  | Session metadata only (not for authorization)      |
-| `getCurrentUserRole` | Active profile role or `null`                      |
-| `requireUser`        | Server Actions — throws if unsigned / inactive     |
-| `requireAuth`        | Pages / layouts — redirects if unsigned / inactive |
-| `requireRole`        | Fail closed on role mismatch                       |
-| `requirePermission`  | Fail closed on permission mismatch                 |
-| `signOut`            | Clears cookies                                     |
-| `toAuthError`        | Map Auth failures to safe `AppError` messages      |
+| Helper                 | Use when                                           |
+| ---------------------- | -------------------------------------------------- |
+| `getCurrentUser`       | Need the user or `null` (enriched from profile)    |
+| `getCurrentProfile`    | Need the profile row or `null`                     |
+| `ensureCurrentProfile` | Load or create own profile via RPC (post sign-in)  |
+| `getAuthState`         | Need `{ user, profile, isAuthenticated }`          |
+| `isAuthenticated`      | Boolean check                                      |
+| `getCurrentSession`    | Session metadata only (not for authorization)      |
+| `getCurrentUserRole`   | Active profile role or `null`                      |
+| `requireUser`          | Server Actions — throws if unsigned / inactive     |
+| `requireAuth`          | Pages / layouts — redirects if unsigned / inactive |
+| `requireRole`          | Fail closed on role mismatch                       |
+| `requirePermission`    | Fail closed on permission mismatch                 |
+| `signOut`              | Clears cookies                                     |
+| `toAuthError`          | Map Auth failures to safe `AppError` messages      |
 
 Import from `@/lib/auth` in server code. Client code must import shared
 utilities from specific modules (`errors`, `route-guards`, `authorization`,
@@ -240,15 +247,17 @@ utilities from specific modules (`errors`, `route-guards`, `authorization`,
 UI messages come from `toAuthError` / `getAuthErrorMessage` /
 `getAuthErrorMessageForCode`. Examples:
 
-| Code / situation | User-facing message                                        |
-| ---------------- | ---------------------------------------------------------- |
-| Unauthorized     | You must be signed in to continue.                         |
-| Forbidden        | You do not have permission to perform this action.         |
-| Inactive account | Your account is inactive. Contact an administrator.        |
-| Missing profile  | Your account profile is missing. Contact an administrator. |
-| Session expired  | Your session has expired. Please sign in again.            |
+| Code / situation | User-facing message                                         |
+| ---------------- | ----------------------------------------------------------- |
+| Unauthorized     | You must be signed in to continue.                          |
+| Forbidden        | You do not have permission to perform this action.          |
+| Inactive account | Your account is inactive. Contact an administrator.         |
+| Missing profile  | Your account profile is missing. Contact an administrator.  |
+| DB setup needed  | Database setup is incomplete. Apply the profiles migration… |
+| Session expired  | Your session has expired. Please sign in again.             |
 
-Login supports `?reason=session_expired|inactive_account|missing_profile`.
+Login supports
+`?reason=session_expired|inactive_account|missing_profile|database_setup_required`.
 
 Never display raw Supabase Auth or Postgres errors.
 

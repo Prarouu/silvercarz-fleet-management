@@ -16,13 +16,12 @@ import {
 } from '@/features/auth/validations/credentials';
 import {
   createInactiveAccountError,
-  createMissingProfileError,
-  getCurrentProfile,
+  ensureCurrentProfile,
   resolvePostLoginPath,
   signOut,
   toAuthError,
 } from '@/lib/auth';
-import { ERROR_CODES } from '@/lib/errors';
+import { AppError, ERROR_CODES } from '@/lib/errors';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { fail, failWith } from '@/services';
 import type { ApiResponse } from '@/types';
@@ -68,18 +67,18 @@ export async function signInAction(
       return fail(toAuthError(error));
     }
 
-    const profile = await getCurrentProfile();
-
-    if (!profile) {
-      await signOut().catch(() => undefined);
-      return fail(createMissingProfileError());
-    }
+    const profile = await ensureCurrentProfile();
 
     if (!profile.isActive) {
       await signOut().catch(() => undefined);
       return fail(createInactiveAccountError());
     }
   } catch (error) {
+    if (error instanceof AppError) {
+      await signOut().catch(() => undefined);
+      return fail(error);
+    }
+
     if (isNetworkError(error)) {
       return failWith(ERROR_CODES.network, 'Network error. Check your connection and try again.');
     }

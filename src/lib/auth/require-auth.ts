@@ -15,15 +15,15 @@ import {
   AUTH_ERROR_CODES,
   createForbiddenError,
   createInactiveAccountError,
-  createMissingProfileError,
   createUnauthenticatedError,
 } from '@/lib/auth/errors';
 import type { Permission } from '@/lib/auth/permissions';
-import { toAuthUserFromProfile } from '@/lib/auth/profile';
+import { ensureCurrentProfile, toAuthUserFromProfile } from '@/lib/auth/profile';
 import type { AppRole } from '@/lib/auth/roles';
 import { getAuthState } from '@/lib/auth/session';
 import { signOut } from '@/lib/auth/sign-out';
 import type { AuthUser, UserProfile } from '@/lib/auth/types';
+import { AppError } from '@/lib/errors';
 
 function buildLoginRedirect(nextPath?: string, reason?: string): string {
   const loginUrl = new URL(ROUTES.login, 'http://localhost');
@@ -50,15 +50,13 @@ export async function requireProfile(): Promise<UserProfile> {
     throw createUnauthenticatedError();
   }
 
-  if (!profile) {
-    throw createMissingProfileError();
-  }
+  const resolved = profile ?? (await ensureCurrentProfile());
 
-  if (!profile.isActive) {
+  if (!resolved.isActive) {
     throw createInactiveAccountError();
   }
 
-  return profile;
+  return resolved;
 }
 
 /**
@@ -84,17 +82,27 @@ export async function requireAuth(nextPath?: string): Promise<AuthUser> {
     redirect(buildLoginRedirect(nextPath));
   }
 
-  if (!profile) {
-    await signOut().catch(() => undefined);
-    redirect(buildLoginRedirect(nextPath, AUTH_ERROR_CODES.missingProfile));
+  let resolved = profile;
+
+  if (!resolved) {
+    try {
+      resolved = await ensureCurrentProfile();
+    } catch (error) {
+      await signOut().catch(() => undefined);
+      const reason =
+        error instanceof AppError && error.code === AUTH_ERROR_CODES.databaseSetupRequired
+          ? AUTH_ERROR_CODES.databaseSetupRequired
+          : AUTH_ERROR_CODES.missingProfile;
+      redirect(buildLoginRedirect(nextPath, reason));
+    }
   }
 
-  if (!profile.isActive) {
+  if (!resolved.isActive) {
     await signOut().catch(() => undefined);
     redirect(buildLoginRedirect(nextPath, AUTH_ERROR_CODES.inactiveAccount));
   }
 
-  return toAuthUserFromProfile(profile);
+  return toAuthUserFromProfile(resolved);
 }
 
 /**

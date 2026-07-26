@@ -31,7 +31,8 @@ function resolveInitialError(reason: string | undefined): string | undefined {
   if (
     reason === AUTH_ERROR_CODES.sessionExpired ||
     reason === AUTH_ERROR_CODES.inactiveAccount ||
-    reason === AUTH_ERROR_CODES.missingProfile
+    reason === AUTH_ERROR_CODES.missingProfile ||
+    reason === AUTH_ERROR_CODES.databaseSetupRequired
   ) {
     return getAuthErrorMessageForCode(reason);
   }

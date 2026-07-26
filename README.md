@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 2.1c — profiles, roles, and authorization on top of login/session. No booking or fleet business features yet.
+> **Status:** Phase 2.2 — profiles, roles, RLS, and authorization foundation. Ready for Phase 3 (booking database). No booking UI yet.
 
 ## Tech Stack
 

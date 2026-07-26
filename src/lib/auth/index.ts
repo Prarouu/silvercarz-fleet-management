@@ -34,7 +34,14 @@ export {
 
 export { getPermissionsForRole, hasPermission, PERMISSIONS, type Permission } from './permissions';
 
-export { getCurrentProfile, getProfileById, toAuthUserFromProfile, toUserProfile } from './profile';
+export {
+  createDatabaseSetupRequiredError,
+  ensureCurrentProfile,
+  getCurrentProfile,
+  getProfileById,
+  toAuthUserFromProfile,
+  toUserProfile,
+} from './profile';
 
 export {
   requireAuth,

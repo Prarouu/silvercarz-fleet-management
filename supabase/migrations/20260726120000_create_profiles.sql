@@ -4,12 +4,19 @@
 -- Application user data lives in public.profiles (1:1 with auth.users).
 -- Roles: owner | manager (both have full application access today).
 -- Profile rows are created automatically via a trigger on auth.users insert.
+-- Safe to re-run in the Supabase SQL Editor (idempotent where practical).
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
 -- Enum: application roles (extend by adding values; do not rename existing)
 -- ---------------------------------------------------------------------------
-CREATE TYPE public.app_role AS ENUM ('owner', 'manager');
+DO $$
+BEGIN
+  CREATE TYPE public.app_role AS ENUM ('owner', 'manager');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END
+$$;
 
 COMMENT ON TYPE public.app_role IS
   'Application RBAC roles. Add new values as the product grows; never rename.';
@@ -17,7 +24,7 @@ COMMENT ON TYPE public.app_role IS
 -- ---------------------------------------------------------------------------
 -- Table: profiles
 -- ---------------------------------------------------------------------------
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
   email text NOT NULL,
   full_name text,
@@ -40,9 +47,9 @@ COMMENT ON COLUMN public.profiles.role IS
 COMMENT ON COLUMN public.profiles.is_active IS
   'When false, the user may authenticate but must be denied application access.';
 
-CREATE INDEX profiles_role_idx ON public.profiles (role);
-CREATE INDEX profiles_is_active_idx ON public.profiles (is_active);
-CREATE INDEX profiles_email_idx ON public.profiles (email);
+CREATE INDEX IF NOT EXISTS profiles_role_idx ON public.profiles (role);
+CREATE INDEX IF NOT EXISTS profiles_is_active_idx ON public.profiles (is_active);
+CREATE INDEX IF NOT EXISTS profiles_email_idx ON public.profiles (email);
 
 -- ---------------------------------------------------------------------------
 -- updated_at maintenance
@@ -57,6 +64,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS profiles_set_updated_at ON public.profiles;
 CREATE TRIGGER profiles_set_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
@@ -88,6 +96,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS profiles_protect_privileged_columns ON public.profiles;
 CREATE TRIGGER profiles_protect_privileged_columns
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
@@ -130,6 +139,7 @@ $$;
 COMMENT ON FUNCTION public.handle_new_user() IS
   'SECURITY DEFINER trigger: creates a profiles row for every new auth.users row.';
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
@@ -167,6 +177,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_email_updated ON auth.users;
 CREATE TRIGGER on_auth_user_email_updated
   AFTER UPDATE OF email ON auth.users
   FOR EACH ROW
@@ -194,30 +205,79 @@ COMMENT ON FUNCTION public.current_user_role() IS
 GRANT EXECUTE ON FUNCTION public.current_user_role() TO authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Ensure a profile exists for the current JWT user (Auth Dashboard safety net)
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.ensure_own_profile()
+RETURNS public.profiles
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  auth_user auth.users%ROWTYPE;
+  result public.profiles;
+  resolved_role public.app_role;
+  raw_role text;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '28000';
+  END IF;
+
+  SELECT * INTO auth_user FROM auth.users WHERE id = auth.uid();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Auth user not found' USING ERRCODE = '28000';
+  END IF;
+
+  raw_role := auth_user.raw_app_meta_data ->> 'role';
+
+  IF raw_role IN ('owner', 'manager') THEN
+    resolved_role := raw_role::public.app_role;
+  ELSE
+    resolved_role := 'manager'::public.app_role;
+  END IF;
+
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    auth_user.id,
+    coalesce(auth_user.email, ''),
+    nullif(trim(coalesce(auth_user.raw_user_meta_data ->> 'full_name', '')), ''),
+    resolved_role
+  )
+  ON CONFLICT (id) DO UPDATE
+    SET email = EXCLUDED.email
+  RETURNING * INTO result;
+
+  RETURN result;
+END;
+$$;
+
+COMMENT ON FUNCTION public.ensure_own_profile() IS
+  'SECURITY DEFINER: creates or returns the profile for auth.uid(). Used after login.';
+
+GRANT EXECUTE ON FUNCTION public.ensure_own_profile() TO authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
 
--- Policy: profiles_select_own
--- Authenticated users may read their own profile row.
+DROP POLICY IF EXISTS profiles_select_own ON public.profiles;
 CREATE POLICY profiles_select_own
   ON public.profiles
   FOR SELECT
   TO authenticated
   USING (auth.uid() = id);
 
--- Policy: profiles_select_staff
--- Active owner/manager may read all profiles (future user management).
--- Both roles currently have full access; tighten when finer roles arrive.
+DROP POLICY IF EXISTS profiles_select_staff ON public.profiles;
 CREATE POLICY profiles_select_staff
   ON public.profiles
   FOR SELECT
   TO authenticated
   USING (public.current_user_role() IN ('owner'::public.app_role, 'manager'::public.app_role));
 
--- Policy: profiles_update_own
--- Authenticated users may update their own row (privileged columns blocked by trigger).
+DROP POLICY IF EXISTS profiles_update_own ON public.profiles;
 CREATE POLICY profiles_update_own
   ON public.profiles
   FOR UPDATE
@@ -226,7 +286,7 @@ CREATE POLICY profiles_update_own
   WITH CHECK (auth.uid() = id);
 
 -- No INSERT / DELETE policies for authenticated clients.
--- Inserts are performed by handle_new_user() (SECURITY DEFINER).
+-- Inserts are performed by handle_new_user() / ensure_own_profile() (SECURITY DEFINER).
 -- Deletes cascade from auth.users; admin role changes use the service role.
 
 GRANT SELECT, UPDATE ON public.profiles TO authenticated;
