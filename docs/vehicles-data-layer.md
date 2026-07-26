@@ -1,17 +1,18 @@
 # Vehicles data layer
 
-Phase 3.4 implements the vehicle backend stack. There is **no vehicle UI** in
-this phase — only repository, service, Server Actions, and domain errors.
+Phase 3.4 implements the vehicle backend stack (repository, service, Server
+Actions, and domain errors). Phase 5.1 adds the Fleet Management list UI at
+`/vehicles` — see [vehicles-list.md](./vehicles-list.md).
 
 ## Data flow
 
 ```
-UI (future)
+UI (Fleet List — /vehicles)
   → Server Actions   (@/features/vehicles/actions)
-    → Vehicle Service  (@/features/vehicles/service)
-      → Vehicle Repository (@/features/vehicles/repository)
-        → Supabase client (@/lib/supabase/server)
-          → PostgreSQL (RLS + constraints)
+  → Vehicle Service  (@/features/vehicles/service)
+    → Vehicle Repository (@/features/vehicles/repository)
+      → Supabase client (@/lib/supabase/server)
+        → PostgreSQL (RLS + constraints)
 ```
 
 Rules:
@@ -150,10 +151,12 @@ UI should read `ApiResponse.error.message` only — never PostgREST payloads.
 5. **Fuel logs** — same orchestration point as maintenance.
 6. **Insurance / servicing reminders** — schedule helpers on the service layer.
 7. **Role divergence** — remove `'all'` from managers for `vehicles:delete` when needed.
-8. **UI** — pages call Server Actions only; no repository imports in components.
+8. **UI** — Fleet List calls Server Actions only; Add / Edit / Details pages
+   are deferred.
 
 ## Related docs
 
+- [Vehicles list UI](./vehicles-list.md)
 - [Database schema](./database.md)
 - [Types & validation](./types-and-validation.md)
 - [Bookings data layer](./bookings-data-layer.md)

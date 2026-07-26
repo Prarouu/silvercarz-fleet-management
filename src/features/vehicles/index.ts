@@ -1,8 +1,8 @@
 /**
  * Vehicles feature public exports.
  *
- * Data layer only in this phase — repository, service, Server Actions.
- * No UI / pages yet.
+ * Data layer (repository, service, Server Actions) plus Fleet List UI.
+ * Add / Edit / Details pages are deferred to later phases.
  */
 
 export type {
@@ -58,6 +58,16 @@ export {
   searchVehicles,
   updateVehicle,
 } from './actions';
+
+export {
+  VehicleAvailabilityBadge,
+  VehicleList,
+  VehicleListSkeleton,
+  VehicleStatusBadge,
+  resolveVehicleAvailability,
+  type VehicleAvailability,
+  type VehicleFleetSummary,
+} from './components';
 
 export {
   createVehicleSchema,

@@ -61,8 +61,11 @@ components.
 - [Edit Booking UI](../../docs/bookings-edit.md)
 - [Booking Details UI](../../docs/bookings-details.md)
 
-## Vehicles data layer
+## Vehicles
 
-`features/vehicles/` includes repository, service, Server Actions, and domain
-errors. Call Server Actions from future UI — never import the repository in
-components. See [docs/vehicles-data-layer.md](../../docs/vehicles-data-layer.md).
+`features/vehicles/` includes repository, service, Server Actions, domain
+errors, and the Fleet Management list UI. Call Server Actions from UI — never
+import the repository in components. Add / Edit / Details pages are deferred.
+
+- [Vehicles data layer](../../docs/vehicles-data-layer.md)
+- [Vehicles list UI](../../docs/vehicles-list.md)

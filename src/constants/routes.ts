@@ -14,6 +14,7 @@ export const ROUTES = {
   bookings: '/bookings',
   bookingsNew: '/bookings/new',
   vehicles: '/vehicles',
+  vehiclesNew: '/vehicles/new',
   customers: '/customers',
   drivers: '/drivers',
   settings: '/settings',
@@ -29,4 +30,14 @@ export function bookingDetailPath(id: string): string {
 /** Dynamic edit path for a booking id. */
 export function bookingEditPath(id: string): string {
   return `${ROUTES.bookings}/${id}/edit`;
+}
+
+/** Dynamic detail path for a vehicle id. */
+export function vehicleDetailPath(id: string): string {
+  return `${ROUTES.vehicles}/${id}`;
+}
+
+/** Dynamic edit path for a vehicle id. */
+export function vehicleEditPath(id: string): string {
+  return `${ROUTES.vehicles}/${id}/edit`;
 }
