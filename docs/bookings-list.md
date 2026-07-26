@@ -2,7 +2,8 @@
 
 Phase 4.1 adds the primary working screen at `/bookings`. Create Booking is
 covered in [bookings-create.md](./bookings-create.md). Edit Booking is covered
-in [bookings-edit.md](./bookings-edit.md). Detail flow is **not** included here.
+in [bookings-edit.md](./bookings-edit.md). Booking Details is covered in
+[bookings-details.md](./bookings-details.md).
 
 ## Architecture
 
@@ -23,7 +24,8 @@ Rules:
 1. URL search params are the source of truth for filters, sort, and page.
 2. The Server Component fetches; client widgets only navigate / refresh.
 3. No repository or Supabase imports in UI components.
-4. Row **Edit** navigates to `/bookings/[id]/edit`. View / Delete remain placeholders.
+4. Row **View** navigates to `/bookings/[id]`. Row **Edit** navigates to
+   `/bookings/[id]/edit`. Delete remains a placeholder.
 5. **New Booking** navigates to `/bookings/new`.
 
 ## Route

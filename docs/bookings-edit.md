@@ -24,7 +24,8 @@ Rules:
 2. Create and Edit pages only differ in server data loading and form props.
 3. Validation reuses `@/validations` through shared helpers in `lib/booking-form.ts`.
 4. UI never imports Supabase or the booking repository.
-5. On success, redirect to the Booking List (details route does not exist yet).
+5. On success, redirect to the Booking List. The Booking Details workspace is
+   available at `/bookings/[id]` (see [bookings-details.md](./bookings-details.md)).
 
 ## Route
 
@@ -99,6 +100,7 @@ src/features/bookings/
 
 ## Related docs
 
+- [Booking Details](./bookings-details.md)
 - [Create Booking](./bookings-create.md)
 - [Bookings list](./bookings-list.md)
 - [Bookings data layer](./bookings-data-layer.md)

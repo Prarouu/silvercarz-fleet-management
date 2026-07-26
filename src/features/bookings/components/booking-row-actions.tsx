@@ -10,11 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { bookingEditPath } from '@/constants/routes';
+import { bookingDetailPath, bookingEditPath } from '@/constants/routes';
 
 /**
- * Row actions menu — View / Delete remain placeholders until detail
- * and delete flows land. Edit navigates to the shared BookingForm.
+ * Row actions menu — View opens Booking Details, Edit opens BookingForm.
+ * Delete remains a placeholder until the delete flow lands.
  */
 export function BookingRowActions({
   bookingId,
@@ -31,7 +31,9 @@ export function BookingRowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
-        <DropdownMenuItem disabled>View</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={bookingDetailPath(bookingId)}>View</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={bookingEditPath(bookingId)}>Edit</Link>
         </DropdownMenuItem>

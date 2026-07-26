@@ -1,3 +1,6 @@
+export { BookingDetailActions } from './booking-detail-actions';
+export { BookingDetailPage } from './booking-detail-page';
+export { BookingDetailSkeleton } from './booking-detail-skeleton';
 export { BookingForm } from './booking-form';
 export { BookingList } from './booking-list';
 export { BookingListSkeleton } from './booking-list-skeleton';

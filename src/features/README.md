@@ -51,13 +51,15 @@ credential schemas. Session infrastructure and route guards live in
 ## Bookings
 
 `features/bookings/` includes repository, service, Server Actions, domain
-errors, booking list UI, and the shared create/edit `BookingForm`. Call Server
-Actions from UI — never import the repository in components.
+errors, booking list UI, the shared create/edit `BookingForm`, and the Booking
+Details workspace. Call Server Actions from UI — never import the repository in
+components.
 
 - [Bookings data layer](../../docs/bookings-data-layer.md)
 - [Bookings list UI](../../docs/bookings-list.md)
 - [Create Booking UI](../../docs/bookings-create.md)
 - [Edit Booking UI](../../docs/bookings-edit.md)
+- [Booking Details UI](../../docs/bookings-details.md)
 
 ## Vehicles data layer
 
