@@ -19,6 +19,12 @@ export const PERMISSIONS = {
   profilesRead: 'profiles:read',
   /** Change roles / active status (future admin only). */
   profilesManage: 'profiles:manage',
+  /** Read bookings (list, search, detail). */
+  bookingsRead: 'bookings:read',
+  /** Create and update bookings. */
+  bookingsWrite: 'bookings:write',
+  /** Soft-delete / permanently delete bookings. */
+  bookingsDelete: 'bookings:delete',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

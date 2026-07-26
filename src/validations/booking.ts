@@ -71,7 +71,7 @@ export const updateBookingSchema = bookingFieldsSchema.partial().superRefine((da
 
 /** Form-friendly booking filters (camelCase query params). */
 export const bookingListFiltersSchema = z.object({
-  search: optionalNullableStringSchema.optional(),
+  search: z.string().trim().max(200).optional(),
   status: bookingStatusSchema.optional(),
   vehicleId: entityIdSchema.optional(),
   mode: rentalModeSchema.optional(),
@@ -80,8 +80,28 @@ export const bookingListFiltersSchema = z.object({
   deliveryDateTo: isoDateSchema.optional(),
   returnDateFrom: isoDateSchema.optional(),
   returnDateTo: isoDateSchema.optional(),
+  includeCancelled: z.boolean().optional(),
+  cursor: z.string().trim().min(1).optional(),
+});
+
+export const bookingSortFieldSchema = z.enum([
+  'invoice_date',
+  'delivery_date',
+  'return_date',
+  'created_at',
+  'customer_name',
+  'invoice_number',
+]);
+
+/** Full list query: filters + pagination + sorting. */
+export const bookingListQuerySchema = bookingListFiltersSchema.extend({
+  page: z.number().int().positive().optional(),
+  pageSize: z.number().int().positive().optional(),
+  sortBy: bookingSortFieldSchema.optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
 export type CreateBookingValues = z.infer<typeof createBookingSchema>;
 export type UpdateBookingValues = z.infer<typeof updateBookingSchema>;
 export type BookingListFilterValues = z.infer<typeof bookingListFiltersSchema>;
+export type BookingListQueryValues = z.infer<typeof bookingListQuerySchema>;

@@ -61,7 +61,10 @@ export type {
   Booking,
   BookingCreateInput,
   BookingListFilters,
+  BookingListQuery,
+  BookingSortField,
   BookingUpdateInput,
+  BookingVehicleOverlapQuery,
   BookingWithVehicle,
 } from './booking';
 

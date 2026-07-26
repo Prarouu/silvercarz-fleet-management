@@ -11,6 +11,7 @@ See also:
 - [Authentication](./authentication.md) — login, profiles, roles, RLS, permissions
 - [Database](./database.md) — vehicles, bookings, ER diagram, indexes, RLS
 - [Types & validation](./types-and-validation.md) — domain models, enums, Zod schemas
+- [Bookings data layer](./bookings-data-layer.md) — repository, service, Server Actions
 - [Project conventions](./conventions.md) — naming, git, imports, quality
 - [Feature modules](../src/features/README.md) — how to add a domain module
 
@@ -192,8 +193,8 @@ unknown error
 
 ## What remains for later phases
 
-- API routes / domain server actions
-- Booking / vehicle feature modules and CRUD UI
+- Booking / vehicle CRUD UI and pages
+- Vehicle data layer (mirror bookings repository/service pattern)
 - Customer / driver normalization (still denormalized on bookings for MVP)
 - Admin user-management UI (profiles list / role edits)
 

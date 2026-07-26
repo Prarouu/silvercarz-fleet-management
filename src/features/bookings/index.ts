@@ -1,15 +1,19 @@
 /**
  * Bookings feature public exports.
  *
- * Types and validation only in this phase — no UI or CRUD yet.
+ * Data layer only in this phase — repository, service, Server Actions.
+ * No UI / pages yet.
  */
 
 export type {
   Booking,
   BookingCreateInput,
   BookingListFilters,
+  BookingListQuery,
+  BookingSortField,
   BookingStatus,
   BookingUpdateInput,
+  BookingVehicleOverlapQuery,
   BookingWithVehicle,
   PaymentMethod,
   RentalMode,
@@ -34,10 +38,54 @@ export {
 } from './types';
 
 export {
+  BOOKING_ERROR_CODES,
+  createBookingDatabaseFailureError,
+  createBookingNotFoundError,
+  createBookingValidationError,
+  createDuplicateInvoiceError,
+  createInvalidBookingDatesError,
+  createUnauthorizedBookingAccessError,
+  createVehicleUnavailableError,
+  type BookingErrorCode,
+} from './errors';
+
+export {
+  createBookingRepository,
+  getBookingRepository,
+  type BookingRepository,
+} from './repository';
+
+export {
+  buildInvoiceNumberSuggestion,
+  calculateBookingAmount,
+  calculateDurationDays,
+  calculateTotalAmount,
+  calculateTotalKilometers,
+  createBookingService,
+  getBookingService,
+  type BookingService,
+  type BookingServiceDeps,
+} from './service';
+
+export {
+  countBookings,
+  createBooking,
+  deleteBooking,
+  getBooking,
+  getBookingByInvoiceNumber,
+  getBookingWithVehicle,
+  listBookings,
+  searchBookings,
+  updateBooking,
+} from './actions';
+
+export {
   bookingListFiltersSchema,
+  bookingListQuerySchema,
   createBookingSchema,
   updateBookingSchema,
   type BookingListFilterValues,
+  type BookingListQueryValues,
   type CreateBookingValues,
   type UpdateBookingValues,
 } from '@/validations';
