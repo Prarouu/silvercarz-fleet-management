@@ -5,12 +5,14 @@ Actions, and domain errors). Phase 5.1 adds the Fleet Management list UI at
 `/vehicles` — see [vehicles-list.md](./vehicles-list.md). Phase 5.2 adds
 Create Vehicle at `/vehicles/new` — see [vehicles-create.md](./vehicles-create.md).
 Phase 5.3 adds Edit Vehicle at `/vehicles/[id]/edit` — see
-[vehicles-edit.md](./vehicles-edit.md).
+[vehicles-edit.md](./vehicles-edit.md). Phase 5.4 adds Vehicle Details at
+`/vehicles/[id]` — see [vehicles-details.md](./vehicles-details.md).
 
 ## Data flow
 
 ```
-UI (Fleet List — /vehicles, Add — /vehicles/new, Edit — /vehicles/[id]/edit)
+UI (Fleet List — /vehicles, Add — /vehicles/new, Edit — /vehicles/[id]/edit,
+    Details — /vehicles/[id])
   → Server Actions   (@/features/vehicles/actions)
   → Vehicle Service  (@/features/vehicles/service)
     → Vehicle Repository (@/features/vehicles/repository)
@@ -18,6 +20,7 @@ UI (Fleet List — /vehicles, Add — /vehicles/new, Edit — /vehicles/[id]/edi
         → PostgreSQL (RLS + constraints)
   → vehicle-image-storage (optional)
       → Supabase Storage (vehicle-images bucket)
+  → Booking Server Actions (details page only — recent history / count)
 ```
 
 Rules:

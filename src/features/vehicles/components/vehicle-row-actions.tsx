@@ -14,7 +14,7 @@ import {
 import { vehicleDetailPath, vehicleEditPath } from '@/constants/routes';
 
 /**
- * Row actions menu — View / Edit navigate to future vehicle routes.
+ * Row actions menu — View opens the fleet profile; Edit opens the form.
  * Deactivate and Delete remain placeholders until those flows land.
  */
 export function VehicleRowActions({

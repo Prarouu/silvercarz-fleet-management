@@ -3,7 +3,8 @@
 Phase 5.1 adds the primary fleet working screen at `/vehicles`. Phase 5.2
 implements Add Vehicle at `/vehicles/new` — see [vehicles-create.md](./vehicles-create.md).
 Phase 5.3 implements Edit Vehicle at `/vehicles/[id]/edit` — see
-[vehicles-edit.md](./vehicles-edit.md). Vehicle Details remains deferred.
+[vehicles-edit.md](./vehicles-edit.md). Phase 5.4 implements Vehicle Details
+at `/vehicles/[id]` — see [vehicles-details.md](./vehicles-details.md).
 
 ## Architecture
 
@@ -27,8 +28,8 @@ Rules:
 3. No repository or Supabase imports in UI components.
 4. Reuses the same TanStack Table + sticky header + mobile card pattern as
    the Bookings list (shared table architecture — no second table system).
-5. Row **Edit** navigates to `/vehicles/[id]/edit` (implemented in Phase 5.3).
-   **View** targets `/vehicles/[id]` (Details deferred). Deactivate and Delete
+5. Row **Edit** navigates to `/vehicles/[id]/edit` (Phase 5.3).
+   **View** navigates to `/vehicles/[id]` (Phase 5.4). Deactivate and Delete
    remain placeholders.
 6. **Add Vehicle** navigates to `/vehicles/new` (implemented in Phase 5.2).
 

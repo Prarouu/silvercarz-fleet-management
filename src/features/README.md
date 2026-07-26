@@ -64,11 +64,12 @@ components.
 ## Vehicles
 
 `features/vehicles/` includes repository, service, Server Actions, domain
-errors, the Fleet Management list UI, and the shared Add / Edit Vehicle
-workflow (`VehicleForm`). Call Server Actions from UI — never import the
-repository in components. Vehicle Details remains deferred.
+errors, the Fleet Management list UI, the shared Add / Edit Vehicle workflow
+(`VehicleForm`), and the Vehicle Details fleet profile. Call Server Actions
+from UI — never import the repository in components.
 
 - [Vehicles data layer](../../docs/vehicles-data-layer.md)
 - [Vehicles list UI](../../docs/vehicles-list.md)
 - [Create Vehicle UI](../../docs/vehicles-create.md)
 - [Edit Vehicle UI](../../docs/vehicles-edit.md)
+- [Vehicle Details UI](../../docs/vehicles-details.md)
