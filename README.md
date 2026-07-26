@@ -2,25 +2,26 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 1.4 — shared project architecture in place. No business features are implemented yet.
+> **Status:** Phase 1.5 — production-ready project foundation. No business features are implemented yet. Next: Phase 2 (Authentication & Security).
 
 ## Tech Stack
 
 | Concern         | Technology                                                     |
 | --------------- | -------------------------------------------------------------- |
-| Framework       | [Next.js](https://nextjs.org) (App Router)                     |
+| Framework       | [Next.js](https://nextjs.org) 16 (App Router)                  |
 | Language        | TypeScript (strict mode)                                       |
 | Styling         | Tailwind CSS v4 (CSS-based configuration)                      |
 | UI components   | [shadcn/ui](https://ui.shadcn.com) (Radix base, CSS variables) |
 | Icons           | Lucide React                                                   |
-| Forms           | React Hook Form + Zod                                          |
-| Tables          | TanStack Table                                                 |
+| Validation      | Zod                                                            |
+| Forms           | React Hook Form _(add when building forms)_                    |
+| Tables          | TanStack Table _(add when building data tables)_               |
 | Server state    | TanStack Query                                                 |
 | Notifications   | Sonner                                                         |
 | Theming         | next-themes (light default, system supported, dark prepared)   |
 | Backend         | Supabase (PostgreSQL, Auth, Storage)                           |
 | Dates           | date-fns                                                       |
-| Package manager | pnpm                                                           |
+| Package manager | pnpm 10                                                        |
 
 ## Getting Started
 
@@ -85,7 +86,7 @@ src/
 ├── services/             # ApiResponse helpers + repository contracts
 ├── hooks/                # Shared generic React hooks
 └── providers/            # Theme, TanStack Query, AppProviders composition
-docs/                     # Architecture docs (see docs/architecture.md)
+docs/                     # Architecture + conventions
 public/                   # Static assets (icons, manifest)
 ```
 
@@ -97,31 +98,7 @@ Conventions:
 - **`components/ui/` is CLI-managed** — add primitives with `pnpm dlx shadcn@latest add <component>`; never hand-edit business terms into them.
 - Global styles live in `src/app/globals.css` (Tailwind v4 configures theme tokens in CSS; there is no `tailwind.config.ts`).
 
-See [docs/architecture.md](./docs/architecture.md) for how future modules should use services, hooks, providers, types, and utilities.
-
-## Coding Standards
-
-- TypeScript strict mode; `any` is disallowed.
-- Named exports preferred (default exports only where Next.js requires them, e.g. pages/layouts).
-- Functional components and `async/await` only.
-- `no-console` enforced (`console.warn`/`console.error` allowed).
-- Formatting is Prettier-owned: single quotes, semicolons, trailing commas, 100-char width, Tailwind class sorting.
-- Path alias `@/*` maps to `src/*` (e.g. `@/components`, `@/features`, `@/lib`, `@/hooks`).
-
-## Environment Variables
-
-All variables are documented in [`.env.example`](./.env.example). Never commit real values; `.env*` files are git-ignored (except the example template).
-
-| Variable                        | Purpose                             |
-| ------------------------------- | ----------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) API key |
-
-Both values are found in your Supabase dashboard under **Project Settings → API**. They are client-safe by design — Row Level Security (added in a later phase) is the actual security boundary. Service role keys must **never** be added to this project.
-
-Environment validation is fail-fast: if a variable is missing, the app throws a descriptive error at startup instead of failing mysteriously at runtime.
-
-## Shared Architecture (Phase 1.4)
+## Architecture Summary
 
 | Layer       | Location           | Use for                                                       |
 | ----------- | ------------------ | ------------------------------------------------------------- |
@@ -140,6 +117,49 @@ Rules for upcoming feature work:
 - Put domain schemas under `features/<name>/validations`, composing shared primitives.
 - Import routes from `ROUTES` — do not hardcode path strings in features.
 - Keep `src/services/` generic; domain repositories and queries live with their feature.
+
+Deep dives:
+
+- [docs/architecture.md](./docs/architecture.md) — shared layer usage, module guide, error flow
+- [docs/conventions.md](./docs/conventions.md) — naming, git, imports, TypeScript
+- [src/features/README.md](./src/features/README.md) — feature folder layout
+
+## Coding Standards
+
+- TypeScript strict mode; `any` is disallowed.
+- Named exports preferred (default exports only where Next.js requires them).
+- Functional components and `async/await` only.
+- Server Components by default; `'use client'` only when needed.
+- `no-console` enforced (`console.warn`/`console.error` allowed).
+- Formatting is Prettier-owned: single quotes, semicolons, trailing commas, 100-char width, Tailwind class sorting.
+- Path alias `@/*` maps to `src/*`. Prefer barrels (`@/config`, `@/constants`, …) over deep relative paths.
+
+## Development Workflow
+
+1. Create a branch from `main` using the naming rules in [docs/conventions.md](./docs/conventions.md).
+2. Implement inside the correct layer (`features/` for domain work; shared folders only when reused).
+3. Run locally:
+   ```bash
+   pnpm lint
+   pnpm typecheck
+   pnpm format:check
+   pnpm build
+   ```
+4. Commit with Conventional Commits. Pre-commit hooks enforce lint, format, and typecheck.
+5. Open a PR against `main`. Keep PRs focused and reviewable.
+
+## Environment Variables
+
+All variables are documented in [`.env.example`](./.env.example). Never commit real values; `.env*` files are git-ignored (except the example template).
+
+| Variable                        | Purpose                             |
+| ------------------------------- | ----------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL                |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) API key |
+
+Both values are found in your Supabase dashboard under **Project Settings → API**. They are client-safe by design — Row Level Security (added in a later phase) is the actual security boundary. Service role keys must **never** be added to this project.
+
+Environment validation is fail-fast: if a variable is missing, the app throws a descriptive error at startup instead of failing mysteriously at runtime.
 
 ## Supabase Infrastructure
 
@@ -170,3 +190,18 @@ To verify connectivity after configuring `.env.local`, temporarily call `checkSu
 - Set environment variables per environment in the Vercel dashboard — no environment logic in code.
 - Use separate Supabase projects for development, staging, and production.
 - Production deploys from `main` only; rollback via Vercel's instant redeploy of a previous build.
+- Node.js 20+ is required (`engines` in `package.json`).
+
+## Contribution Guidelines
+
+This project will be maintained by a small internal team. Before contributing:
+
+1. Read [docs/architecture.md](./docs/architecture.md) and [docs/conventions.md](./docs/conventions.md).
+2. Match existing patterns — do not introduce parallel abstractions.
+3. Keep PRs small: one concern per branch.
+4. Do not commit secrets, `.env.local`, or generated build output.
+5. Do not add business logic into `components/ui/`, `lib/supabase/`, or shared barrels unless it is truly cross-cutting.
+6. Prefer extending existing helpers (`ApiResponse`, `AppError`, shared Zod schemas) over inventing new response/error shapes.
+7. When adding UI primitives, use the shadcn CLI rather than hand-rolling Radix wrappers.
+
+Questions about structure should be resolved in favor of **feature isolation** and **thin routes**.

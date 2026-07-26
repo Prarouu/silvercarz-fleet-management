@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { appConfig } from '@/config/app';
+import { appConfig } from '@/config';
 
 /**
  * Top navigation bar shared by all app pages. The breadcrumb and user

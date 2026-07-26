@@ -1,5 +1,5 @@
 import { AppError, toAppError } from '@/lib/errors';
-import type { ApiFailure, ApiResponse, ApiSuccess } from '@/types/api';
+import type { ApiFailure, ApiResponse, ApiSuccess } from '@/types';
 
 /** Creates a successful service / API response. */
 export function ok<T>(data: T): ApiSuccess<T> {

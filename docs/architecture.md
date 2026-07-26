@@ -1,14 +1,19 @@
 # Shared Architecture
 
-Phase 1.4 establishes the shared foundation every feature module builds on.
+Phase 1.5 locks the shared foundation every feature module builds on.
 This layer is intentionally **domain-agnostic** — no bookings, vehicles,
 customers, drivers, or authentication logic lives here.
+
+See also:
+
+- [Project conventions](./conventions.md) — naming, git, imports, quality
+- [Feature modules](../src/features/README.md) — how to add a domain module
 
 ## Folder structure
 
 ```
 src/
-├── app/                 # Next.js routes, layouts, global CSS only
+├── app/                 # Next.js routes, layouts, global CSS, error/loading UI
 ├── components/
 │   ├── ui/              # shadcn primitives (CLI-managed)
 │   ├── shared/          # Business-agnostic composites (EmptyState, PageHeader, …)
@@ -21,8 +26,7 @@ src/
 ├── validations/         # Reusable Zod schemas and helpers
 ├── services/            # Service result helpers + repository contracts
 ├── hooks/               # Generic React hooks
-├── providers/           # Theme, TanStack Query, provider composition
-└── styles/              # (reserved) shared style helpers if needed later
+└── providers/           # Theme, TanStack Query, provider composition
 ```
 
 ## Design principles
@@ -30,19 +34,20 @@ src/
 1. **Thin routes** — `app/` composes feature UI; no business logic in pages.
 2. **Feature isolation** — domain code lives in `features/<name>/`. Promote to
    shared folders only when two or more features need the same abstraction.
-3. **No hardcoded paths** — always use `ROUTES` from `@/constants/routes`.
+3. **No hardcoded paths** — always use `ROUTES` from `@/constants`.
 4. **No hardcoded app defaults** — names, currency, date formats, and page
-   sizes come from `@/config/app` / `@/constants/*`.
+   sizes come from `@/config` / `@/constants`.
 5. **Normalized errors** — never format raw infrastructure errors in UI code.
 6. **Named exports** — prefer named exports; default exports only where Next.js
-   requires them (pages/layouts).
+   requires them (pages/layouts/error/loading/not-found).
+7. **Server Components by default** — `'use client'` only when required.
 
 ## How future modules should use the shared layer
 
 ### Config (`@/config`)
 
 ```ts
-import { appConfig } from '@/config/app';
+import { appConfig } from '@/config';
 
 appConfig.name; // "Silver Carz"
 appConfig.currency; // "INR"
@@ -119,22 +124,57 @@ Today it wires:
 
 Add future cross-cutting providers (e.g. auth) here — not ad hoc in layouts.
 
+## Shared components — when to use
+
+| Use `components/shared/` when…                     | Do **not** put in shared when…             |
+| -------------------------------------------------- | ------------------------------------------ |
+| The UI is domain-agnostic (EmptyState, PageHeader) | It mentions bookings, vehicles, customers… |
+| Two or more features need the same composite       | Only one feature needs it (keep it local)  |
+| It improves layout consistency across modules      | It is a one-off screen section             |
+
+Start local in `features/<name>/components`. Promote only after a second
+consumer appears. Never force abstraction early.
+
+## Adding a future module
+
+1. Create `src/features/<name>/` using the layout in
+   [`src/features/README.md`](../src/features/README.md).
+2. Add the route under `src/app/(app)/<route>/page.tsx` — page only composes
+   feature UI.
+3. Register the path in `ROUTES` (`@/constants/routes`) and navigation
+   (`@/config/navigation`) if it belongs in the sidebar.
+4. Implement services that return `ApiResponse<T>`; keep Supabase access behind
+   `@/lib/supabase/*`.
+5. Compose Zod schemas from `@/validations` for shared field rules.
+
+No restructuring of the shared layer should be required for Authentication or
+Booking CRUD — those plug into this shape.
+
 ## Error handling flow
 
 ```
 unknown error
   → toAppError() / normalizeSupabaseError()
   → fail() → ApiResponse failure
-  → UI reads response.error.message / ErrorState
+  → UI reads response.error.message / ErrorState / toast
 ```
 
 - App-wide: `@/lib/errors`
 - Supabase-specific: `@/lib/supabase/errors`
 - Service boundary: `@/services` (`ok` / `fail` / `fromPromise`)
+- Route boundary: `app/(app)/error.tsx`
+
+## Server / client boundaries
+
+- Prefer Server Components. Mark client boundaries at the smallest leaf that
+  needs interactivity (hooks, event handlers, browser APIs).
+- Providers live under `src/providers/` and are composed once in the root layout.
+- Supabase: browser → `@/lib/supabase/client`; server → `@/lib/supabase/server`;
+  middleware (future) → `@/lib/supabase/middleware`.
 
 ## What this phase deliberately does not include
 
-- Authentication / middleware
+- Authentication / middleware wiring
 - API routes / server actions
 - Database tables or SQL
 - Booking / vehicle / customer / driver logic

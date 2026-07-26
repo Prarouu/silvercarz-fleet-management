@@ -17,9 +17,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { appConfig } from '@/config/app';
-import { mainNavItems, secondaryNavItems, type NavItem } from '@/config/navigation';
-import { ROUTES } from '@/constants/routes';
+import { appConfig, mainNavItems, secondaryNavItems, type NavItem } from '@/config';
+import { ROUTES } from '@/constants';
 
 function NavMenu({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();

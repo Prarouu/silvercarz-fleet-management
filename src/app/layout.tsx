@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
-import { appConfig } from '@/config/app';
-import { AppProviders } from '@/providers/app-providers';
+import { appConfig } from '@/config';
+import { AppProviders } from '@/providers';
 
 import './globals.css';
 

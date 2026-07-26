@@ -1,5 +1,4 @@
-import type { BaseEntity } from '@/types/common';
-import type { ListQueryParams, PaginatedResult } from '@/types/pagination';
+import type { BaseEntity, ListQueryParams, PaginatedResult } from '@/types';
 
 /**
  * Generic repository contract for future data-access modules.

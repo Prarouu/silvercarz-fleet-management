@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PAGINATION } from '@/constants/pagination';
+import { PAGINATION } from '@/constants';
 
 /**
  * Reusable Zod schemas and validation helpers.

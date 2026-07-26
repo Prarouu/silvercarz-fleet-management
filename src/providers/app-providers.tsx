@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { THEME } from '@/constants/theme';
+import { THEME } from '@/constants';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 

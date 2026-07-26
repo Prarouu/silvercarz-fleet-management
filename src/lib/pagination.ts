@@ -1,5 +1,5 @@
-import { PAGINATION } from '@/constants/pagination';
-import type { PaginatedResult, PaginationMeta, PaginationParams } from '@/types/pagination';
+import { PAGINATION } from '@/constants';
+import type { PaginatedResult, PaginationMeta, PaginationParams } from '@/types';
 
 /** Builds pagination metadata from raw totals. */
 export function createPaginationMeta(params: PaginationParams, totalItems: number): PaginationMeta {

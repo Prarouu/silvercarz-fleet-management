@@ -1,6 +1,6 @@
 import { format as formatDateFns, isValid, parseISO } from 'date-fns';
 
-import { appConfig } from '@/config/app';
+import { appConfig } from '@/config';
 
 function toDate(value: Date | string | number): Date | null {
   if (value instanceof Date) {
