@@ -61,19 +61,21 @@ an `is*` type guard. Prefer constants over raw strings in UI and services.
 
 ## Domain models
 
-| Model                            | Meaning                    |
-| -------------------------------- | -------------------------- |
-| `Vehicle`                        | Persisted vehicle row      |
-| `VehicleCreateInput`             | Insert payload             |
-| `VehicleUpdateInput`             | Update payload             |
-| `VehicleListFilters`             | Shared list filter shape   |
-| `Booking`                        | Persisted booking row      |
-| `BookingCreateInput`             | Insert payload             |
-| `BookingUpdateInput`             | Update payload             |
-| `BookingWithVehicle`             | Booking + nested `vehicle` |
-| `BookingListFilters`             | Shared list filter shape   |
-| `AuthUser` / `AuthenticatedUser` | App session user           |
-| `UserProfile`                    | Profile / RBAC row         |
+| Model                            | Meaning                     |
+| -------------------------------- | --------------------------- |
+| `Vehicle`                        | Persisted vehicle row       |
+| `VehicleCreateInput`             | Insert payload              |
+| `VehicleUpdateInput`             | Update payload              |
+| `VehicleListFilters`             | Shared list filter shape    |
+| `VehicleListQuery`               | Filters + sort + pagination |
+| `VehicleAvailabilityQuery`       | Future availability input   |
+| `Booking`                        | Persisted booking row       |
+| `BookingCreateInput`             | Insert payload              |
+| `BookingUpdateInput`             | Update payload              |
+| `BookingWithVehicle`             | Booking + nested `vehicle`  |
+| `BookingListFilters`             | Shared list filter shape    |
+| `AuthUser` / `AuthenticatedUser` | App session user            |
+| `UserProfile`                    | Profile / RBAC row          |
 
 Column names on booking/vehicle models match the database (**snake_case**) so
 validated values can be passed to Supabase without remapping.

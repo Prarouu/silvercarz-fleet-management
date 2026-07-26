@@ -54,7 +54,10 @@ export {
   createVehicleSchema,
   updateVehicleSchema,
   vehicleListFiltersSchema,
+  vehicleListQuerySchema,
+  vehicleSortFieldSchema,
   type CreateVehicleValues,
   type UpdateVehicleValues,
   type VehicleListFilterValues,
+  type VehicleListQueryValues,
 } from './vehicle';

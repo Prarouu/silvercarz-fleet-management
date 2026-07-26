@@ -122,8 +122,8 @@ Add a role by:
 ## Permission architecture
 
 Permissions live in `PERMISSIONS` (`app:access`, `profiles:read`,
-`profiles:manage`, …). Each role maps to `'all'` or an explicit list in
-`ROLE_PERMISSIONS`.
+`profiles:manage`, `bookings:*`, `vehicles:*`, …). Each role maps to `'all'`
+or an explicit list in `ROLE_PERMISSIONS`.
 
 Helpers (pure — no I/O):
 
@@ -303,7 +303,8 @@ pnpm dlx supabase gen types typescript --project-id <project-id> --schema public
 
 ## Out of scope (later phases)
 
-- Booking / vehicle CRUD UI and services (schema: [database.md](./database.md))
+- Booking / vehicle CRUD UI (data layers: [bookings-data-layer.md](./bookings-data-layer.md),
+  [vehicles-data-layer.md](./vehicles-data-layer.md); schema: [database.md](./database.md))
 - Customers / drivers as separate entities, reports
 - Admin user-management UI
 - Self-service password reset email flow

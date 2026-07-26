@@ -54,7 +54,8 @@ credential schemas. Session infrastructure and route guards live in
 errors. Call Server Actions from future UI — never import the repository in
 components. See [docs/bookings-data-layer.md](../../docs/bookings-data-layer.md).
 
-## Vehicles (types only)
+## Vehicles data layer
 
-`features/vehicles/` currently exports shared types and validation schemas.
-Vehicle repository/service and CRUD UI arrive in later phases.
+`features/vehicles/` includes repository, service, Server Actions, and domain
+errors. Call Server Actions from future UI — never import the repository in
+components. See [docs/vehicles-data-layer.md](../../docs/vehicles-data-layer.md).

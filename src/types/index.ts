@@ -70,8 +70,11 @@ export type {
 
 export type {
   Vehicle,
+  VehicleAvailabilityQuery,
   VehicleCreateInput,
   VehicleListFilters,
+  VehicleListQuery,
+  VehicleSortField,
   VehicleUpdateInput,
 } from './vehicle';
 

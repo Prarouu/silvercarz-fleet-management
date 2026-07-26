@@ -8,8 +8,11 @@
 export type {
   FuelType,
   Vehicle,
+  VehicleAvailabilityQuery,
   VehicleCreateInput,
   VehicleListFilters,
+  VehicleListQuery,
+  VehicleSortField,
   VehicleUpdateInput,
 } from '@/types';
 

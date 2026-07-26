@@ -25,6 +25,12 @@ export const PERMISSIONS = {
   bookingsWrite: 'bookings:write',
   /** Soft-delete / permanently delete bookings. */
   bookingsDelete: 'bookings:delete',
+  /** Read vehicles (list, search, detail). */
+  vehiclesRead: 'vehicles:read',
+  /** Create and update vehicles. */
+  vehiclesWrite: 'vehicles:write',
+  /** Soft-delete / permanently delete vehicles. */
+  vehiclesDelete: 'vehicles:delete',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
