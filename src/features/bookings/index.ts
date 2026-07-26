@@ -1,8 +1,7 @@
 /**
  * Bookings feature public exports.
  *
- * Data layer only in this phase — repository, service, Server Actions.
- * No UI / pages yet.
+ * Data layer + booking list UI. Create / edit / detail screens arrive later.
  */
 
 export type {
@@ -78,6 +77,8 @@ export {
   searchBookings,
   updateBooking,
 } from './actions';
+
+export { BookingList, BookingListSkeleton, BookingStatusBadge } from './components';
 
 export {
   bookingListFiltersSchema,

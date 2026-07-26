@@ -67,11 +67,11 @@ export interface BookingService {
   getBooking(id: string): Promise<ApiResponse<Booking>>;
   getBookingWithVehicle(id: string): Promise<ApiResponse<BookingWithVehicle>>;
   getBookingByInvoiceNumber(invoiceNumber: string): Promise<ApiResponse<Booking>>;
-  listBookings(query?: BookingListQuery): Promise<ApiResponse<PaginatedResult<Booking>>>;
+  listBookings(query?: BookingListQuery): Promise<ApiResponse<PaginatedResult<BookingWithVehicle>>>;
   searchBookings(
     search: string,
     query?: BookingListQuery,
-  ): Promise<ApiResponse<PaginatedResult<Booking>>>;
+  ): Promise<ApiResponse<PaginatedResult<BookingWithVehicle>>>;
   countBookings(filters?: BookingListFilters): Promise<ApiResponse<number>>;
   /** Extension point for sequential invoice numbers. */
   suggestInvoiceNumber(sequence: number, issuedOn?: string): string;

@@ -8,11 +8,11 @@
  */
 
 import { getBookingService } from '@/features/bookings/service';
-import type { ApiResponse, Booking, BookingListQuery, PaginatedResult } from '@/types';
+import type { ApiResponse, BookingListQuery, BookingWithVehicle, PaginatedResult } from '@/types';
 
 export async function searchBookings(
   search: string,
   query?: BookingListQuery,
-): Promise<ApiResponse<PaginatedResult<Booking>>> {
+): Promise<ApiResponse<PaginatedResult<BookingWithVehicle>>> {
   return getBookingService().searchBookings(search, query);
 }

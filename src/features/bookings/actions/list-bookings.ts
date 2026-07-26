@@ -7,15 +7,15 @@
 import { getBookingService } from '@/features/bookings/service';
 import type {
   ApiResponse,
-  Booking,
   BookingListFilters,
   BookingListQuery,
+  BookingWithVehicle,
   PaginatedResult,
 } from '@/types';
 
 export async function listBookings(
   query?: BookingListQuery,
-): Promise<ApiResponse<PaginatedResult<Booking>>> {
+): Promise<ApiResponse<PaginatedResult<BookingWithVehicle>>> {
   return getBookingService().listBookings(query);
 }
 

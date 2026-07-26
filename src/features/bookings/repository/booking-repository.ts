@@ -50,8 +50,8 @@ export interface BookingRepository {
   findById(id: string): Promise<Booking | null>;
   findByIdWithVehicle(id: string): Promise<BookingWithVehicle | null>;
   findByInvoiceNumber(invoiceNumber: string): Promise<Booking | null>;
-  list(query?: BookingListQuery): Promise<PaginatedResult<Booking>>;
-  search(search: string, query?: BookingListQuery): Promise<PaginatedResult<Booking>>;
+  list(query?: BookingListQuery): Promise<PaginatedResult<BookingWithVehicle>>;
+  search(search: string, query?: BookingListQuery): Promise<PaginatedResult<BookingWithVehicle>>;
   count(filters?: BookingListFilters): Promise<number>;
   /**
    * Returns non-cancelled bookings for a vehicle that overlap a date range.
@@ -295,7 +295,7 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         vehicleIds = await resolveVehicleIdsByNumber(client, searchTerm);
       }
 
-      let builder = client.from('bookings').select('*', { count: 'exact' });
+      let builder = client.from('bookings').select('*, vehicle:vehicles(*)', { count: 'exact' });
       builder = applyNonSearchFilters(
         builder as unknown as FilterableBuilder,
         query,
@@ -313,7 +313,9 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         throw mapPersistenceError(error);
       }
 
-      return createPaginatedResult(data ?? [], pagination, count ?? 0);
+      const rows = (data ?? []).filter((row): row is BookingWithVehicle => row.vehicle != null);
+
+      return createPaginatedResult(rows, pagination, count ?? 0);
     },
 
     async search(search, query = {}) {

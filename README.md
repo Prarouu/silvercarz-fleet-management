@@ -2,7 +2,7 @@
 
 Internal rental and fleet management software for **Silver Carz** (Nagpur, Maharashtra). A dashboard-first application used exclusively by internal staff (max 5 admins — Owner and Manager roles). There is no customer login and no public portal.
 
-> **Status:** Phase 3.4 — vehicle data layer (repository, service, Server Actions). No vehicle UI yet.
+> **Status:** Phase 4.1 — booking list page. Create / edit booking UI not started.
 
 ## Tech Stack
 
@@ -128,6 +128,7 @@ Deep dives:
 - [docs/database.md](./docs/database.md) — vehicles & bookings schema, ER, indexes, RLS
 - [docs/types-and-validation.md](./docs/types-and-validation.md) — domain models, enums, Zod
 - [docs/bookings-data-layer.md](./docs/bookings-data-layer.md) — booking repository / service / actions
+- [docs/bookings-list.md](./docs/bookings-list.md) — booking list table UI
 - [docs/vehicles-data-layer.md](./docs/vehicles-data-layer.md) — vehicle repository / service / actions
 - [docs/conventions.md](./docs/conventions.md) — naming, git, imports, TypeScript
 - [src/features/README.md](./src/features/README.md) — feature folder layout

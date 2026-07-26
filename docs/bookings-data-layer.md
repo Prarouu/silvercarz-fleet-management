@@ -135,10 +135,18 @@ Pure helpers in `service/booking-calculations.ts`:
 3. **Cursor pagination** — honor `BookingListQuery.cursor` beside offset/`range`.
 4. **Stricter availability** — Postgres exclusion constraints; service already calls overlap lookup.
 5. **Role divergence** — remove `'all'` from managers for `bookings:delete` when needed.
-6. **UI** — pages call Server Actions only; no repository imports in components.
+6. **UI** — list screen at `/bookings` (see [bookings-list.md](./bookings-list.md));
+   pages call Server Actions only; no repository imports in components.
+
+## List query note
+
+`list` / `search` return `BookingWithVehicle` (embedded `vehicle:vehicles(*)`)
+so the bookings table can render vehicle name and registration without N+1
+lookups.
 
 ## Related docs
 
+- [Bookings list UI](./bookings-list.md)
 - [Database schema](./database.md)
 - [Types & validation](./types-and-validation.md)
 - [Authentication](./authentication.md)

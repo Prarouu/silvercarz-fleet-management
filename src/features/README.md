@@ -48,11 +48,14 @@ Shared booking/vehicle models and Zod schemas live in `@/types` and
 credential schemas. Session infrastructure and route guards live in
 `@/lib/auth` — import those from there, not from this folder.
 
-## Bookings data layer
+## Bookings
 
-`features/bookings/` includes repository, service, Server Actions, and domain
-errors. Call Server Actions from future UI — never import the repository in
-components. See [docs/bookings-data-layer.md](../../docs/bookings-data-layer.md).
+`features/bookings/` includes repository, service, Server Actions, domain
+errors, and the booking list UI. Call Server Actions from UI — never import the
+repository in components.
+
+- [Bookings data layer](../../docs/bookings-data-layer.md)
+- [Bookings list UI](../../docs/bookings-list.md)
 
 ## Vehicles data layer
 
