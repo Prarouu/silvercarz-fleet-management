@@ -70,6 +70,26 @@ export interface BookingVehicleOverlapQuery {
   readonly excludeBookingId?: string;
 }
 
+/**
+ * Fleet-wide overlap query for calendar / scheduler viewports.
+ * Closed-interval overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
+ */
+export interface BookingFleetOverlapQuery {
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+  readonly vehicleId?: string;
+  readonly vehicleIds?: readonly string[];
+  readonly driverName?: string;
+  readonly search?: string;
+  /** When false (default), cancelled rows are excluded. */
+  readonly includeCancelled?: boolean;
+  /** When true (default), draft rows are excluded from the schedule. */
+  readonly excludeDraft?: boolean;
+  readonly excludeBookingId?: string;
+  /** Soft cap to avoid unbounded history loads (calendar viewports). */
+  readonly limit?: number;
+}
+
 /** Input for the Booking Conflict Detection Engine. */
 export interface BookingConflictCheckParams {
   readonly vehicleId: string;

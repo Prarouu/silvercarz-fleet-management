@@ -20,6 +20,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type {
   Booking,
   BookingCreateInput,
+  BookingFleetOverlapQuery,
   BookingListFilters,
   BookingListQuery,
   BookingSortField,
@@ -65,6 +66,12 @@ export interface BookingRepository {
    * Overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
    */
   findOverlappingForVehicle(params: BookingVehicleOverlapQuery): Promise<Booking[]>;
+  /**
+   * Fleet-wide bookings overlapping a calendar viewport (with vehicle join).
+   * Closed-interval overlap — used by the Fleet Availability Calendar.
+   * Does not invent availability; callers compose Status / Availability engines.
+   */
+  findOverlappingInRange(params: BookingFleetOverlapQuery): Promise<BookingWithVehicle[]>;
 }
 
 function escapeIlike(value: string): string {
@@ -437,6 +444,59 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
       }
 
       return data ?? [];
+    },
+
+    async findOverlappingInRange(params) {
+      const limit = Math.min(Math.max(params.limit ?? 500, 1), 1000);
+      const excludeDraft = params.excludeDraft !== false;
+
+      let builder = client
+        .from('bookings')
+        .select('*, vehicle:vehicles(*)')
+        .lte('delivery_date', params.returnDate)
+        .gte('return_date', params.deliveryDate)
+        .order('delivery_date', { ascending: true })
+        .limit(limit);
+
+      if (!params.includeCancelled) {
+        builder = builder.neq('status', BOOKING_STATUSES.cancelled);
+      }
+
+      if (excludeDraft) {
+        builder = builder.neq('status', BOOKING_STATUSES.draft);
+      }
+
+      if (params.vehicleId) {
+        builder = builder.eq('vehicle_id', params.vehicleId);
+      } else if (params.vehicleIds && params.vehicleIds.length > 0) {
+        builder = builder.in('vehicle_id', [...params.vehicleIds]);
+      } else if (params.vehicleIds && params.vehicleIds.length === 0) {
+        return [];
+      }
+
+      if (params.excludeBookingId) {
+        builder = builder.neq('id', params.excludeBookingId);
+      }
+
+      const driverTerm = params.driverName?.trim();
+      if (driverTerm) {
+        const pattern = `%${escapeIlike(driverTerm)}%`;
+        builder = builder.ilike('driver_name', pattern);
+      }
+
+      const searchTerm = params.search?.trim();
+      if (searchTerm) {
+        const vehicleIds = await resolveVehicleIdsByNumber(client, searchTerm);
+        builder = builder.or(buildSearchOrFilter(searchTerm, vehicleIds));
+      }
+
+      const { data, error } = await builder;
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      return (data ?? []).filter((row): row is BookingWithVehicle => row.vehicle != null);
     },
   };
 

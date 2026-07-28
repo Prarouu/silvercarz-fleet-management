@@ -77,6 +77,7 @@ export type {
   BookingSortField,
   BookingUpdateInput,
   BookingVehicleOverlapQuery,
+  BookingFleetOverlapQuery,
   BookingWithVehicle,
 } from './booking';
 

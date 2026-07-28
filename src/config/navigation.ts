@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   CalendarRange,
   Car,
   LayoutDashboard,
@@ -24,6 +25,7 @@ export interface NavItem {
 export const mainNavItems: readonly NavItem[] = [
   { title: 'Dashboard', href: ROUTES.dashboard, icon: LayoutDashboard },
   { title: 'Bookings', href: ROUTES.bookings, icon: CalendarRange },
+  { title: 'Calendar', href: ROUTES.calendar, icon: CalendarDays },
   { title: 'Vehicles', href: ROUTES.vehicles, icon: Car },
   { title: 'Customers', href: ROUTES.customers, icon: Users },
   { title: 'Drivers', href: ROUTES.drivers, icon: UserRound },

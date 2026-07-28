@@ -15,6 +15,7 @@ export const ROUTES = {
   bookingsNew: '/bookings/new',
   vehicles: '/vehicles',
   vehiclesNew: '/vehicles/new',
+  calendar: '/calendar',
   customers: '/customers',
   drivers: '/drivers',
   settings: '/settings',

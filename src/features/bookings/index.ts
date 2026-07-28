@@ -16,6 +16,7 @@ export type {
   BookingStatus,
   BookingUpdateInput,
   BookingVehicleOverlapQuery,
+  BookingFleetOverlapQuery,
   BookingWithVehicle,
   PaymentMethod,
   RentalMode,

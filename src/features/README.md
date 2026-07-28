@@ -73,3 +73,11 @@ from UI — never import the repository in components.
 - [Create Vehicle UI](../../docs/vehicles-create.md)
 - [Edit Vehicle UI](../../docs/vehicles-edit.md)
 - [Vehicle Details UI](../../docs/vehicles-details.md)
+
+## Calendar
+
+`features/calendar/` is the Fleet Availability Calendar — scheduling read model
+over bookings and vehicles. It reuses Availability, Status, Conflict, and
+Pricing engines; it does not edit bookings or invent overlap rules.
+
+- [Fleet Availability Calendar](../../docs/fleet-availability-calendar.md)
