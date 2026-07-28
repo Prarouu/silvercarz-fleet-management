@@ -12,15 +12,18 @@ components, never by reading the last booking row, and never in Server Actions.
 
 Examples:
 
-- `SC-2026-0001`
-- `SC-2026-0002`
-- `SC-2027-0001` (new year resets the sequence)
+- `SC-2026-00001`
+- `SC-2026-00002`
+- `SC-2027-00001` (new year resets the sequence)
 
-| Segment    | Source                                                     |
-| ---------- | ---------------------------------------------------------- |
-| `prefix`   | Configurable company prefix (default `SC`)                 |
-| `year`     | UTC calendar year at allocation time                       |
-| `sequence` | Zero-padded yearly counter (`XXXX`, width from config = 4) |
+| Segment    | Source                                                 |
+| ---------- | ------------------------------------------------------ |
+| `prefix`   | Configurable company prefix (default `SC`)             |
+| `year`     | UTC calendar year at allocation time                   |
+| `sequence` | Zero-padded yearly counter (width from config = **5**) |
+
+Existing bookings created before the sequence table (any zero-pad width) are
+parsed and used as a floor so New Booking never reuses an already-taken number.
 
 Future format changes should only require config / formatter updates.
 
@@ -70,13 +73,19 @@ Unique constraint: `(prefix, year)`.
 
 ### RPCs
 
-| Function                                   | Behavior                                             |
-| ------------------------------------------ | ---------------------------------------------------- |
-| `next_invoice_sequence(prefix, year)`      | Atomically inserts or increments; returns next value |
-| `peek_next_invoice_sequence(prefix, year)` | Returns next value **without** incrementing          |
+| Function                                     | Behavior                                                             |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `max_booking_invoice_sequence(prefix, year)` | Highest sequence already on `bookings` for that prefix/year          |
+| `next_invoice_sequence(prefix, year)`        | Atomically allocates next value floored by existing bookings         |
+| `peek_next_invoice_sequence(prefix, year)`   | Returns next value **without** incrementing (includes booking floor) |
 
-Both are `SECURITY DEFINER` so authenticated staff can allocate without direct
-table writes. RLS allows staff `SELECT` only; mutations go through the RPC.
+Both allocate/peek RPCs are `SECURITY DEFINER` so authenticated staff can
+allocate without direct table writes. RLS allows staff `SELECT` only; mutations
+go through the RPC.
+
+Migration `20260728150000_sync_invoice_sequences_from_bookings.sql` seeds
+`invoice_sequences` from existing `bookings.invoice_number` rows and keeps peek /
+next floored by that max going forward.
 
 ## Concurrency strategy
 
@@ -109,7 +118,7 @@ Edit flows keep the existing invoice read-only; updates never change it.
 | Setting                 | Location                        | Default |
 | ----------------------- | ------------------------------- | ------- |
 | Company prefix          | `INVOICE_COMPANY_PREFIX` env    | `SC`    |
-| Sequence zero-pad width | `invoiceConfig.sequencePadding` | `4`     |
+| Sequence zero-pad width | `invoiceConfig.sequencePadding` | `5`     |
 
 ```ts
 import { invoiceConfig, formatInvoiceNumber, resolveInvoicePrefix } from '@/config';

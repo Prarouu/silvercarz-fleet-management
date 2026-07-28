@@ -1,7 +1,7 @@
 /**
  * Invoice numbering configuration.
  *
- * Format: `{prefix}-{year}-{sequence}` → e.g. SC-2026-0001
+ * Format: `{prefix}-{year}-{sequence}` → e.g. SC-2026-00001
  * Override the company prefix via `INVOICE_COMPANY_PREFIX` (server env).
  */
 
@@ -9,8 +9,11 @@ export const invoiceConfig = {
   /** Default company prefix when env is unset. */
   prefix: 'SC',
 
-  /** Zero-pad width for the yearly sequence segment (XXXX). */
-  sequencePadding: 4,
+  /**
+   * Zero-pad width for the yearly sequence segment.
+   * Uses 5 digits to match existing bookings (e.g. SC-2026-00001).
+   */
+  sequencePadding: 5,
 
   /** Inclusive year bounds accepted by the database allocator. */
   minYear: 2000,
