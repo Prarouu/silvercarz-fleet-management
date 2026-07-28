@@ -186,7 +186,7 @@ export function VehicleListToolbar({ state, className }: VehicleListToolbarProps
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             onClick={() => {
               startTransition(() => {
                 router.refresh();
@@ -201,7 +201,7 @@ export function VehicleListToolbar({ state, className }: VehicleListToolbarProps
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             disabled={!hasFilters}
             onClick={() => {
               setSearchInput('');

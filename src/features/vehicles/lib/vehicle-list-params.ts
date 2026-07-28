@@ -18,7 +18,9 @@ const SORT_FIELDS = new Set<VehicleSortField>([
 export const VEHICLE_AVAILABILITY_FILTERS = {
   available: 'available',
   booked: 'booked',
+  reserved: 'reserved',
   maintenance: 'maintenance',
+  inactive: 'inactive',
 } as const;
 
 export type VehicleAvailabilityFilter =
@@ -30,7 +32,9 @@ export const VEHICLE_AVAILABILITY_FILTER_OPTIONS: ReadonlyArray<{
 }> = [
   { value: 'available', label: 'Available' },
   { value: 'booked', label: 'Booked' },
+  { value: 'reserved', label: 'Reserved' },
   { value: 'maintenance', label: 'Maintenance' },
+  { value: 'inactive', label: 'Inactive' },
 ];
 
 /** Status filter values exposed in the fleet toolbar. */
@@ -90,7 +94,9 @@ function isAvailabilityFilter(value: string): value is VehicleAvailabilityFilter
   return (
     value === VEHICLE_AVAILABILITY_FILTERS.available ||
     value === VEHICLE_AVAILABILITY_FILTERS.booked ||
-    value === VEHICLE_AVAILABILITY_FILTERS.maintenance
+    value === VEHICLE_AVAILABILITY_FILTERS.reserved ||
+    value === VEHICLE_AVAILABILITY_FILTERS.maintenance ||
+    value === VEHICLE_AVAILABILITY_FILTERS.inactive
   );
 }
 
@@ -161,7 +167,9 @@ export function toVehicleListQuery(state: VehicleListUrlState): VehicleListQuery
 
   if (
     state.availability === VEHICLE_AVAILABILITY_FILTERS.booked ||
-    state.availability === VEHICLE_AVAILABILITY_FILTERS.maintenance
+    state.availability === VEHICLE_AVAILABILITY_FILTERS.reserved ||
+    state.availability === VEHICLE_AVAILABILITY_FILTERS.maintenance ||
+    state.availability === VEHICLE_AVAILABILITY_FILTERS.inactive
   ) {
     return {
       ...query,

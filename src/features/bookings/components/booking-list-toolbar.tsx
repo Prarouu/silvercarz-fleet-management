@@ -18,8 +18,9 @@ import {
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
+import { BOOKING_DISPLAY_STATUS_OPTIONS } from '@/features/bookings/service/status.service';
 import { useDebounce } from '@/hooks';
-import { BOOKING_STATUS_OPTIONS, RENTAL_MODE_OPTIONS } from '@/types';
+import { RENTAL_MODE_OPTIONS } from '@/types';
 import { cn } from '@/lib/utils';
 
 const ALL_VALUE = '__all__';
@@ -83,7 +84,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Invoice, customer, contact, vehicle…"
-                className={cn('pl-8', searchInput && 'pr-8')}
+                className={cn('pl-8', searchInput && 'pr-10 sm:pr-8')}
                 autoComplete="off"
                 enterKeyHint="search"
               />
@@ -122,7 +123,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_VALUE}>All statuses</SelectItem>
-                {BOOKING_STATUS_OPTIONS.map((option) => (
+                {BOOKING_DISPLAY_STATUS_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -178,7 +179,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             onClick={() => {
               startTransition(() => {
                 router.refresh();
@@ -193,7 +194,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             disabled={!hasFilters}
             onClick={() => {
               setSearchInput('');

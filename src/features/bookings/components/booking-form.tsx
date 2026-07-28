@@ -21,28 +21,32 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ROUTES } from '@/constants/routes';
 import { createBooking } from '@/features/bookings/actions/create-booking';
+import { deleteBooking } from '@/features/bookings/actions/delete-booking';
 import { updateBooking } from '@/features/bookings/actions/update-booking';
 import {
   BookingFormField,
   fieldAriaProps,
 } from '@/features/bookings/components/booking-form-field';
 import { BookingFormSection } from '@/features/bookings/components/booking-form-section';
+import { BookingPricingSummary } from '@/features/bookings/components/booking-pricing-summary';
+import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import {
   BOOKING_PAYMENT_OPTIONS,
   createBookingFormDefaults,
   formatVehicleOptionLabel,
+  isVehicleSelectionBlocked,
   parseOptionalNumber,
   validateCreateBookingForm,
   validateUpdateBookingForm,
   type BookingFormValues,
   type VehicleSelectOption,
 } from '@/features/bookings/lib/booking-form';
+import { previewPricing } from '@/features/bookings/service/pricing.service';
 import {
-  calculateBookingAmount,
-  calculateDurationDays,
-  calculateTotalAmount,
-  calculateTotalKilometers,
-} from '@/features/bookings/service/booking-calculations';
+  BOOKING_DISPLAY_STATUSES,
+  getBookingStatusPresentation,
+} from '@/features/bookings/service/status.service';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { cn } from '@/lib/utils';
 import { RENTAL_MODE_OPTIONS, type BookingStatus } from '@/types';
 
@@ -60,6 +64,8 @@ type EditBookingFormProps = BookingFormBaseProps & {
   readonly mode: 'edit';
   readonly bookingId: string;
   readonly bookingStatus: BookingStatus;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
   readonly defaultValues: BookingFormValues;
 };
 
@@ -69,6 +75,9 @@ type PaymentMethodValue = NonNullable<BookingFormValues['payment_method']>;
 
 const UNSAVED_CHANGES_MESSAGE =
   'You have unsaved changes. Leave this page? Your edits will be lost.';
+
+const CANCEL_BOOKING_MESSAGE =
+  'Cancel this booking? The vehicle will be released according to availability rules.';
 
 export function BookingForm(props: BookingFormProps) {
   const { vehicles, className, mode } = props;
@@ -102,63 +111,100 @@ export function BookingForm(props: BookingFormProps) {
   const duration = useWatch({ control, name: 'duration' });
   const totalKilometers = useWatch({ control, name: 'total_kilometers' });
   const bookingAmountValue = useWatch({ control, name: 'booking_amount' });
+  const cautionMoneyValue = useWatch({ control, name: 'caution_money' });
   const totalAmountValue = useWatch({ control, name: 'total_amount' });
+  const selectedVehicleId = useWatch({ control, name: 'vehicle_id' });
+
+  // Pricing Engine owns every derived money / distance value shown on the form.
+  const pricing = previewPricing({
+    dailyRate: dailyCharge ?? 0,
+    extraKilometerRate: kilometerRate,
+    deliveryDate: deliveryDate || undefined,
+    returnDate: returnDate || undefined,
+    startOdometer,
+    endOdometer,
+    amountPaid: bookingAmountValue ?? 0,
+    securityDeposit: cautionMoneyValue ?? 0,
+  });
 
   useEffect(() => {
-    if (!deliveryDate || !returnDate) {
+    const nextDuration = pricing.rentalDays > 0 ? pricing.rentalDays : null;
+    if (nextDuration === duration) {
       return;
     }
-
-    const nextDuration = calculateDurationDays(deliveryDate, returnDate);
-    const nextValue = nextDuration > 0 ? nextDuration : null;
-    if (nextValue === duration) {
-      return;
-    }
-    setValue('duration', nextValue, {
+    setValue('duration', nextDuration, {
       shouldValidate: false,
       shouldDirty: false,
     });
-  }, [deliveryDate, returnDate, duration, setValue]);
+  }, [pricing.rentalDays, duration, setValue]);
 
   useEffect(() => {
-    const nextKm = calculateTotalKilometers(startOdometer, endOdometer);
-    if (nextKm === totalKilometers) {
+    if (pricing.totalKilometers === totalKilometers) {
       return;
     }
-    setValue('total_kilometers', nextKm, { shouldValidate: false, shouldDirty: false });
-  }, [startOdometer, endOdometer, totalKilometers, setValue]);
-
-  useEffect(() => {
-    if (dailyCharge == null || duration == null || duration <= 0) {
-      return;
-    }
-
-    const bookingAmount = calculateBookingAmount({
-      dailyCharge,
-      durationDays: duration,
-      kilometerRate,
-      totalKilometers,
+    setValue('total_kilometers', pricing.totalKilometers, {
+      shouldValidate: false,
+      shouldDirty: false,
     });
-    const totalAmount = calculateTotalAmount(bookingAmount);
+  }, [pricing.totalKilometers, totalKilometers, setValue]);
 
-    if (bookingAmount !== bookingAmountValue) {
-      setValue('booking_amount', bookingAmount, { shouldValidate: false, shouldDirty: false });
+  useEffect(() => {
+    if (pricing.grandTotal === totalAmountValue) {
+      return;
     }
-    if (totalAmount !== totalAmountValue) {
-      setValue('total_amount', totalAmount, { shouldValidate: false, shouldDirty: false });
+    setValue('total_amount', pricing.grandTotal, {
+      shouldValidate: false,
+      shouldDirty: false,
+    });
+  }, [pricing.grandTotal, totalAmountValue, setValue]);
+
+  useEffect(() => {
+    if (!selectedVehicleId || mode === 'edit') {
+      return;
     }
-  }, [
-    dailyCharge,
-    duration,
-    kilometerRate,
-    totalKilometers,
-    bookingAmountValue,
-    totalAmountValue,
-    setValue,
-  ]);
+
+    const vehicle = vehicles.find((option) => option.id === selectedVehicleId);
+    if (!vehicle) {
+      return;
+    }
+
+    if (vehicle.default_daily_rate != null && dailyCharge == null) {
+      setValue('daily_charge', vehicle.default_daily_rate, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+
+    if (vehicle.extra_kilometer_rate != null && kilometerRate == null) {
+      setValue('kilometer_rate', vehicle.extra_kilometer_rate, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+
+    if (
+      vehicle.security_deposit != null &&
+      (cautionMoneyValue == null || cautionMoneyValue === 0)
+    ) {
+      setValue('caution_money', vehicle.security_deposit, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [selectedVehicleId, vehicles, mode, dailyCharge, kilometerRate, cautionMoneyValue, setValue]);
 
   const isLoading = isSubmitting || isPending;
   const formError = errors.root?.message;
+  const editStatusPresentation =
+    mode === 'edit'
+      ? getBookingStatusPresentation({
+          status: props.bookingStatus,
+          delivery_date: deliveryDate || props.deliveryDate,
+          return_date: returnDate || props.returnDate,
+        })
+      : null;
+  const isCancelled =
+    mode === 'edit' && editStatusPresentation?.status === BOOKING_DISPLAY_STATUSES.cancelled;
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -180,6 +226,32 @@ export function BookingForm(props: BookingFormProps) {
     }
 
     router.push(ROUTES.bookings);
+  };
+
+  const handleCancelBooking = () => {
+    if (mode !== 'edit' || isCancelled) {
+      return;
+    }
+
+    if (!window.confirm(CANCEL_BOOKING_MESSAGE)) {
+      return;
+    }
+
+    clearErrors('root');
+    startTransition(async () => {
+      const result = await deleteBooking(props.bookingId);
+
+      if (!result.success) {
+        setError('root', { type: 'server', message: result.error.message });
+        return;
+      }
+
+      toast.success('Booking cancelled', {
+        description: `Invoice ${result.data.invoice_number} was cancelled.`,
+      });
+      router.push(ROUTES.bookings);
+      router.refresh();
+    });
   };
 
   const onSubmit = handleSubmit((values) => {
@@ -218,10 +290,21 @@ export function BookingForm(props: BookingFormProps) {
             });
           }
 
-          if (result.error.code === 'vehicle_unavailable') {
+          if (
+            result.error.code === 'vehicle_unavailable' ||
+            result.error.code === 'booking_conflict'
+          ) {
             setError('vehicle_id', {
               type: 'server',
               message: result.error.message,
+            });
+            setError('delivery_date', {
+              type: 'server',
+              message: 'Choose dates that do not overlap an existing hire.',
+            });
+            setError('return_date', {
+              type: 'server',
+              message: 'Choose dates that do not overlap an existing hire.',
             });
           }
 
@@ -237,7 +320,7 @@ export function BookingForm(props: BookingFormProps) {
       return;
     }
 
-    const validated = validateUpdateBookingForm(values, props.bookingStatus);
+    const validated = validateUpdateBookingForm(values);
 
     if (!validated.success) {
       for (const [field, message] of Object.entries(validated.fieldErrors)) {
@@ -262,10 +345,21 @@ export function BookingForm(props: BookingFormProps) {
           });
         }
 
-        if (result.error.code === 'vehicle_unavailable') {
+        if (
+          result.error.code === 'vehicle_unavailable' ||
+          result.error.code === 'booking_conflict'
+        ) {
           setError('vehicle_id', {
             type: 'server',
             message: result.error.message,
+          });
+          setError('delivery_date', {
+            type: 'server',
+            message: 'Choose dates that do not overlap an existing hire.',
+          });
+          setError('return_date', {
+            type: 'server',
+            message: 'Choose dates that do not overlap an existing hire.',
           });
         }
 
@@ -299,7 +393,7 @@ export function BookingForm(props: BookingFormProps) {
       aria-describedby={formError ? formErrorId : undefined}
     >
       {formError ? (
-        <Alert variant="destructive" id={formErrorId}>
+        <Alert variant="destructive" id={formErrorId} aria-live="assertive">
           <AlertTitle>{alertTitle}</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
         </Alert>
@@ -309,7 +403,7 @@ export function BookingForm(props: BookingFormProps) {
         title="Booking Information"
         description="Invoice identity and rental mode for this booking."
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <BookingFormField
             id="invoice_number"
             label="Invoice Number"
@@ -346,7 +440,11 @@ export function BookingForm(props: BookingFormProps) {
               control={control}
               name="mode"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={isLoading || isCancelled}
+                >
                   <SelectTrigger
                     className="w-full"
                     {...fieldAriaProps({
@@ -377,7 +475,7 @@ export function BookingForm(props: BookingFormProps) {
           >
             <Input
               type="date"
-              disabled={isLoading}
+              disabled={isLoading || isCancelled}
               {...fieldAriaProps({
                 id: 'invoice_date',
                 required: true,
@@ -386,6 +484,46 @@ export function BookingForm(props: BookingFormProps) {
               {...register('invoice_date')}
             />
           </BookingFormField>
+
+          {mode === 'edit' && editStatusPresentation ? (
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+              <Label id="booking-status-label">Status</Label>
+              <div
+                className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                role="group"
+                aria-labelledby="booking-status-label"
+              >
+                <div className="space-y-1">
+                  <BookingStatusBadge
+                    booking={{
+                      status: props.bookingStatus,
+                      delivery_date: deliveryDate || props.deliveryDate,
+                      return_date: returnDate || props.returnDate,
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editStatusPresentation.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Lifecycle status updates automatically from delivery and return dates. It cannot
+                    be edited manually.
+                  </p>
+                </div>
+                {!isCancelled ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 text-destructive"
+                    disabled={isLoading}
+                    onClick={handleCancelBooking}
+                    aria-label="Cancel this booking"
+                  >
+                    Cancel Booking
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </BookingFormSection>
 
@@ -526,7 +664,7 @@ export function BookingForm(props: BookingFormProps) {
             id="vehicle_id"
             label="Vehicle"
             required
-            description="Only active vehicles are listed."
+            description="Available vehicles can be selected. Booked, maintenance, and inactive vehicles are disabled."
             error={errors.vehicle_id?.message}
             className="sm:col-span-2"
           >
@@ -536,7 +674,20 @@ export function BookingForm(props: BookingFormProps) {
               render={({ field }) => (
                 <Select
                   value={field.value ? field.value : undefined}
-                  onValueChange={(value) => field.onChange(value ?? '')}
+                  onValueChange={(value) => {
+                    if (!value) {
+                      return;
+                    }
+                    const selected = vehicles.find((vehicle) => vehicle.id === value);
+                    if (
+                      selected &&
+                      isVehicleSelectionBlocked(selected) &&
+                      selected.id !== field.value
+                    ) {
+                      return;
+                    }
+                    field.onChange(value);
+                  }}
                   disabled={isLoading || vehicles.length === 0}
                 >
                   <SelectTrigger
@@ -545,26 +696,76 @@ export function BookingForm(props: BookingFormProps) {
                       id: 'vehicle_id',
                       required: true,
                       error: errors.vehicle_id?.message,
-                      description: 'Only active vehicles are listed.',
+                      description:
+                        'Available vehicles can be selected. Booked, maintenance, and inactive vehicles are disabled.',
                     })}
                   >
                     <SelectValue
                       placeholder={
-                        vehicles.length === 0 ? 'No active vehicles available' : 'Select vehicle'
+                        vehicles.length === 0 ? 'No vehicles available' : 'Select vehicle'
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {formatVehicleOptionLabel(vehicle)}
-                      </SelectItem>
-                    ))}
+                    {vehicles.map((vehicle) => {
+                      const blocked =
+                        isVehicleSelectionBlocked(vehicle) && vehicle.id !== field.value;
+
+                      return (
+                        <SelectItem
+                          key={vehicle.id}
+                          value={vehicle.id}
+                          disabled={blocked}
+                          aria-label={
+                            blocked
+                              ? `${formatVehicleOptionLabel(vehicle)} (not selectable)`
+                              : formatVehicleOptionLabel(vehicle)
+                          }
+                          className="py-2"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <VehicleThumbnail
+                              imagePath={vehicle.image_path}
+                              alt={`${vehicle.vehicle_name} photo`}
+                              size="xs"
+                            />
+                            <span className="truncate">{formatVehicleOptionLabel(vehicle)}</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
             />
           </BookingFormField>
+
+          {selectedVehicleId
+            ? (() => {
+                const selected = vehicles.find((vehicle) => vehicle.id === selectedVehicleId);
+                if (!selected) {
+                  return null;
+                }
+                return (
+                  <div className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2">
+                    <VehicleThumbnail
+                      imagePath={selected.image_path}
+                      alt={`${selected.vehicle_name} photo`}
+                      size="md"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        Selected vehicle
+                      </p>
+                      <p className="truncate font-medium">{selected.vehicle_name}</p>
+                      <p className="truncate text-sm text-muted-foreground tabular-nums">
+                        {selected.vehicle_number}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()
+            : null}
 
           <BookingFormField
             id="driver_name"
@@ -634,9 +835,9 @@ export function BookingForm(props: BookingFormProps) {
 
       <BookingFormSection
         title="Pricing"
-        description="Charges, distance, and duration. Derived fields update automatically."
+        description="Rates and distance. Derived fields come from the Pricing Engine."
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <BookingFormField
             id="daily_charge"
             label="Per Day Charge"
@@ -755,7 +956,7 @@ export function BookingForm(props: BookingFormProps) {
           <BookingFormField
             id="total_kilometers"
             label="Total Kilometers"
-            description="Calculated from odometer readings."
+            description="Calculated by the Pricing Engine from odometer readings."
             error={errors.total_kilometers?.message}
           >
             <Input
@@ -769,7 +970,7 @@ export function BookingForm(props: BookingFormProps) {
               {...fieldAriaProps({
                 id: 'total_kilometers',
                 error: errors.total_kilometers?.message,
-                description: 'Calculated from odometer readings.',
+                description: 'Calculated by the Pricing Engine from odometer readings.',
               })}
             />
           </BookingFormField>
@@ -802,17 +1003,19 @@ export function BookingForm(props: BookingFormProps) {
             />
           </BookingFormField>
         </div>
+
+        <BookingPricingSummary pricing={pricing} live className="mt-2" />
       </BookingFormSection>
 
       <BookingFormSection
         title="Payment"
-        description="Amounts collected for this booking. Caution money is tracked separately."
+        description="Amount paid and security deposit. Grand total is owned by the Pricing Engine."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <BookingFormField
             id="booking_amount"
             label="Booking Amount"
-            description="Auto-calculated from per-day charge, duration, and km rate."
+            description="Amount paid toward this hire (advance). Not the grand total."
             error={errors.booking_amount?.message}
           >
             <Controller
@@ -831,7 +1034,7 @@ export function BookingForm(props: BookingFormProps) {
                   {...fieldAriaProps({
                     id: 'booking_amount',
                     error: errors.booking_amount?.message,
-                    description: 'Auto-calculated from per-day charge, duration, and km rate.',
+                    description: 'Amount paid toward this hire (advance). Not the grand total.',
                   })}
                 />
               )}
@@ -841,6 +1044,7 @@ export function BookingForm(props: BookingFormProps) {
           <BookingFormField
             id="caution_money"
             label="Caution Money"
+            description="Security deposit — tracked separately from remaining balance."
             error={errors.caution_money?.message}
           >
             <Controller
@@ -859,6 +1063,7 @@ export function BookingForm(props: BookingFormProps) {
                   {...fieldAriaProps({
                     id: 'caution_money',
                     error: errors.caution_money?.message,
+                    description: 'Security deposit — tracked separately from remaining balance.',
                   })}
                 />
               )}
@@ -904,30 +1109,23 @@ export function BookingForm(props: BookingFormProps) {
 
           <BookingFormField
             id="total_amount"
-            label="Total Amount"
-            description="Defaults to booking amount; ready for future total rules."
+            label="Grand Total"
+            description="Calculated by the Pricing Engine (rental + kilometer charges)."
             error={errors.total_amount?.message}
           >
-            <Controller
-              control={control}
-              name="total_amount"
-              render={({ field }) => (
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  disabled={isLoading}
-                  value={field.value ?? ''}
-                  onBlur={field.onBlur}
-                  onChange={(event) => field.onChange(parseOptionalNumber(event.target.value) ?? 0)}
-                  {...fieldAriaProps({
-                    id: 'total_amount',
-                    error: errors.total_amount?.message,
-                    description: 'Defaults to booking amount; ready for future total rules.',
-                  })}
-                />
-              )}
+            <Input
+              type="number"
+              inputMode="decimal"
+              readOnly
+              tabIndex={-1}
+              disabled={isLoading}
+              value={totalAmountValue ?? ''}
+              className="bg-muted/40"
+              {...fieldAriaProps({
+                id: 'total_amount',
+                error: errors.total_amount?.message,
+                description: 'Calculated by the Pricing Engine (rental + kilometer charges).',
+              })}
             />
           </BookingFormField>
         </div>
@@ -946,20 +1144,31 @@ export function BookingForm(props: BookingFormProps) {
       </BookingFormSection>
 
       <div className="sticky bottom-0 z-20 -mx-4 mt-2 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-backdrop-filter:bg-background/80 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
-        <div className="flex w-full items-center justify-end gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          {mode === 'edit' && !isCancelled ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-w-28 text-destructive"
+              disabled={isLoading}
+              onClick={handleCancelBooking}
+            >
+              Cancel Booking
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
-            className="min-h-9 min-w-24 sm:min-h-8"
+            className="min-w-24"
             disabled={isLoading}
             onClick={handleCancel}
           >
-            Cancel
+            Back
           </Button>
           <Button
             type="submit"
-            className="min-h-9 min-w-32 sm:min-h-8"
-            disabled={isLoading}
+            className="min-w-32"
+            disabled={isLoading || isCancelled}
             aria-busy={isLoading}
           >
             {isLoading ? (

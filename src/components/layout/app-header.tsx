@@ -19,19 +19,19 @@ import type { AuthUser } from '@/lib/auth/types';
  */
 export function AppHeader({ user }: { user: AuthUser }) {
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur supports-backdrop-filter:bg-background/80 sm:px-4">
       <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-1 h-4" />
+      <Separator orientation="vertical" className="mr-1 hidden h-4 sm:block" />
 
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>{appConfig.title}</BreadcrumbPage>
+      <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
+        <BreadcrumbList className="flex-nowrap">
+          <BreadcrumbItem className="min-w-0">
+            <BreadcrumbPage className="truncate">{appConfig.title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
         <ThemeToggle />
 
         <Button variant="ghost" size="icon" aria-label="Notifications">

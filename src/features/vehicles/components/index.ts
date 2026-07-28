@@ -28,4 +28,6 @@ export { VehicleRecentBookingsTable } from './vehicle-recent-bookings-table';
 export { VehicleRentalSection } from './vehicle-rental-section';
 export { VehicleStatusBadge } from './vehicle-status-badge';
 export { VehicleThumbnail } from './vehicle-thumbnail';
+export type { VehicleThumbnailSize } from './vehicle-thumbnail';
+export { VehicleInline } from './vehicle-inline';
 export type { VehicleFleetSummary } from './vehicle-summary-cards';

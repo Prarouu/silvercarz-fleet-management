@@ -5,12 +5,19 @@
  * this module only shapes UX values.
  */
 
-import type { Booking, BookingStatus, PaymentMethod, RentalMode, SelectOption } from '@/types';
+import type {
+  Booking,
+  PaymentMethod,
+  RentalMode,
+  SelectOption,
+  VehicleAvailabilityStatus,
+} from '@/types';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
   RENTAL_MODES,
+  VEHICLE_AVAILABILITY_STATUS_LABELS,
 } from '@/types';
 import {
   createBookingSchema,
@@ -56,6 +63,17 @@ export type VehicleSelectOption = {
   readonly id: string;
   readonly vehicle_name: string;
   readonly vehicle_number: string;
+  readonly image_path?: string | null;
+  readonly availability_status?: VehicleAvailabilityStatus;
+  readonly is_active?: boolean;
+  /** Default daily rate used to seed the Pricing Engine inputs. */
+  readonly default_daily_rate?: number | null;
+  /** Default extra kilometer rate for the Pricing Engine. */
+  readonly extra_kilometer_rate?: number | null;
+  /** Default security / caution deposit. */
+  readonly security_deposit?: number | null;
+  /** When true, option is shown but not selectable (booked / maintenance / inactive). */
+  readonly disabled?: boolean;
 };
 
 export type BookingFormFieldErrors = Partial<Record<keyof BookingFormValues, string>>;
@@ -174,16 +192,13 @@ export function toCreateBookingInput(values: BookingFormValues) {
     payment_method: values.payment_method,
     total_amount: values.total_amount ?? 0,
     notes: values.notes,
-    status: 'confirmed' as const,
+    // Lifecycle status is owned by the Status Service on the server.
   };
 }
 
-/** Map form values into the update-booking schema input shape. */
-export function toUpdateBookingInput(values: BookingFormValues, status: BookingStatus) {
-  return {
-    ...toCreateBookingInput(values),
-    status,
-  };
+/** Map form values into the update-booking schema input shape (no manual status). */
+export function toUpdateBookingInput(values: BookingFormValues) {
+  return toCreateBookingInput(values);
 }
 
 function mapZodFieldErrors(
@@ -225,17 +240,18 @@ export function validateCreateBookingForm(
 /**
  * Full-form validation for edit (same field rules as create).
  * Uses `createBookingSchema` so partial update schema cannot skip required fields.
+ * Status is never accepted from the client — Status Service owns lifecycle.
  */
 export function validateUpdateBookingForm(
   values: BookingFormValues,
-  status: BookingStatus,
 ):
   | { success: true; data: UpdateBookingValues }
   | { success: false; fieldErrors: BookingFormFieldErrors; formError: string } {
-  const parsed = createBookingSchema.safeParse(toUpdateBookingInput(values, status));
+  const parsed = createBookingSchema.safeParse(toUpdateBookingInput(values));
 
   if (parsed.success) {
-    return { success: true, data: parsed.data };
+    const { status: _ignoredStatus, ...data } = parsed.data;
+    return { success: true, data };
   }
 
   const fieldErrors = mapZodFieldErrors(parsed.error.issues);
@@ -259,5 +275,28 @@ export function parseOptionalNumber(raw: string): number | null {
 }
 
 export function formatVehicleOptionLabel(vehicle: VehicleSelectOption): string {
-  return `${vehicle.vehicle_name} (${vehicle.vehicle_number})`;
+  const base = `${vehicle.vehicle_name} (${vehicle.vehicle_number})`;
+
+  if (!vehicle.availability_status || vehicle.availability_status === 'available') {
+    return base;
+  }
+
+  return `${base} — ${VEHICLE_AVAILABILITY_STATUS_LABELS[vehicle.availability_status]}`;
+}
+
+/** Vehicles that must never be newly selected on a booking form. */
+export function isVehicleSelectionBlocked(vehicle: VehicleSelectOption): boolean {
+  if (vehicle.disabled) {
+    return true;
+  }
+
+  if (vehicle.is_active === false) {
+    return true;
+  }
+
+  return (
+    vehicle.availability_status === 'booked' ||
+    vehicle.availability_status === 'maintenance' ||
+    vehicle.availability_status === 'inactive'
+  );
 }

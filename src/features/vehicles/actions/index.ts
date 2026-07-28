@@ -4,5 +4,6 @@ export { deleteVehicle } from './delete-vehicle';
 export { getVehicle, getVehicleByNumber } from './get-vehicle';
 export { countVehicles, listVehicles } from './list-vehicles';
 export { searchVehicles } from './search-vehicles';
+export { reconcileVehicleAvailability } from './reconcile-vehicle-availability';
 export { uploadVehicleImageAction, type UploadVehicleImageResult } from './upload-vehicle-image';
 export { removeVehicleImageAction, type RemoveVehicleImageResult } from './remove-vehicle-image';

@@ -20,6 +20,8 @@ import {
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
+import { VehicleInline } from '@/features/vehicles/components/vehicle-inline';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { bookingDetailPath } from '@/constants/routes';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -110,12 +112,13 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         header: 'Vehicle',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="max-w-[11rem] min-w-[8rem]">
-            <p className="truncate font-medium">{row.original.vehicle.vehicle_name}</p>
-            <p className="truncate text-xs text-muted-foreground tabular-nums">
-              {row.original.vehicle.vehicle_number}
-            </p>
-          </div>
+          <VehicleInline
+            imagePath={row.original.vehicle.image_path}
+            name={row.original.vehicle.vehicle_name}
+            number={row.original.vehicle.vehicle_number}
+            size="xs"
+            className="max-w-[14rem] min-w-[10rem]"
+          />
         ),
       },
       {
@@ -148,7 +151,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'status',
         header: 'Status',
         enableSorting: false,
-        cell: ({ row }) => <BookingStatusBadge status={row.original.status} />,
+        cell: ({ row }) => <BookingStatusBadge booking={row.original} />,
       },
       {
         id: 'total_amount',
@@ -224,7 +227,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
       {/* Desktop / tablet table */}
       <div
         className={cn(
-          'hidden overflow-hidden rounded-xl border bg-card md:block',
+          'hidden overflow-hidden rounded-xl border bg-card lg:block',
           isPending && 'pointer-events-none opacity-70',
         )}
         aria-busy={isPending}
@@ -299,7 +302,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
 
       {/* Mobile stacked cards */}
       <ul
-        className={cn('space-y-3 md:hidden', isPending && 'pointer-events-none opacity-70')}
+        className={cn('space-y-3 lg:hidden', isPending && 'pointer-events-none opacity-70')}
         aria-busy={isPending}
         aria-label="Bookings"
       >
@@ -307,20 +310,27 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
           <li key={booking.id}>
             <article className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/20">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 space-y-1">
-                  <Link
-                    href={bookingDetailPath(booking.id)}
-                    className="block truncate font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                  >
-                    {booking.invoice_number}
-                  </Link>
-                  <p className="truncate text-sm font-medium">{booking.customer_name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <VehicleThumbnail
+                    imagePath={booking.vehicle.image_path}
+                    alt={`${booking.vehicle.vehicle_name} photo`}
+                    size="md"
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <Link
+                      href={bookingDetailPath(booking.id)}
+                      className="block truncate font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    >
+                      {booking.invoice_number}
+                    </Link>
+                    <p className="truncate text-sm font-medium">{booking.customer_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <BookingStatusBadge status={booking.status} />
+                  <BookingStatusBadge booking={booking} />
                   <BookingRowActions
                     bookingId={booking.id}
                     invoiceNumber={booking.invoice_number}

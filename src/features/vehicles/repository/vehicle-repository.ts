@@ -230,7 +230,10 @@ export function createVehicleRepository(client: TypedSupabaseClient): VehicleRep
     },
 
     async softDelete(id) {
-      return repository.update(id, { is_active: false });
+      return repository.update(id, {
+        is_active: false,
+        availability_status: 'inactive',
+      });
     },
 
     async findById(id) {

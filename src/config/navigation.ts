@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   CalendarRange,
   Car,
   LayoutDashboard,
@@ -17,13 +18,13 @@ export interface NavItem {
 }
 
 /**
- * Sidebar navigation. Routes are placeholders until their modules are
- * implemented in later phases — keeping them here means the sidebar needs
- * no changes when pages arrive.
+ * Sidebar navigation. Dashboard, Bookings, Calendar, and Vehicles are live.
+ * Customers / Drivers / Settings remain placeholders until those modules land.
  */
 export const mainNavItems: readonly NavItem[] = [
   { title: 'Dashboard', href: ROUTES.dashboard, icon: LayoutDashboard },
   { title: 'Bookings', href: ROUTES.bookings, icon: CalendarRange },
+  { title: 'Calendar', href: ROUTES.calendar, icon: CalendarDays },
   { title: 'Vehicles', href: ROUTES.vehicles, icon: Car },
   { title: 'Customers', href: ROUTES.customers, icon: Users },
   { title: 'Drivers', href: ROUTES.drivers, icon: UserRound },

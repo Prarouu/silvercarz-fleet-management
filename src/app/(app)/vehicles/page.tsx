@@ -1,5 +1,9 @@
 import { createPaginatedResult, normalizePaginationParams } from '@/lib/pagination';
-import { countVehicles, listVehicles } from '@/features/vehicles/actions';
+import {
+  countVehicles,
+  listVehicles,
+  reconcileVehicleAvailability,
+} from '@/features/vehicles/actions';
 import { VehicleList } from '@/features/vehicles/components';
 import type { VehicleFleetSummary } from '@/features/vehicles/components';
 import {
@@ -37,6 +41,9 @@ export default async function VehiclesPage({ searchParams }: VehiclesPageProps) 
   const params = await searchParams;
   const state = parseVehicleListUrlState(params);
   const query = toVehicleListQuery(state);
+
+  // Self-heal availability for bookings created before the Availability Engine.
+  await reconcileVehicleAvailability();
 
   const summaryPromise = loadFleetSummary();
 

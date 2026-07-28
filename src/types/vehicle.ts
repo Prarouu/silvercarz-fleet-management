@@ -54,8 +54,8 @@ export interface VehicleListQuery
   extends VehicleListFilters, Partial<PaginationParams>, SortParams<VehicleSortField> {}
 
 /**
- * Future availability check input (date-range ready).
- * Booking conflict detection is not implemented yet.
+ * Availability check input. When delivery/return are set, the Availability
+ * Engine delegates schedule overlap to the Booking Conflict Detection Engine.
  */
 export interface VehicleAvailabilityQuery {
   readonly vehicleId: string;

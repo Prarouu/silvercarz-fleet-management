@@ -18,21 +18,21 @@ export function VehicleDetailQuickActions({ vehicleId }: VehicleDetailQuickActio
         role="toolbar"
         aria-label="Vehicle quick actions"
       >
-        <Button asChild size="sm" className="min-h-9 justify-start">
+        <Button asChild size="sm" className="justify-start">
           <Link href={vehicleEditPath(vehicleId)}>
             <Pencil className="size-4" aria-hidden="true" />
             Edit Vehicle
           </Link>
         </Button>
 
-        <Button asChild variant="outline" size="sm" className="min-h-9 justify-start">
+        <Button asChild variant="outline" size="sm" className="justify-start">
           <Link href={ROUTES.bookingsNew}>
             <CalendarPlus className="size-4" aria-hidden="true" />
             Create Booking
           </Link>
         </Button>
 
-        <Button asChild variant="outline" size="sm" className="min-h-9 justify-start">
+        <Button asChild variant="outline" size="sm" className="justify-start">
           <Link href={ROUTES.vehicles}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to Fleet
@@ -43,7 +43,7 @@ export function VehicleDetailQuickActions({ vehicleId }: VehicleDetailQuickActio
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-9 justify-start"
+          className="justify-start"
           disabled
           aria-disabled="true"
           title="Deactivate vehicle will be available in a future release"
@@ -56,7 +56,7 @@ export function VehicleDetailQuickActions({ vehicleId }: VehicleDetailQuickActio
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-9 justify-start text-destructive"
+          className="justify-start text-destructive"
           disabled
           aria-disabled="true"
           title="Delete vehicle will be available in a future release"

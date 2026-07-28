@@ -36,7 +36,12 @@ export type BookingSortField =
 /** Common list / filter inputs for booking queries. */
 export interface BookingListFilters {
   readonly search?: string;
-  readonly status?: BookingStatus;
+  /**
+   * Display status from the Status Automation Engine
+   * (`upcoming` | `active` | `completed` | `cancelled` | `draft`).
+   * Lifecycle filters use delivery/return dates — not raw DB enum equality.
+   */
+  readonly status?: 'upcoming' | 'active' | 'completed' | 'cancelled' | 'draft' | BookingStatus;
   readonly vehicleId?: string;
   readonly mode?: RentalMode;
   readonly paymentMethod?: PaymentMethod;
@@ -57,10 +62,57 @@ export interface BookingListFilters {
 export interface BookingListQuery
   extends BookingListFilters, Partial<PaginationParams>, SortParams<BookingSortField> {}
 
-/** Vehicle overlap check input (availability architecture). */
+/** Vehicle overlap check input (conflict / availability queries). */
 export interface BookingVehicleOverlapQuery {
   readonly vehicleId: string;
   readonly deliveryDate: string;
   readonly returnDate: string;
   readonly excludeBookingId?: string;
+}
+
+/**
+ * Fleet-wide overlap query for calendar / scheduler viewports.
+ * Closed-interval overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
+ */
+export interface BookingFleetOverlapQuery {
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+  readonly vehicleId?: string;
+  readonly vehicleIds?: readonly string[];
+  readonly driverName?: string;
+  readonly search?: string;
+  /** When false (default), cancelled rows are excluded. */
+  readonly includeCancelled?: boolean;
+  /** When true (default), draft rows are excluded from the schedule. */
+  readonly excludeDraft?: boolean;
+  readonly excludeBookingId?: string;
+  /** Soft cap to avoid unbounded history loads (calendar viewports). */
+  readonly limit?: number;
+}
+
+/** Input for the Booking Conflict Detection Engine. */
+export interface BookingConflictCheckParams {
+  readonly vehicleId: string;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+  /** When editing, exclude this booking so it does not conflict with itself. */
+  readonly excludeBookingId?: string;
+}
+
+/** One conflicting hire returned by the conflict engine. */
+export interface BookingConflict {
+  readonly bookingId: string;
+  readonly invoiceNumber: string;
+  readonly customerName: string;
+  readonly status: BookingStatus;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+}
+
+/** Result of a conflict detection pass. */
+export interface BookingConflictResult {
+  readonly hasConflict: boolean;
+  readonly conflicts: readonly BookingConflict[];
+  /** Friendly message for the primary conflict (safe for UI). */
+  readonly message?: string;
 }

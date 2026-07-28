@@ -87,9 +87,16 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
         cell: ({ row }) => (
           <Link
             href={vehicleDetailPath(row.original.id)}
-            className="block max-w-[14rem] truncate font-medium text-foreground underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="flex max-w-[16rem] items-center gap-2.5 focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
-            {row.original.vehicle_name}
+            <VehicleThumbnail
+              imagePath={row.original.image_path}
+              alt={`${row.original.vehicle_name} photo`}
+              size="xs"
+            />
+            <span className="truncate font-medium text-foreground underline-offset-4 hover:underline">
+              {row.original.vehicle_name}
+            </span>
           </Link>
         ),
       },
@@ -201,7 +208,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
     <>
       <div
         className={cn(
-          'hidden overflow-hidden rounded-xl border bg-card md:block',
+          'hidden overflow-hidden rounded-xl border bg-card lg:block',
           isPending && 'pointer-events-none opacity-70',
         )}
         aria-busy={isPending}
@@ -276,7 +283,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
       </div>
 
       <ul
-        className={cn('space-y-3 md:hidden', isPending && 'pointer-events-none opacity-70')}
+        className={cn('space-y-3 lg:hidden', isPending && 'pointer-events-none opacity-70')}
         aria-busy={isPending}
         aria-label="Vehicles"
       >
@@ -290,6 +297,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
                   <VehicleThumbnail
                     imagePath={vehicle.image_path}
                     alt={`${vehicle.vehicle_name} thumbnail`}
+                    size="md"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">

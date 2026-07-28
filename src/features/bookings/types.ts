@@ -7,6 +7,9 @@
 
 export type {
   Booking,
+  BookingConflict,
+  BookingConflictCheckParams,
+  BookingConflictResult,
   BookingCreateInput,
   BookingListFilters,
   BookingListQuery,
@@ -14,6 +17,7 @@ export type {
   BookingStatus,
   BookingUpdateInput,
   BookingVehicleOverlapQuery,
+  BookingFleetOverlapQuery,
   BookingWithVehicle,
   PaymentMethod,
   RentalMode,

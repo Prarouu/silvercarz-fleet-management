@@ -32,13 +32,13 @@ Text relationships:
 
 ## Enums
 
-| Enum                   | Values                                                    | Used on                        |
-| ---------------------- | --------------------------------------------------------- | ------------------------------ |
-| `fuel_type`            | `petrol`, `diesel`, `cng`, `electric`, `hybrid`           | `vehicles.fuel_type`           |
-| `vehicle_availability` | `available`, `booked`, `maintenance`                      | `vehicles.availability_status` |
-| `rental_mode`          | `with_driver`, `without_driver`                           | `bookings.mode`                |
-| `payment_method`       | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other` | `bookings.payment_method`      |
-| `booking_status`       | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled` | `bookings.status`              |
+| Enum                   | Values                                                       | Used on                        |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------ |
+| `fuel_type`            | `petrol`, `diesel`, `cng`, `electric`, `hybrid`              | `vehicles.fuel_type`           |
+| `vehicle_availability` | `available`, `booked`, `reserved`, `maintenance`, `inactive` | `vehicles.availability_status` |
+| `rental_mode`          | `with_driver`, `without_driver`                              | `bookings.mode`                |
+| `payment_method`       | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other`    | `bookings.payment_method`      |
+| `booking_status`       | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled`    | `bookings.status`              |
 
 Extend enums with `ALTER TYPE … ADD VALUE`. Never rename or reorder existing
 values in production.
@@ -74,53 +74,60 @@ Fleet inventory. One row per physical vehicle.
 
 One rental / invoice per row.
 
-| Column                            | Type             | Notes                                          |
-| --------------------------------- | ---------------- | ---------------------------------------------- |
-| `id`                              | `uuid` PK        | `gen_random_uuid()`                            |
-| `invoice_number`                  | `text` UNIQUE    | Human-facing invoice reference                 |
-| `vehicle_id`                      | `uuid` FK        | → `vehicles.id`                                |
-| `mode`                            | `rental_mode`    | With / without driver                          |
-| `customer_name`                   | `text`           | Required                                       |
-| `address` … `zip_code`            | `text`           | Optional address fields                        |
-| `place_to_visit`                  | `text`           | Trip destination note                          |
-| `document_submitted`              | `boolean`        | Default `false`                                |
-| `contact_number`                  | `text`           | Optional; non-blank when set                   |
-| `invoice_date`                    | `date`           | Defaults to UTC today                          |
-| `delivery_date`                   | `date`           | Hire start                                     |
-| `return_date`                     | `date`           | Must be ≥ `delivery_date`                      |
-| `driver_name`                     | `text`           | Optional (often set when `with_driver`)        |
-| `daily_charge`                    | `numeric(12,2)`  | ≥ 0                                            |
-| `fuel_range`                      | `text`           | Free-text fuel condition for MVP               |
-| `start_odometer` / `end_odometer` | `numeric(12,2)`  | ≥ 0; end ≥ start when both set                 |
-| `total_kilometers`                | `numeric(12,2)`  | ≥ 0 when set                                   |
-| `duration`                        | `numeric(8,2)`   | Days; > 0 when set                             |
-| `kilometer_rate`                  | `numeric(12,2)`  | ≥ 0 when set                                   |
-| `booking_amount`                  | `numeric(12,2)`  | ≥ 0                                            |
-| `caution_money`                   | `numeric(12,2)`  | ≥ 0                                            |
-| `payment_method`                  | `payment_method` | Nullable until payment recorded                |
-| `total_amount`                    | `numeric(12,2)`  | ≥ 0                                            |
-| `status`                          | `booking_status` | Default `confirmed`                            |
-| `notes`                           | `text`           | Free-form                                      |
-| `created_by`                      | `uuid` FK        | → `profiles.id`; auto-filled from `auth.uid()` |
-| `created_at` / `updated_at`       | `timestamptz`    | UTC                                            |
+| Column                            | Type             | Notes                                             |
+| --------------------------------- | ---------------- | ------------------------------------------------- |
+| `id`                              | `uuid` PK        | `gen_random_uuid()`                               |
+| `invoice_number`                  | `text` UNIQUE    | Human-facing invoice reference                    |
+| `vehicle_id`                      | `uuid` FK        | → `vehicles.id`                                   |
+| `mode`                            | `rental_mode`    | With / without driver                             |
+| `customer_name`                   | `text`           | Required                                          |
+| `address` … `zip_code`            | `text`           | Optional address fields                           |
+| `place_to_visit`                  | `text`           | Trip destination note                             |
+| `document_submitted`              | `boolean`        | Default `false`                                   |
+| `contact_number`                  | `text`           | Optional; non-blank when set                      |
+| `invoice_date`                    | `date`           | Defaults to UTC today                             |
+| `delivery_date`                   | `date`           | Hire start                                        |
+| `return_date`                     | `date`           | Must be ≥ `delivery_date`                         |
+| `driver_name`                     | `text`           | Optional (often set when `with_driver`)           |
+| `daily_charge`                    | `numeric(12,2)`  | ≥ 0                                               |
+| `fuel_range`                      | `text`           | Free-text fuel condition for MVP                  |
+| `start_odometer` / `end_odometer` | `numeric(12,2)`  | ≥ 0; end ≥ start when both set                    |
+| `total_kilometers`                | `numeric(12,2)`  | ≥ 0 when set                                      |
+| `duration`                        | `numeric(8,2)`   | Days; > 0 when set                                |
+| `kilometer_rate`                  | `numeric(12,2)`  | ≥ 0 when set                                      |
+| `booking_amount`                  | `numeric(12,2)`  | ≥ 0; **amount paid** (advance) toward the hire    |
+| `caution_money`                   | `numeric(12,2)`  | ≥ 0; security deposit (separate from balance)     |
+| `payment_method`                  | `payment_method` | Nullable until payment recorded                   |
+| `total_amount`                    | `numeric(12,2)`  | ≥ 0; **grand total** snapshot from Pricing Engine |
+
+Pricing line items (rental charge, km charge, remaining balance) are **not**
+stored — rematerialize via the [Pricing Engine](./booking-pricing-engine.md).
+| `status` | `booking_status` | Default `confirmed` |
+| `notes` | `text` | Free-form |
+| `created_by` | `uuid` FK | → `profiles.id`; auto-filled from `auth.uid()` |
+| `created_at` / `updated_at` | `timestamptz` | UTC |
 
 ## Indexes
 
-| Index                               | Purpose                                        |
-| ----------------------------------- | ---------------------------------------------- |
-| `vehicles_vehicle_number` (unique)  | Exact plate lookup / uniqueness                |
-| `vehicles_is_active_idx`            | Active fleet lists                             |
-| `vehicles_fuel_type_idx`            | Filter by fuel                                 |
-| `vehicles_vehicle_name_idx`         | Name sort / equality filters                   |
-| `bookings_invoice_number` (unique)  | Invoice lookup                                 |
-| `bookings_vehicle_id_idx`           | Bookings for a vehicle                         |
-| `bookings_delivery_date_idx`        | Calendar / start-date filters                  |
-| `bookings_return_date_idx`          | Calendar / end-date filters                    |
-| `bookings_status_idx`               | Status filters                                 |
-| `bookings_customer_name_idx`        | Customer search / sort                         |
-| `bookings_invoice_date_idx`         | Reporting by invoice date                      |
-| `bookings_created_by_idx`           | Staff activity                                 |
-| `bookings_vehicle_active_dates_idx` | Partial index for availability (non-cancelled) |
+| Index                                 | Purpose                                               |
+| ------------------------------------- | ----------------------------------------------------- |
+| `vehicles_vehicle_number` (unique)    | Exact plate lookup / uniqueness                       |
+| `vehicles_is_active_idx`              | Active fleet lists                                    |
+| `vehicles_fuel_type_idx`              | Filter by fuel                                        |
+| `vehicles_vehicle_name_idx`           | Name sort / equality filters                          |
+| `bookings_invoice_number` (unique)    | Invoice lookup                                        |
+| `bookings_vehicle_id_idx`             | Bookings for a vehicle                                |
+| `bookings_delivery_date_idx`          | Calendar / start-date filters                         |
+| `bookings_return_date_idx`            | Calendar / end-date filters                           |
+| `bookings_status_idx`                 | Status filters                                        |
+| `bookings_customer_name_idx`          | Customer search / sort                                |
+| `bookings_invoice_date_idx`           | Reporting by invoice date                             |
+| `bookings_created_by_idx`             | Staff activity                                        |
+| `bookings_vehicle_conflict_dates_idx` | Partial index for Conflict Engine (confirmed/ongoing) |
+
+> `bookings_vehicle_active_dates_idx` (non-cancelled) was replaced by
+> `bookings_vehicle_conflict_dates_idx` in migration
+> `20260728170000_booking_conflict_detection_index.sql`.
 
 ## Constraints (selected)
 
@@ -173,6 +180,7 @@ Triggers:
 | `20260727090000_extend_vehicles_for_creation.sql`         | Vehicle profile fields, availability, images |
 | `20260728140000_create_invoice_sequences.sql`             | Yearly invoice counters + atomic RPCs        |
 | `20260728150000_sync_invoice_sequences_from_bookings.sql` | Seed counters from existing bookings         |
+| `20260728160000_extend_vehicle_availability_statuses.sql` | Adds `reserved` + `inactive` availability    |
 
 Apply order matters: profiles migration first (for `created_by` FK and
 `current_user_role()`).
@@ -195,8 +203,10 @@ Idempotency: enums use `DO $$ … EXCEPTION WHEN duplicate_object`, tables use
 
 - Separate `customers` / `drivers` tables (denormalized on bookings for MVP)
 - Soft-delete columns beyond `is_active` / `cancelled`
-- Overlap exclusion constraints for vehicle double-booking (partial index is
-  prepared; hard exclusion can land with availability logic)
+- Hard exclusion constraints for vehicle double-booking (partial index is
+  prepared; Availability Engine + overlap queries cover application rules)
+
+See [vehicle-availability.md](./vehicle-availability.md) for lifecycle rules.
 
 Invoice sequences are documented in [invoice-numbering.md](./invoice-numbering.md)
 (`invoice_sequences` + `next_invoice_sequence` / `peek_next_invoice_sequence`).

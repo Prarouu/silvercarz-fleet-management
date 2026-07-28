@@ -18,6 +18,12 @@ See also:
 - [Create Booking UI](./bookings-create.md) — `/bookings/new` shared `BookingForm`
 - [Edit Booking UI](./bookings-edit.md) — `/bookings/[id]/edit` reuses `BookingForm`
 - [Vehicles data layer](./vehicles-data-layer.md) — repository, service, Server Actions
+- [Vehicle Availability Engine](./vehicle-availability.md) — centralized availability states & sync
+- [Booking Conflict Detection](./booking-conflict-detection.md) — schedule overlap engine
+- [Booking Status Automation](./booking-status-automation.md) — lifecycle / badge engine
+- [Booking Pricing Engine](./booking-pricing-engine.md) — centralized hire money math
+- [Fleet Availability Calendar](./fleet-availability-calendar.md) — scheduling UI & occupancy
+- [Admin Dashboard](./admin-dashboard.md) — post-login KPIs, charts, schedule, fleet snapshot
 - [Vehicles list UI](./vehicles-list.md) — `/vehicles` fleet table, search, filters, pagination
 - [Create Vehicle UI](./vehicles-create.md) — `/vehicles/new` Add Vehicle form + image upload
 - [Edit Vehicle UI](./vehicles-edit.md) — `/vehicles/[id]/edit` reuses `VehicleForm`
@@ -204,9 +210,8 @@ unknown error
 
 ## What remains for later phases
 
-- Booking create / edit / detail UI
-- Vehicle CRUD UI and pages
 - Customer / driver normalization (still denormalized on bookings for MVP)
 - Admin user-management UI (profiles list / role edits)
+- Calendar year view and drag-and-drop scheduling (see fleet calendar doc)
 
 Those arrive on top of this foundation.

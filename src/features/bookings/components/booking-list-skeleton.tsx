@@ -34,11 +34,11 @@ export function BookingListSkeleton() {
         </div>
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <TableSkeleton rows={8} columns={6} />
       </div>
 
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-3 lg:hidden">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="space-y-3 rounded-xl border p-4">
             <div className="flex items-start justify-between gap-3">

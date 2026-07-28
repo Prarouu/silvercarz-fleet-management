@@ -53,16 +53,16 @@ Sidebar already includes Vehicles via `mainNavItems` → `ROUTES.vehicles`.
 
 ## URL parameters
 
-| Param          | Maps to        | Notes                                  |
-| -------------- | -------------- | -------------------------------------- |
-| `q`            | `search`       | Debounced server-side search           |
-| `fuelType`     | `fuelType`     | Fuel type enum                         |
-| `availability` | `availability` | `available` / `booked` / `maintenance` |
-| `status`       | `status`       | `active` / `inactive`                  |
-| `page`         | `page`         | Default `1`                            |
-| `pageSize`     | `pageSize`     | `10` / `20` / `50` / `100`             |
-| `sortBy`       | `sortBy`       | Backend sort fields only               |
-| `sortOrder`    | `sortOrder`    | `asc` / `desc`                         |
+| Param          | Maps to        | Notes                                                            |
+| -------------- | -------------- | ---------------------------------------------------------------- |
+| `q`            | `search`       | Debounced server-side search                                     |
+| `fuelType`     | `fuelType`     | Fuel type enum                                                   |
+| `availability` | `availability` | `available` / `booked` / `reserved` / `maintenance` / `inactive` |
+| `status`       | `status`       | `active` / `inactive`                                            |
+| `page`         | `page`         | Default `1`                                                      |
+| `pageSize`     | `pageSize`     | `10` / `20` / `50` / `100`                                       |
+| `sortBy`       | `sortBy`       | Backend sort fields only                                         |
+| `sortOrder`    | `sortOrder`    | `asc` / `desc`                                                   |
 
 Helpers live in `src/features/vehicles/lib/vehicle-list-params.ts`.
 

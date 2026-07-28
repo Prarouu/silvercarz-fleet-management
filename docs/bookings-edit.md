@@ -15,7 +15,10 @@ same `BookingForm` as Create Booking — only data loading and submission differ
             → React Hook Form (defaultValues from booking)
             → createBookingSchema via validateUpdateBookingForm()
             → updateBooking(id, payload) Server Action
-                 → Booking Service → Repository
+                 → Booking Service
+                      → Availability Engine + Conflict Detection Engine
+                        (excludes current booking id)
+                      → Repository
 ```
 
 Rules:
@@ -26,6 +29,9 @@ Rules:
 4. UI never imports Supabase or the booking repository.
 5. On success, redirect to the Booking List. The Booking Details workspace is
    available at `/bookings/[id]` (see [bookings-details.md](./bookings-details.md)).
+6. Date / vehicle changes re-run conflict detection; the current booking id is
+   excluded so edits do not conflict with themselves.
+   See [booking-conflict-detection.md](./booking-conflict-detection.md).
 
 ## Route
 
@@ -71,9 +77,9 @@ Edit fields
   → Redirect to /bookings
 ```
 
-Derived fields (duration, total km, amounts) keep the same live calculations as
-Create. Status is not edited in the form — the existing booking status is sent
-with the update payload.
+Derived fields (duration, total km, grand total) are owned by the
+[Pricing Engine](./booking-pricing-engine.md) (`previewPricing`), same as Create.
+Status is not edited in the form — Status Service owns lifecycle on save.
 
 ## Unsaved changes
 

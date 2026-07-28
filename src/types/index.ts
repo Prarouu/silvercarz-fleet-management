@@ -46,6 +46,7 @@ export {
   isRentalMode,
   isUserRole,
   isVehicleAvailabilityStatus,
+  isVehicleBookableStatus,
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_OPTIONS,
@@ -61,16 +62,22 @@ export {
   VEHICLE_AVAILABILITY_STATUS_LABELS,
   VEHICLE_AVAILABILITY_STATUS_OPTIONS,
   VEHICLE_AVAILABILITY_STATUS_VALUES,
+  VEHICLE_BOOKING_DERIVED_STATUSES,
+  VEHICLE_UNBOOKABLE_STATUSES,
 } from './enums';
 
 export type {
   Booking,
+  BookingConflict,
+  BookingConflictCheckParams,
+  BookingConflictResult,
   BookingCreateInput,
   BookingListFilters,
   BookingListQuery,
   BookingSortField,
   BookingUpdateInput,
   BookingVehicleOverlapQuery,
+  BookingFleetOverlapQuery,
   BookingWithVehicle,
 } from './booking';
 

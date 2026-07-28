@@ -20,6 +20,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type {
   Booking,
   BookingCreateInput,
+  BookingFleetOverlapQuery,
   BookingListFilters,
   BookingListQuery,
   BookingSortField,
@@ -54,10 +55,23 @@ export interface BookingRepository {
   search(search: string, query?: BookingListQuery): Promise<PaginatedResult<BookingWithVehicle>>;
   count(filters?: BookingListFilters): Promise<number>;
   /**
-   * Returns non-cancelled bookings for a vehicle that overlap a date range.
-   * Used by the service availability check (architecture ready).
+   * Returns non-cancelled, non-draft bookings that can drive availability state
+   * (confirmed / ongoing / completed history for date windows).
+   * Used by the Availability Engine — not for UI lists.
+   */
+  findLifecycleBookingsForVehicle(vehicleId: string): Promise<Booking[]>;
+  /**
+   * Returns blocking bookings for a vehicle that overlap a date range.
+   * Only confirmed / ongoing rows — used by the Conflict Detection Engine.
+   * Overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
    */
   findOverlappingForVehicle(params: BookingVehicleOverlapQuery): Promise<Booking[]>;
+  /**
+   * Fleet-wide bookings overlapping a calendar viewport (with vehicle join).
+   * Closed-interval overlap — used by the Fleet Availability Calendar.
+   * Does not invent availability; callers compose Status / Availability engines.
+   */
+  findOverlappingInRange(params: BookingFleetOverlapQuery): Promise<BookingWithVehicle[]>;
 }
 
 function escapeIlike(value: string): string {
@@ -144,10 +158,54 @@ function buildSearchOrFilter(term: string, vehicleIds: readonly string[]): strin
 type FilterableBuilder = {
   eq: (column: string, value: unknown) => FilterableBuilder;
   neq: (column: string, value: unknown) => FilterableBuilder;
+  gt: (column: string, value: unknown) => FilterableBuilder;
   gte: (column: string, value: unknown) => FilterableBuilder;
+  lt: (column: string, value: unknown) => FilterableBuilder;
   lte: (column: string, value: unknown) => FilterableBuilder;
   or: (filters: string) => FilterableBuilder;
 };
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Apply Status Engine display-status filters (date-derived lifecycle + terminals).
+ * Mirrors `resolveBookingDisplayStatus` rules for list queries.
+ */
+function applyStatusFilter(builder: FilterableBuilder, status: string): FilterableBuilder {
+  const today = todayIsoDate();
+
+  switch (status) {
+    case 'cancelled':
+      return builder.eq('status', BOOKING_STATUSES.cancelled);
+    case 'draft':
+      return builder.eq('status', BOOKING_STATUSES.draft);
+    case 'upcoming':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .gt('delivery_date', today);
+    case 'active':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .lte('delivery_date', today)
+        .gte('return_date', today);
+    case 'completed':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .lt('return_date', today);
+    // Legacy persisted-enum filters (still accepted for older URLs / callers)
+    case BOOKING_STATUSES.confirmed:
+    case BOOKING_STATUSES.ongoing:
+    case BOOKING_STATUSES.completed:
+      return builder.eq('status', status);
+    default:
+      return builder.eq('status', status);
+  }
+}
 
 function applyNonSearchFilters(
   builder: FilterableBuilder,
@@ -156,7 +214,7 @@ function applyNonSearchFilters(
   let next = builder;
 
   if (filters?.status) {
-    next = next.eq('status', filters.status);
+    next = applyStatusFilter(next, filters.status);
   } else if (!filters?.includeCancelled) {
     next = next.neq('status', BOOKING_STATUSES.cancelled);
   }
@@ -345,14 +403,35 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
       return count ?? 0;
     },
 
+    async findLifecycleBookingsForVehicle(vehicleId) {
+      const { data, error } = await client
+        .from('bookings')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .in('status', [
+          BOOKING_STATUSES.confirmed,
+          BOOKING_STATUSES.ongoing,
+          BOOKING_STATUSES.completed,
+        ])
+        .order('delivery_date', { ascending: true });
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      return data ?? [];
+    },
+
     async findOverlappingForVehicle(params) {
+      // Closed-interval overlap + blocking statuses only (indexed partial query).
       let builder = client
         .from('bookings')
         .select('*')
         .eq('vehicle_id', params.vehicleId)
-        .neq('status', BOOKING_STATUSES.cancelled)
+        .in('status', [BOOKING_STATUSES.confirmed, BOOKING_STATUSES.ongoing])
         .lte('delivery_date', params.returnDate)
-        .gte('return_date', params.deliveryDate);
+        .gte('return_date', params.deliveryDate)
+        .order('delivery_date', { ascending: true });
 
       if (params.excludeBookingId) {
         builder = builder.neq('id', params.excludeBookingId);
@@ -365,6 +444,59 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
       }
 
       return data ?? [];
+    },
+
+    async findOverlappingInRange(params) {
+      const limit = Math.min(Math.max(params.limit ?? 500, 1), 1000);
+      const excludeDraft = params.excludeDraft !== false;
+
+      let builder = client
+        .from('bookings')
+        .select('*, vehicle:vehicles(*)')
+        .lte('delivery_date', params.returnDate)
+        .gte('return_date', params.deliveryDate)
+        .order('delivery_date', { ascending: true })
+        .limit(limit);
+
+      if (!params.includeCancelled) {
+        builder = builder.neq('status', BOOKING_STATUSES.cancelled);
+      }
+
+      if (excludeDraft) {
+        builder = builder.neq('status', BOOKING_STATUSES.draft);
+      }
+
+      if (params.vehicleId) {
+        builder = builder.eq('vehicle_id', params.vehicleId);
+      } else if (params.vehicleIds && params.vehicleIds.length > 0) {
+        builder = builder.in('vehicle_id', [...params.vehicleIds]);
+      } else if (params.vehicleIds && params.vehicleIds.length === 0) {
+        return [];
+      }
+
+      if (params.excludeBookingId) {
+        builder = builder.neq('id', params.excludeBookingId);
+      }
+
+      const driverTerm = params.driverName?.trim();
+      if (driverTerm) {
+        const pattern = `%${escapeIlike(driverTerm)}%`;
+        builder = builder.ilike('driver_name', pattern);
+      }
+
+      const searchTerm = params.search?.trim();
+      if (searchTerm) {
+        const vehicleIds = await resolveVehicleIdsByNumber(client, searchTerm);
+        builder = builder.or(buildSearchOrFilter(searchTerm, vehicleIds));
+      }
+
+      const { data, error } = await builder;
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      return (data ?? []).filter((row): row is BookingWithVehicle => row.vehicle != null);
     },
   };
 

@@ -331,7 +331,7 @@ export function VehicleForm(props: VehicleFormProps) {
             <Button
               type="button"
               variant="outline"
-              className="min-h-9 min-w-24 sm:min-h-8"
+              className="min-w-24"
               disabled={isLoading}
               onClick={handleCancel}
             >
@@ -339,7 +339,7 @@ export function VehicleForm(props: VehicleFormProps) {
             </Button>
             <Button
               type="submit"
-              className="min-h-9 min-w-36 sm:min-h-8"
+              className="min-w-36"
               disabled={isLoading || !canSave}
               aria-busy={isLoading}
             >

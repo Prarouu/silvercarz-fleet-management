@@ -21,17 +21,31 @@ import {
   type BookingRepository,
 } from '@/features/bookings/repository';
 import {
-  calculateBookingAmount,
-  calculateDurationDays,
-  calculateTotalAmount,
-  calculateTotalKilometers,
-} from '@/features/bookings/service/booking-calculations';
+  createConflictService,
+  getConflictService,
+  type ConflictService,
+} from '@/features/bookings/service/conflict.service';
 import {
   createInvoiceNumberService,
   getInvoiceNumberService,
   type InvoiceNumberService,
 } from '@/features/bookings/service/invoice-number.service';
+import {
+  calculatePricing,
+  pricingToPersistedFields,
+} from '@/features/bookings/service/pricing.service';
+import {
+  getBookingStatusService,
+  resolvePersistedBookingStatus,
+  type BookingStatusService,
+} from '@/features/bookings/service/status.service';
+import {
+  createAvailabilityService,
+  getAvailabilityService,
+  type AvailabilityService,
+} from '@/features/vehicles/service/availability.service';
 import { PERMISSIONS, requirePermission, type AuthUser } from '@/lib/auth';
+import { AppError } from '@/lib/errors';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
 import type {
@@ -58,6 +72,9 @@ export interface BookingServiceDeps {
   readonly repository?: BookingRepository;
   readonly client?: TypedSupabaseClient;
   readonly invoiceNumberService?: InvoiceNumberService;
+  readonly availabilityService?: AvailabilityService;
+  readonly conflictService?: ConflictService;
+  readonly statusService?: BookingStatusService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -122,8 +139,13 @@ async function ensureInvoiceUnique(
   }
 }
 
-async function ensureVehicleAvailable(
-  repository: BookingRepository,
+/**
+ * Operational bookability + schedule conflict detection.
+ * Conflict rules live in ConflictService — never duplicate them here.
+ */
+async function ensureVehicleScheduleClear(
+  availability: AvailabilityService,
+  conflict: ConflictService,
   params: {
     vehicleId: string;
     deliveryDate: string;
@@ -137,16 +159,22 @@ async function ensureVehicleAvailable(
     return;
   }
 
-  const overlaps = await repository.findOverlappingForVehicle({
+  try {
+    await availability.assertVehicleBookable(params.vehicleId);
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw createVehicleUnavailableError(error.message);
+    }
+    throw error;
+  }
+
+  await conflict.assertNoConflict({
     vehicleId: params.vehicleId,
     deliveryDate: params.deliveryDate,
     returnDate: params.returnDate,
     excludeBookingId: params.excludeBookingId,
+    status: params.status,
   });
-
-  if (overlaps.length > 0) {
-    throw createVehicleUnavailableError();
-  }
 }
 
 function applyCreateDerivedFields(
@@ -156,29 +184,38 @@ function applyCreateDerivedFields(
 ): BookingCreateInput {
   assertValidDates(values.delivery_date, values.return_date);
 
-  const duration =
-    values.duration ?? calculateDurationDays(values.delivery_date, values.return_date);
-  const totalKilometers =
-    values.total_kilometers ?? calculateTotalKilometers(values.start_odometer, values.end_odometer);
-  const bookingAmount =
-    values.booking_amount > 0
-      ? values.booking_amount
-      : calculateBookingAmount({
-          dailyCharge: values.daily_charge,
-          durationDays: duration,
-          kilometerRate: values.kilometer_rate,
-          totalKilometers,
+  // Pricing Engine is the sole authority for duration, km, and money totals.
+  const pricing = calculatePricing({
+    dailyRate: values.daily_charge,
+    extraKilometerRate: values.kilometer_rate,
+    deliveryDate: values.delivery_date,
+    returnDate: values.return_date,
+    startOdometer: values.start_odometer,
+    endOdometer: values.end_odometer,
+    amountPaid: values.booking_amount,
+    securityDeposit: values.caution_money,
+  });
+  const priced = pricingToPersistedFields(pricing);
+
+  // Draft stays draft; otherwise Status Service owns lifecycle persistence.
+  const status =
+    values.status === BOOKING_STATUSES.draft
+      ? BOOKING_STATUSES.draft
+      : resolvePersistedBookingStatus({
+          status: values.status,
+          delivery_date: values.delivery_date,
+          return_date: values.return_date,
         });
-  const totalAmount =
-    values.total_amount > 0 ? values.total_amount : calculateTotalAmount(bookingAmount);
 
   return {
     ...values,
     invoice_number: invoiceNumber,
-    duration,
-    total_kilometers: totalKilometers,
-    booking_amount: bookingAmount,
-    total_amount: totalAmount,
+    duration: priced.duration,
+    total_kilometers: priced.total_kilometers,
+    booking_amount: priced.booking_amount,
+    caution_money: priced.caution_money,
+    total_amount: priced.total_amount,
+    status,
     created_by: values.created_by ?? actor.id,
   };
 }
@@ -198,54 +235,44 @@ function applyUpdateDerivedFields(
   const dailyCharge = values.daily_charge ?? existing.daily_charge;
   const kilometerRate =
     values.kilometer_rate !== undefined ? values.kilometer_rate : existing.kilometer_rate;
+  const amountPaid =
+    values.booking_amount !== undefined ? values.booking_amount : existing.booking_amount;
+  const securityDeposit =
+    values.caution_money !== undefined ? values.caution_money : existing.caution_money;
 
-  const shouldRecalculateDuration =
-    values.duration === undefined &&
-    (values.delivery_date !== undefined || values.return_date !== undefined);
-  const duration = shouldRecalculateDuration
-    ? calculateDurationDays(deliveryDate, returnDate)
-    : (values.duration ?? existing.duration);
+  // Always rematerialize derived money / distance via Pricing Engine.
+  const pricing = calculatePricing({
+    dailyRate: dailyCharge,
+    extraKilometerRate: kilometerRate,
+    deliveryDate,
+    returnDate,
+    startOdometer,
+    endOdometer,
+    amountPaid,
+    securityDeposit,
+  });
+  const priced = pricingToPersistedFields(pricing);
 
-  const shouldRecalculateKm =
-    values.total_kilometers === undefined &&
-    (values.start_odometer !== undefined || values.end_odometer !== undefined);
-  const totalKilometers = shouldRecalculateKm
-    ? calculateTotalKilometers(startOdometer, endOdometer)
-    : (values.total_kilometers ?? existing.total_kilometers);
-
-  const shouldRecalculateAmounts =
-    values.booking_amount === undefined &&
-    (values.daily_charge !== undefined ||
-      values.delivery_date !== undefined ||
-      values.return_date !== undefined ||
-      values.duration !== undefined ||
-      values.kilometer_rate !== undefined ||
-      values.start_odometer !== undefined ||
-      values.end_odometer !== undefined ||
-      values.total_kilometers !== undefined);
-
-  const bookingAmount = shouldRecalculateAmounts
-    ? calculateBookingAmount({
-        dailyCharge,
-        durationDays: duration ?? calculateDurationDays(deliveryDate, returnDate),
-        kilometerRate,
-        totalKilometers,
-      })
-    : (values.booking_amount ?? existing.booking_amount);
-
-  const totalAmount =
-    values.total_amount !== undefined
-      ? values.total_amount
-      : shouldRecalculateAmounts
-        ? calculateTotalAmount(bookingAmount)
-        : existing.total_amount;
+  // Manual status edits are ignored. Cancelled stays cancelled; otherwise
+  // Status Service recomputes lifecycle from dates (drafts graduate on save).
+  const { status: _ignoredClientStatus, ...safeWithoutStatus } = values;
+  const status =
+    existing.status === BOOKING_STATUSES.cancelled
+      ? BOOKING_STATUSES.cancelled
+      : resolvePersistedBookingStatus({
+          status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
+          delivery_date: deliveryDate,
+          return_date: returnDate,
+        });
 
   return {
-    ...values,
-    duration,
-    total_kilometers: totalKilometers,
-    booking_amount: bookingAmount,
-    total_amount: totalAmount,
+    ...safeWithoutStatus,
+    duration: priced.duration,
+    total_kilometers: priced.total_kilometers,
+    booking_amount: priced.booking_amount,
+    caution_money: priced.caution_money,
+    total_amount: priced.total_amount,
+    status,
   };
 }
 
@@ -276,13 +303,78 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getInvoiceNumberService();
   }
 
+  function getAvailability(): AvailabilityService {
+    if (deps.availabilityService) {
+      return deps.availabilityService;
+    }
+
+    if (deps.client) {
+      return createAvailabilityService({
+        client: deps.client,
+        requirePermission: requirePerm,
+      });
+    }
+
+    return getAvailabilityService();
+  }
+
+  function getConflict(): ConflictService {
+    if (deps.conflictService) {
+      return deps.conflictService;
+    }
+
+    if (deps.client) {
+      return createConflictService({ client: deps.client });
+    }
+
+    return getConflictService();
+  }
+
+  function getStatus(): BookingStatusService {
+    if (deps.statusService) {
+      return deps.statusService;
+    }
+
+    return getBookingStatusService();
+  }
+
+  async function syncVehicleAvailability(vehicleId: string | null | undefined): Promise<void> {
+    if (!vehicleId) {
+      return;
+    }
+
+    await getAvailability().syncAvailabilityFromBookings(vehicleId);
+  }
+
   const service: BookingService = {
     createBooking(input) {
       return fromPromise(async () => {
         const actor = await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
         const invoiceService = getInvoiceService();
+        const availability = getAvailability();
+        const conflict = getConflict();
+        const statusEngine = getStatus();
         const values = parseCreateInput(input);
+
+        assertValidDates(values.delivery_date, values.return_date);
+
+        const scheduleStatus =
+          values.status === BOOKING_STATUSES.draft
+            ? BOOKING_STATUSES.draft
+            : statusEngine.resolvePersistedStatus({
+                status: values.status,
+                delivery_date: values.delivery_date,
+                return_date: values.return_date,
+              });
+
+        // Validate → operational status → conflict → invoice → save
+        await ensureVehicleScheduleClear(availability, conflict, {
+          vehicleId: values.vehicle_id,
+          deliveryDate: values.delivery_date,
+          returnDate: values.return_date,
+          status: scheduleStatus,
+        });
 
         const invoiceNumber = await invoiceService.generateNextInvoiceNumber({
           issuedOn: values.invoice_date,
@@ -290,14 +382,10 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const payload = applyCreateDerivedFields(values, actor, invoiceNumber);
 
         await ensureInvoiceUnique(repository, payload.invoice_number);
-        await ensureVehicleAvailable(repository, {
-          vehicleId: payload.vehicle_id,
-          deliveryDate: payload.delivery_date,
-          returnDate: payload.return_date,
-          status: payload.status,
-        });
 
-        return repository.create(payload);
+        const created = await repository.create(payload);
+        await syncVehicleAvailability(created.vehicle_id);
+        return created;
       });
     },
 
@@ -305,6 +393,8 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
       return fromPromise(async () => {
         await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
+        const availability = getAvailability();
+        const conflict = getConflict();
         const existing = await repository.findById(id);
 
         if (!existing) {
@@ -320,7 +410,7 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const returnDate = payload.return_date ?? existing.return_date;
         const status = payload.status ?? existing.status;
 
-        await ensureVehicleAvailable(repository, {
+        await ensureVehicleScheduleClear(availability, conflict, {
           vehicleId,
           deliveryDate,
           returnDate,
@@ -328,7 +418,14 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
           status,
         });
 
-        return repository.update(id, payload);
+        const updated = await repository.update(id, payload);
+
+        await syncVehicleAvailability(existing.vehicle_id);
+        if (updated.vehicle_id !== existing.vehicle_id) {
+          await syncVehicleAvailability(updated.vehicle_id);
+        }
+
+        return updated;
       });
     },
 
@@ -342,7 +439,9 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
           throw createBookingNotFoundError();
         }
 
-        return repository.softDelete(id);
+        const cancelled = await repository.softDelete(id);
+        await syncVehicleAvailability(existing.vehicle_id);
+        return cancelled;
       });
     },
 
@@ -350,7 +449,10 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
       return fromPromise(async () => {
         await requirePerm(PERMISSIONS.bookingsDelete);
         const repository = await getRepository();
+        const existing = await repository.findById(id);
+        const vehicleId = existing?.vehicle_id;
         await repository.delete(id);
+        await syncVehicleAvailability(vehicleId);
         return null;
       });
     },

@@ -128,9 +128,11 @@ Deep dives:
 - [docs/database.md](./docs/database.md) — vehicles & bookings schema, ER, indexes, RLS
 - [docs/types-and-validation.md](./docs/types-and-validation.md) — domain models, enums, Zod
 - [docs/bookings-data-layer.md](./docs/bookings-data-layer.md) — booking repository / service / actions
+- [docs/booking-conflict-detection.md](./docs/booking-conflict-detection.md) — schedule conflict engine
 - [docs/bookings-list.md](./docs/bookings-list.md) — booking list table UI
 - [docs/bookings-create.md](./docs/bookings-create.md) — create booking form UI
 - [docs/vehicles-data-layer.md](./docs/vehicles-data-layer.md) — vehicle repository / service / actions
+- [docs/vehicle-availability.md](./docs/vehicle-availability.md) — fleet availability engine
 - [docs/vehicles-list.md](./docs/vehicles-list.md) — fleet list UI
 - [docs/vehicles-create.md](./docs/vehicles-create.md) — add vehicle form UI
 - [docs/vehicles-edit.md](./docs/vehicles-edit.md) — edit vehicle form UI

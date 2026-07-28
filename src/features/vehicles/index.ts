@@ -21,17 +21,27 @@ export {
   FUEL_TYPE_LABELS,
   FUEL_TYPE_OPTIONS,
   FUEL_TYPE_VALUES,
+  VEHICLE_AVAILABILITY_STATUSES,
+  VEHICLE_AVAILABILITY_STATUS_LABELS,
+  VEHICLE_AVAILABILITY_STATUS_OPTIONS,
+  VEHICLE_AVAILABILITY_STATUS_VALUES,
   isFuelType,
+  isVehicleAvailabilityStatus,
+  isVehicleBookableStatus,
 } from './types';
+
+export type { VehicleAvailabilityStatus } from './types';
 
 export {
   VEHICLE_ERROR_CODES,
   createDuplicateVehicleNumberError,
   createInactiveVehicleError,
+  createInvalidAvailabilityStatusError,
   createUnauthorizedVehicleAccessError,
   createVehicleDatabaseFailureError,
   createVehicleNotFoundError,
   createVehicleStorageFailureError,
+  createVehicleUnavailableForBookingError,
   createVehicleValidationError,
   type VehicleErrorCode,
 } from './errors';
@@ -45,8 +55,13 @@ export {
 export {
   createVehicleService,
   getVehicleService,
+  createAvailabilityService,
+  getAvailabilityService,
+  resolveAvailabilityFromBookings,
   type VehicleService,
   type VehicleServiceDeps,
+  type AvailabilityService,
+  type AvailabilityServiceDeps,
 } from './service';
 
 export {
@@ -56,6 +71,7 @@ export {
   getVehicle,
   getVehicleByNumber,
   listVehicles,
+  reconcileVehicleAvailability,
   removeVehicleImageAction,
   searchVehicles,
   updateVehicle,

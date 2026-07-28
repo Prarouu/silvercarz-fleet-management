@@ -44,20 +44,41 @@ export const FUEL_TYPE_LABELS: Record<FuelType, string> = {
 export const VEHICLE_AVAILABILITY_STATUSES = {
   available: 'available',
   booked: 'booked',
+  reserved: 'reserved',
   maintenance: 'maintenance',
+  inactive: 'inactive',
 } as const satisfies Record<string, VehicleAvailabilityStatus>;
 
 export const VEHICLE_AVAILABILITY_STATUS_VALUES = [
   VEHICLE_AVAILABILITY_STATUSES.available,
   VEHICLE_AVAILABILITY_STATUSES.booked,
+  VEHICLE_AVAILABILITY_STATUSES.reserved,
   VEHICLE_AVAILABILITY_STATUSES.maintenance,
+  VEHICLE_AVAILABILITY_STATUSES.inactive,
 ] as const;
 
 export const VEHICLE_AVAILABILITY_STATUS_LABELS: Record<VehicleAvailabilityStatus, string> = {
   available: 'Available',
   booked: 'Booked',
+  reserved: 'Reserved',
   maintenance: 'Maintenance',
+  inactive: 'Inactive',
 };
+
+/** Statuses that block creating / assigning a new booking. */
+export const VEHICLE_UNBOOKABLE_STATUSES = [
+  VEHICLE_AVAILABILITY_STATUSES.booked,
+  VEHICLE_AVAILABILITY_STATUSES.reserved,
+  VEHICLE_AVAILABILITY_STATUSES.maintenance,
+  VEHICLE_AVAILABILITY_STATUSES.inactive,
+] as const;
+
+/** Statuses that may be overwritten by booking-driven sync. */
+export const VEHICLE_BOOKING_DERIVED_STATUSES = [
+  VEHICLE_AVAILABILITY_STATUSES.available,
+  VEHICLE_AVAILABILITY_STATUSES.booked,
+  VEHICLE_AVAILABILITY_STATUSES.reserved,
+] as const;
 
 export const RENTAL_MODES = {
   withDriver: 'with_driver',
@@ -176,6 +197,10 @@ export function isFuelType(value: unknown): value is FuelType {
 
 export function isVehicleAvailabilityStatus(value: unknown): value is VehicleAvailabilityStatus {
   return typeof value === 'string' && VEHICLE_AVAILABILITY_STATUS_SET.has(value);
+}
+
+export function isVehicleBookableStatus(status: VehicleAvailabilityStatus): boolean {
+  return status === VEHICLE_AVAILABILITY_STATUSES.available;
 }
 
 export function isRentalMode(value: unknown): value is RentalMode {
