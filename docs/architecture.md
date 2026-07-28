@@ -23,6 +23,7 @@ See also:
 - [Booking Status Automation](./booking-status-automation.md) — lifecycle / badge engine
 - [Booking Pricing Engine](./booking-pricing-engine.md) — centralized hire money math
 - [Fleet Availability Calendar](./fleet-availability-calendar.md) — scheduling UI & occupancy
+- [Admin Dashboard](./admin-dashboard.md) — post-login KPIs, charts, schedule, fleet snapshot
 - [Vehicles list UI](./vehicles-list.md) — `/vehicles` fleet table, search, filters, pagination
 - [Create Vehicle UI](./vehicles-create.md) — `/vehicles/new` Add Vehicle form + image upload
 - [Edit Vehicle UI](./vehicles-edit.md) — `/vehicles/[id]/edit` reuses `VehicleForm`

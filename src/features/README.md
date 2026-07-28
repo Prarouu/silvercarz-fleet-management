@@ -81,3 +81,12 @@ over bookings and vehicles. It reuses Availability, Status, Conflict, and
 Pricing engines; it does not edit bookings or invent overlap rules.
 
 - [Fleet Availability Calendar](../../docs/fleet-availability-calendar.md)
+
+## Dashboard
+
+`features/dashboard/` is the Admin Dashboard — post-login landing page with KPIs,
+status/availability charts, today's schedule, fleet snapshot, and recent
+bookings. It reuses Booking / Vehicle repositories plus Availability and Status
+engines; it does not invent lifecycle or availability rules.
+
+- [Admin Dashboard](../../docs/admin-dashboard.md)

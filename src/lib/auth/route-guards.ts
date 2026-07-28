@@ -106,11 +106,11 @@ export function buildLoginRedirectPath(nextPath?: string): string {
  */
 export function resolvePostLoginPath(nextPath: string | null | undefined): AppRoute | string {
   if (!nextPath || !nextPath.startsWith('/') || nextPath.startsWith('//')) {
-    return ROUTES.home;
+    return ROUTES.dashboard;
   }
 
   if (isAuthRoute(nextPath) || isAuthCallbackRoute(nextPath)) {
-    return ROUTES.home;
+    return ROUTES.dashboard;
   }
 
   return nextPath;

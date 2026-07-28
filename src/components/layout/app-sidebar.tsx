@@ -50,7 +50,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip={appConfig.name}>
-              <Link href={ROUTES.home}>
+              <Link href={ROUTES.dashboard}>
                 <div
                   className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
                   aria-hidden="true"
