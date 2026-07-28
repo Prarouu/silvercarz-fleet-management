@@ -67,14 +67,16 @@ surfaced without raw database messages.
 Fill form
   → Client Zod validation
   → createBooking(payload)   // invoice_number omitted from client
-  → Service allocates invoice via InvoiceNumberService (once)
-  → Uniqueness + availability + derived fields
+  → Service allocates invoice via InvoiceNumberService (once, after conflict checks)
+  → Conflict Detection Engine + Availability Engine
   → Repository insert
   → Success toast (shows final invoice)
   → Redirect to /bookings
 ```
 
 On failure, form values are preserved and the sticky bar re-enables Save.
+Schedule conflicts highlight the vehicle field and show a friendly date-range
+message (see [booking-conflict-detection.md](./booking-conflict-detection.md)).
 
 ## Automatic calculations
 

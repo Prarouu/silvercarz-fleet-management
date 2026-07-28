@@ -6,6 +6,9 @@
 
 export type {
   Booking,
+  BookingConflict,
+  BookingConflictCheckParams,
+  BookingConflictResult,
   BookingCreateInput,
   BookingListFilters,
   BookingListQuery,
@@ -38,6 +41,7 @@ export {
 
 export {
   BOOKING_ERROR_CODES,
+  createBookingConflictError,
   createBookingDatabaseFailureError,
   createBookingNotFoundError,
   createBookingValidationError,
@@ -61,15 +65,25 @@ export {
   calculateDurationDays,
   calculateTotalAmount,
   calculateTotalKilometers,
+  CONFLICT_BLOCKING_STATUSES,
+  CONFLICT_IGNORED_STATUSES,
   createBookingService,
+  createConflictService,
   createInvoiceNumberService,
+  datesOverlap,
   getBookingService,
+  getConflictService,
   getInvoiceNumberService,
+  isConflictBlockingStatus,
   type BookingService,
   type BookingServiceDeps,
+  type ConflictService,
+  type ConflictServiceDeps,
   type GenerateInvoiceNumberOptions,
   type InvoiceNumberService,
   type InvoiceNumberServiceDeps,
+  type NextAvailableDateParams,
+  type NextAvailableDateResult,
 } from './service';
 
 export {

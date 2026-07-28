@@ -7,6 +7,9 @@
 
 export type {
   Booking,
+  BookingConflict,
+  BookingConflictCheckParams,
+  BookingConflictResult,
   BookingCreateInput,
   BookingListFilters,
   BookingListQuery,

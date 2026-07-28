@@ -219,10 +219,21 @@ export function BookingForm(props: BookingFormProps) {
             });
           }
 
-          if (result.error.code === 'vehicle_unavailable') {
+          if (
+            result.error.code === 'vehicle_unavailable' ||
+            result.error.code === 'booking_conflict'
+          ) {
             setError('vehicle_id', {
               type: 'server',
               message: result.error.message,
+            });
+            setError('delivery_date', {
+              type: 'server',
+              message: 'Choose dates that do not overlap an existing hire.',
+            });
+            setError('return_date', {
+              type: 'server',
+              message: 'Choose dates that do not overlap an existing hire.',
             });
           }
 
@@ -263,10 +274,21 @@ export function BookingForm(props: BookingFormProps) {
           });
         }
 
-        if (result.error.code === 'vehicle_unavailable') {
+        if (
+          result.error.code === 'vehicle_unavailable' ||
+          result.error.code === 'booking_conflict'
+        ) {
           setError('vehicle_id', {
             type: 'server',
             message: result.error.message,
+          });
+          setError('delivery_date', {
+            type: 'server',
+            message: 'Choose dates that do not overlap an existing hire.',
+          });
+          setError('return_date', {
+            type: 'server',
+            message: 'Choose dates that do not overlap an existing hire.',
           });
         }
 
@@ -300,7 +322,7 @@ export function BookingForm(props: BookingFormProps) {
       aria-describedby={formError ? formErrorId : undefined}
     >
       {formError ? (
-        <Alert variant="destructive" id={formErrorId}>
+        <Alert variant="destructive" id={formErrorId} aria-live="assertive">
           <AlertTitle>{alertTitle}</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
         </Alert>

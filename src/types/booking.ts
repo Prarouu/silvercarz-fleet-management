@@ -57,10 +57,37 @@ export interface BookingListFilters {
 export interface BookingListQuery
   extends BookingListFilters, Partial<PaginationParams>, SortParams<BookingSortField> {}
 
-/** Vehicle overlap check input (availability architecture). */
+/** Vehicle overlap check input (conflict / availability queries). */
 export interface BookingVehicleOverlapQuery {
   readonly vehicleId: string;
   readonly deliveryDate: string;
   readonly returnDate: string;
   readonly excludeBookingId?: string;
+}
+
+/** Input for the Booking Conflict Detection Engine. */
+export interface BookingConflictCheckParams {
+  readonly vehicleId: string;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+  /** When editing, exclude this booking so it does not conflict with itself. */
+  readonly excludeBookingId?: string;
+}
+
+/** One conflicting hire returned by the conflict engine. */
+export interface BookingConflict {
+  readonly bookingId: string;
+  readonly invoiceNumber: string;
+  readonly customerName: string;
+  readonly status: BookingStatus;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
+}
+
+/** Result of a conflict detection pass. */
+export interface BookingConflictResult {
+  readonly hasConflict: boolean;
+  readonly conflicts: readonly BookingConflict[];
+  /** Friendly message for the primary conflict (safe for UI). */
+  readonly message?: string;
 }

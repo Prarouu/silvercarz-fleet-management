@@ -5,8 +5,8 @@
  * Admin booking, customer portal, calendar, reports, and dashboards must
  * call this service — never reimplement rules in UI or ad-hoc queries.
  *
- * Scheduling / conflict detection can extend `checkAvailability` later
- * without changing call sites.
+ * Date-window schedule conflicts are owned by the Booking Conflict Detection
+ * Engine (`ConflictService`). `checkAvailability` delegates when dates are set.
  */
 
 import 'server-only';
@@ -16,6 +16,11 @@ import {
   getBookingRepository,
   type BookingRepository,
 } from '@/features/bookings/repository';
+import {
+  createConflictService,
+  getConflictService,
+  type ConflictService,
+} from '@/features/bookings/service/conflict.service';
 import {
   createInvalidAvailabilityStatusError,
   createUnauthorizedVehicleAccessError,
@@ -52,6 +57,7 @@ import {
 export interface AvailabilityServiceDeps {
   readonly vehicleRepository?: VehicleRepository;
   readonly bookingRepository?: BookingRepository;
+  readonly conflictService?: ConflictService;
   readonly client?: TypedSupabaseClient;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
@@ -69,7 +75,7 @@ export interface AvailabilityService {
   ): Promise<ApiResponse<Vehicle>>;
   /**
    * Whether the vehicle can accept a booking (optionally for a date window).
-   * Date-window conflict detection is reserved for a later phase.
+   * When delivery/return are provided, delegates schedule overlap to ConflictService.
    */
   checkAvailability(query: VehicleAvailabilityQuery): Promise<ApiResponse<boolean>>;
   /** Active fleet vehicles currently marked available. */
@@ -200,6 +206,22 @@ export function createAvailabilityService(deps: AvailabilityServiceDeps = {}): A
     return getBookingRepository();
   }
 
+  function getConflict(): ConflictService {
+    if (deps.conflictService) {
+      return deps.conflictService;
+    }
+
+    if (deps.client) {
+      return createConflictService({ client: deps.client });
+    }
+
+    if (deps.bookingRepository) {
+      return createConflictService({ repository: deps.bookingRepository });
+    }
+
+    return getConflictService();
+  }
+
   const service: AvailabilityService = {
     resolveStatusFromBookings(vehicle, bookings, asOfDate) {
       return resolveAvailabilityFromBookings(vehicle, bookings, asOfDate ?? resolveToday());
@@ -268,8 +290,25 @@ export function createAvailabilityService(deps: AvailabilityServiceDeps = {}): A
           return false;
         }
 
-        // Future: honor deliveryDate / returnDate / excludeBookingId via
-        // booking conflict detection. Overlap enforcement remains in BookingService.
+        const { deliveryDate, returnDate, excludeBookingId } = query;
+
+        if (deliveryDate && returnDate) {
+          const conflictResult = await getConflict().detectConflicts({
+            vehicleId: query.vehicleId,
+            deliveryDate,
+            returnDate,
+            excludeBookingId,
+          });
+
+          if (!conflictResult.success) {
+            throw conflictResult.error;
+          }
+
+          if (conflictResult.data.hasConflict) {
+            return false;
+          }
+        }
+
         return true;
       });
     },

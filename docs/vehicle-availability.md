@@ -74,7 +74,7 @@ Manual `maintenance` is preserved during booking sync. Soft-retired /
 | ------------------------------ | ------------------------------------------------- |
 | `getCurrentAvailability`       | Read persisted status                             |
 | `updateAvailability`           | Explicit staff override                           |
-| `checkAvailability`            | Bookable now? (date-window ready for later)       |
+| `checkAvailability`            | Bookable now? (+ date-window via Conflict Engine) |
 | `getAvailableVehicles`         | Active + `available` list                         |
 | `getUnavailableVehicles`       | Active fleet excluding `available`                |
 | `assertVehicleBookable`        | Throws friendly errors for maintenance / inactive |
@@ -85,14 +85,16 @@ Manual `maintenance` is preserved during booking sync. Soft-retired /
 
 ## Booking integration
 
-`BookingService` calls the engine on create / update / soft-delete / hard-delete:
+`BookingService` calls the engines on create / update / soft-delete / hard-delete:
 
 1. `assertVehicleBookable` — blocks maintenance and inactive vehicles.
-2. Overlap query — date conflict check (existing repository helper).
-3. Persist booking.
+2. `ConflictService.assertNoConflict` — date-window schedule conflicts.
+3. Persist booking (invoice allocated only after conflict checks on create).
 4. `syncAvailabilityFromBookings` for affected vehicle id(s).
 
 Friendly messages are returned via `ApiResponse` — never raw Postgres errors.
+
+See [booking-conflict-detection.md](./booking-conflict-detection.md).
 
 ## UI surfaces
 
@@ -109,8 +111,9 @@ Friendly messages are returned via `ApiResponse` — never raw Postgres errors.
 - **Customer portal** — call `getAvailableVehicles` / `checkAvailability`.
 - **Calendar** — use `resolveStatusFromBookings` with an as-of date.
 - **Reports / dashboard** — count by `availability_status`.
-- **Booking conflict detection** — extend `checkAvailability` with date windows
-  (do not duplicate overlap logic in UI).
+- **Booking conflict detection** — implemented; see
+  [booking-conflict-detection.md](./booking-conflict-detection.md).
+  `checkAvailability` delegates date windows to `ConflictService`.
 
 ## Migration
 

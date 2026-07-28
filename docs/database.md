@@ -106,21 +106,25 @@ One rental / invoice per row.
 
 ## Indexes
 
-| Index                               | Purpose                                        |
-| ----------------------------------- | ---------------------------------------------- |
-| `vehicles_vehicle_number` (unique)  | Exact plate lookup / uniqueness                |
-| `vehicles_is_active_idx`            | Active fleet lists                             |
-| `vehicles_fuel_type_idx`            | Filter by fuel                                 |
-| `vehicles_vehicle_name_idx`         | Name sort / equality filters                   |
-| `bookings_invoice_number` (unique)  | Invoice lookup                                 |
-| `bookings_vehicle_id_idx`           | Bookings for a vehicle                         |
-| `bookings_delivery_date_idx`        | Calendar / start-date filters                  |
-| `bookings_return_date_idx`          | Calendar / end-date filters                    |
-| `bookings_status_idx`               | Status filters                                 |
-| `bookings_customer_name_idx`        | Customer search / sort                         |
-| `bookings_invoice_date_idx`         | Reporting by invoice date                      |
-| `bookings_created_by_idx`           | Staff activity                                 |
-| `bookings_vehicle_active_dates_idx` | Partial index for availability (non-cancelled) |
+| Index                                 | Purpose                                               |
+| ------------------------------------- | ----------------------------------------------------- |
+| `vehicles_vehicle_number` (unique)    | Exact plate lookup / uniqueness                       |
+| `vehicles_is_active_idx`              | Active fleet lists                                    |
+| `vehicles_fuel_type_idx`              | Filter by fuel                                        |
+| `vehicles_vehicle_name_idx`           | Name sort / equality filters                          |
+| `bookings_invoice_number` (unique)    | Invoice lookup                                        |
+| `bookings_vehicle_id_idx`             | Bookings for a vehicle                                |
+| `bookings_delivery_date_idx`          | Calendar / start-date filters                         |
+| `bookings_return_date_idx`            | Calendar / end-date filters                           |
+| `bookings_status_idx`                 | Status filters                                        |
+| `bookings_customer_name_idx`          | Customer search / sort                                |
+| `bookings_invoice_date_idx`           | Reporting by invoice date                             |
+| `bookings_created_by_idx`             | Staff activity                                        |
+| `bookings_vehicle_conflict_dates_idx` | Partial index for Conflict Engine (confirmed/ongoing) |
+
+> `bookings_vehicle_active_dates_idx` (non-cancelled) was replaced by
+> `bookings_vehicle_conflict_dates_idx` in migration
+> `20260728170000_booking_conflict_detection_index.sql`.
 
 ## Constraints (selected)
 

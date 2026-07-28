@@ -27,6 +27,11 @@ import {
   calculateTotalKilometers,
 } from '@/features/bookings/service/booking-calculations';
 import {
+  createConflictService,
+  getConflictService,
+  type ConflictService,
+} from '@/features/bookings/service/conflict.service';
+import {
   createInvoiceNumberService,
   getInvoiceNumberService,
   type InvoiceNumberService,
@@ -65,6 +70,7 @@ export interface BookingServiceDeps {
   readonly client?: TypedSupabaseClient;
   readonly invoiceNumberService?: InvoiceNumberService;
   readonly availabilityService?: AvailabilityService;
+  readonly conflictService?: ConflictService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -129,9 +135,13 @@ async function ensureInvoiceUnique(
   }
 }
 
-async function ensureVehicleAvailable(
-  repository: BookingRepository,
+/**
+ * Operational bookability + schedule conflict detection.
+ * Conflict rules live in ConflictService — never duplicate them here.
+ */
+async function ensureVehicleScheduleClear(
   availability: AvailabilityService,
+  conflict: ConflictService,
   params: {
     vehicleId: string;
     deliveryDate: string;
@@ -154,16 +164,13 @@ async function ensureVehicleAvailable(
     throw error;
   }
 
-  const overlaps = await repository.findOverlappingForVehicle({
+  await conflict.assertNoConflict({
     vehicleId: params.vehicleId,
     deliveryDate: params.deliveryDate,
     returnDate: params.returnDate,
     excludeBookingId: params.excludeBookingId,
+    status: params.status,
   });
-
-  if (overlaps.length > 0) {
-    throw createVehicleUnavailableError();
-  }
 }
 
 function applyCreateDerivedFields(
@@ -308,6 +315,18 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getAvailabilityService();
   }
 
+  function getConflict(): ConflictService {
+    if (deps.conflictService) {
+      return deps.conflictService;
+    }
+
+    if (deps.client) {
+      return createConflictService({ client: deps.client });
+    }
+
+    return getConflictService();
+  }
+
   async function syncVehicleAvailability(vehicleId: string | null | undefined): Promise<void> {
     if (!vehicleId) {
       return;
@@ -323,7 +342,18 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const repository = await getRepository();
         const invoiceService = getInvoiceService();
         const availability = getAvailability();
+        const conflict = getConflict();
         const values = parseCreateInput(input);
+
+        assertValidDates(values.delivery_date, values.return_date);
+
+        // Validate → operational status → conflict → invoice → save
+        await ensureVehicleScheduleClear(availability, conflict, {
+          vehicleId: values.vehicle_id,
+          deliveryDate: values.delivery_date,
+          returnDate: values.return_date,
+          status: values.status,
+        });
 
         const invoiceNumber = await invoiceService.generateNextInvoiceNumber({
           issuedOn: values.invoice_date,
@@ -331,12 +361,6 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const payload = applyCreateDerivedFields(values, actor, invoiceNumber);
 
         await ensureInvoiceUnique(repository, payload.invoice_number);
-        await ensureVehicleAvailable(repository, availability, {
-          vehicleId: payload.vehicle_id,
-          deliveryDate: payload.delivery_date,
-          returnDate: payload.return_date,
-          status: payload.status,
-        });
 
         const created = await repository.create(payload);
         await syncVehicleAvailability(created.vehicle_id);
@@ -349,6 +373,7 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
         const availability = getAvailability();
+        const conflict = getConflict();
         const existing = await repository.findById(id);
 
         if (!existing) {
@@ -364,7 +389,7 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const returnDate = payload.return_date ?? existing.return_date;
         const status = payload.status ?? existing.status;
 
-        await ensureVehicleAvailable(repository, availability, {
+        await ensureVehicleScheduleClear(availability, conflict, {
           vehicleId,
           deliveryDate,
           returnDate,

@@ -4,13 +4,17 @@
  * Safe for UI display — never wrap raw Supabase / Postgres messages here.
  */
 
+import { formatDate } from '@/lib/format';
 import { AppError, ERROR_CODES } from '@/lib/errors';
+import type { BookingConflict } from '@/types/booking';
+import { BOOKING_STATUS_LABELS } from '@/types/enums';
 
 export const BOOKING_ERROR_CODES = {
   notFound: 'booking_not_found',
   duplicateInvoice: 'duplicate_invoice',
   invoiceGenerationFailed: 'invoice_generation_failed',
   vehicleUnavailable: 'vehicle_unavailable',
+  bookingConflict: 'booking_conflict',
   invalidDates: 'invalid_booking_dates',
   unauthorized: 'unauthorized_booking_access',
   databaseFailure: 'database_failure',
@@ -44,6 +48,35 @@ export function createVehicleUnavailableError(message?: string): AppError {
     message ?? 'This vehicle is not available for the selected dates.',
     BOOKING_ERROR_CODES.vehicleUnavailable,
   );
+}
+
+/**
+ * Schedule conflict — same code surface as vehicle_unavailable for form UX,
+ * with a richer message (dates, invoice, customer, status).
+ */
+export function createBookingConflictError(
+  conflict: BookingConflict,
+  messageOverride?: string,
+): AppError {
+  if (messageOverride) {
+    return new AppError(messageOverride, BOOKING_ERROR_CODES.vehicleUnavailable);
+  }
+
+  const from = formatDate(conflict.deliveryDate);
+  const to = formatDate(conflict.returnDate);
+  const statusLabel = BOOKING_STATUS_LABELS[conflict.status];
+  const details = [
+    conflict.invoiceNumber ? `Invoice ${conflict.invoiceNumber}` : null,
+    conflict.customerName || null,
+    statusLabel || null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+
+  const base = `This vehicle is already booked between ${from} and ${to}.`;
+  const message = details ? `${base} (${details})` : base;
+
+  return new AppError(message, BOOKING_ERROR_CODES.vehicleUnavailable);
 }
 
 export function createInvalidBookingDatesError(message?: string): AppError {

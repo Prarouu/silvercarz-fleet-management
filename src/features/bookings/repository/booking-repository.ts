@@ -60,8 +60,9 @@ export interface BookingRepository {
    */
   findLifecycleBookingsForVehicle(vehicleId: string): Promise<Booking[]>;
   /**
-   * Returns non-cancelled bookings for a vehicle that overlap a date range.
-   * Used by the service availability check (architecture ready).
+   * Returns blocking bookings for a vehicle that overlap a date range.
+   * Only confirmed / ongoing rows — used by the Conflict Detection Engine.
+   * Overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
    */
   findOverlappingForVehicle(params: BookingVehicleOverlapQuery): Promise<Booking[]>;
 }
@@ -371,13 +372,15 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
     },
 
     async findOverlappingForVehicle(params) {
+      // Closed-interval overlap + blocking statuses only (indexed partial query).
       let builder = client
         .from('bookings')
         .select('*')
         .eq('vehicle_id', params.vehicleId)
-        .neq('status', BOOKING_STATUSES.cancelled)
+        .in('status', [BOOKING_STATUSES.confirmed, BOOKING_STATUSES.ongoing])
         .lte('delivery_date', params.returnDate)
-        .gte('return_date', params.deliveryDate);
+        .gte('return_date', params.deliveryDate)
+        .order('delivery_date', { ascending: true });
 
       if (params.excludeBookingId) {
         builder = builder.neq('id', params.excludeBookingId);
