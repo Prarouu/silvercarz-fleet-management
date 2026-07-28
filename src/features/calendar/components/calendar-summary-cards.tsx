@@ -73,7 +73,7 @@ type CalendarSummaryCardsProps = {
 export function CalendarSummaryCards({ summary, className }: CalendarSummaryCardsProps) {
   return (
     <section
-      className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6', className)}
+      className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6', className)}
       aria-label="Fleet calendar summary"
     >
       {CARDS.map((card) => {

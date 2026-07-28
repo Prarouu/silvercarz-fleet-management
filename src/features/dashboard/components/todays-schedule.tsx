@@ -27,12 +27,12 @@ export function TodaysSchedule({ items }: TodaysScheduleProps) {
   return (
     <MotionSection delay={0.2} aria-label="Today's schedule">
       <Card className="shadow-none">
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
             <CardTitle>Today&apos;s Schedule</CardTitle>
             <CardDescription>Pickups, returns, and active hires for today</CardDescription>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="self-start">
             <Link href={ROUTES.calendar}>Open calendar</Link>
           </Button>
         </CardHeader>

@@ -66,48 +66,58 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
       aria-label="Booking actions"
     >
       {!isCancelled ? (
-        <Button asChild size="sm" className="min-h-9 sm:min-h-8">
+        <Button asChild size="sm">
           <Link href={bookingEditPath(bookingId)}>
             <Pencil className="size-4" aria-hidden="true" />
             Edit Booking
           </Link>
         </Button>
       ) : (
-        <Button size="sm" className="min-h-9 sm:min-h-8" disabled aria-disabled="true">
+        <Button size="sm" disabled aria-disabled="true">
           <Pencil className="size-4" aria-hidden="true" />
           Edit Booking
         </Button>
       )}
 
-      <Button asChild variant="outline" size="sm" className="min-h-9 sm:min-h-8">
-        <Link href={ROUTES.bookings}>Back to Bookings</Link>
+      <Button asChild variant="outline" size="sm">
+        <Link href={ROUTES.bookings}>
+          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">Back to Bookings</span>
+        </Link>
       </Button>
 
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="min-h-9 sm:min-h-8"
         disabled
         aria-disabled="true"
         title="Invoice printing will be available in a future release"
       >
         <Printer className="size-4" aria-hidden="true" />
-        Print Invoice
+        <span className="sm:hidden">Print</span>
+        <span className="hidden sm:inline">Print Invoice</span>
       </Button>
 
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="min-h-9 text-destructive sm:min-h-8"
+        className="text-destructive"
         disabled={isPending || isCancelled}
         aria-busy={isPending}
         onClick={handleCancelBooking}
         aria-label="Cancel booking"
       >
         <Ban className="size-4" aria-hidden="true" />
-        {isCancelled ? 'Cancelled' : 'Cancel Booking'}
+        {isCancelled ? (
+          'Cancelled'
+        ) : (
+          <>
+            <span className="sm:hidden">Cancel</span>
+            <span className="hidden sm:inline">Cancel Booking</span>
+          </>
+        )}
       </Button>
     </div>
   );

@@ -16,12 +16,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { appConfig, mainNavItems, secondaryNavItems, type NavItem } from '@/config';
 import { ROUTES } from '@/constants';
 
 function NavMenu({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   return (
     <SidebarMenu>
@@ -32,7 +34,14 @@ function NavMenu({ items }: { items: readonly NavItem[] }) {
             isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
             tooltip={item.title}
           >
-            <Link href={item.href}>
+            <Link
+              href={item.href}
+              onClick={() => {
+                if (isMobile) {
+                  setOpenMobile(false);
+                }
+              }}
+            >
               <item.icon />
               <span>{item.title}</span>
             </Link>

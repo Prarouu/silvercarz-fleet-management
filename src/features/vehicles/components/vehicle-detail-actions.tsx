@@ -19,17 +19,19 @@ export function VehicleDetailActions({ vehicleId }: VehicleDetailActionsProps) {
       role="toolbar"
       aria-label="Vehicle actions"
     >
-      <Button asChild size="sm" className="min-h-9 sm:min-h-8">
+      <Button asChild size="sm">
         <Link href={vehicleEditPath(vehicleId)}>
           <Pencil className="size-4" aria-hidden="true" />
-          Edit Vehicle
+          <span className="sm:hidden">Edit</span>
+          <span className="hidden sm:inline">Edit Vehicle</span>
         </Link>
       </Button>
 
-      <Button asChild variant="outline" size="sm" className="min-h-9 sm:min-h-8">
+      <Button asChild variant="outline" size="sm">
         <Link href={ROUTES.vehicles}>
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Back to Fleet
+          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">Back to Fleet</span>
         </Link>
       </Button>
 
@@ -37,26 +39,27 @@ export function VehicleDetailActions({ vehicleId }: VehicleDetailActionsProps) {
         type="button"
         variant="outline"
         size="sm"
-        className="min-h-9 sm:min-h-8"
         disabled
         aria-disabled="true"
         title="Deactivate vehicle will be available in a future release"
       >
         <Ban className="size-4" aria-hidden="true" />
-        Deactivate Vehicle
+        <span className="sm:hidden">Deactivate</span>
+        <span className="hidden sm:inline">Deactivate Vehicle</span>
       </Button>
 
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="min-h-9 text-destructive sm:min-h-8"
+        className="text-destructive"
         disabled
         aria-disabled="true"
         title="Delete vehicle will be available in a future release"
       >
         <Trash2 className="size-4" aria-hidden="true" />
-        Delete Vehicle
+        <span className="sm:hidden">Delete</span>
+        <span className="hidden sm:inline">Delete Vehicle</span>
       </Button>
     </div>
   );

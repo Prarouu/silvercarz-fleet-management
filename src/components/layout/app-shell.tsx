@@ -11,9 +11,9 @@ export function AppShell({ user, children }: { user: AuthUser; children: React.R
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <AppHeader user={user} />
-        <main className="flex flex-1 flex-col">{children}</main>
+        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

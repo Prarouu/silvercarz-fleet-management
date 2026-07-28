@@ -84,7 +84,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Invoice, customer, contact, vehicle…"
-                className={cn('pl-8', searchInput && 'pr-8')}
+                className={cn('pl-8', searchInput && 'pr-10 sm:pr-8')}
                 autoComplete="off"
                 enterKeyHint="search"
               />
@@ -179,7 +179,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             onClick={() => {
               startTransition(() => {
                 router.refresh();
@@ -194,7 +194,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-8 flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial"
             disabled={!hasFilters}
             onClick={() => {
               setSearchInput('');

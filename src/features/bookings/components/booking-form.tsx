@@ -402,7 +402,7 @@ export function BookingForm(props: BookingFormProps) {
         title="Booking Information"
         description="Invoice identity and rental mode for this booking."
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <BookingFormField
             id="invoice_number"
             label="Invoice Number"
@@ -801,7 +801,7 @@ export function BookingForm(props: BookingFormProps) {
         title="Pricing"
         description="Rates and distance. Derived fields come from the Pricing Engine."
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <BookingFormField
             id="daily_charge"
             label="Per Day Charge"
@@ -1113,7 +1113,7 @@ export function BookingForm(props: BookingFormProps) {
             <Button
               type="button"
               variant="outline"
-              className="min-h-9 min-w-28 text-destructive sm:min-h-8"
+              className="min-w-28 text-destructive"
               disabled={isLoading}
               onClick={handleCancelBooking}
             >
@@ -1123,7 +1123,7 @@ export function BookingForm(props: BookingFormProps) {
           <Button
             type="button"
             variant="outline"
-            className="min-h-9 min-w-24 sm:min-h-8"
+            className="min-w-24"
             disabled={isLoading}
             onClick={handleCancel}
           >
@@ -1131,7 +1131,7 @@ export function BookingForm(props: BookingFormProps) {
           </Button>
           <Button
             type="submit"
-            className="min-h-9 min-w-32 sm:min-h-8"
+            className="min-w-32"
             disabled={isLoading || isCancelled}
             aria-busy={isLoading}
           >

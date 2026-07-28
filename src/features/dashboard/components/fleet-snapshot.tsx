@@ -23,12 +23,12 @@ export function FleetSnapshot({ items }: FleetSnapshotProps) {
   return (
     <MotionSection delay={0.24} aria-label="Fleet snapshot">
       <Card className="shadow-none">
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
             <CardTitle>Fleet Snapshot</CardTitle>
             <CardDescription>Availability and next bookings at a glance</CardDescription>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="self-start">
             <Link href={ROUTES.vehicles}>View fleet</Link>
           </Button>
         </CardHeader>

@@ -36,6 +36,9 @@ export function FleetTimeline({ rows, rangeStart, rangeEnd, className }: FleetTi
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card p-3">
+          <p className="mb-2 text-xs text-muted-foreground md:hidden">
+            Scroll horizontally to view more days →
+          </p>
           <div className="min-w-[36rem] space-y-3">
             <div className="flex gap-3">
               <div className="w-44 shrink-0 px-1 text-xs font-medium text-muted-foreground">

@@ -98,7 +98,7 @@ export function CalendarFilters({ state, vehicles, className }: CalendarFiltersP
       role="search"
       aria-label="Filter fleet calendar"
     >
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
         <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
           <Label htmlFor="calendar-search">Search</Label>
           <div className="relative">

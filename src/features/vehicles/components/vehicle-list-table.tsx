@@ -201,7 +201,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
     <>
       <div
         className={cn(
-          'hidden overflow-hidden rounded-xl border bg-card md:block',
+          'hidden overflow-hidden rounded-xl border bg-card lg:block',
           isPending && 'pointer-events-none opacity-70',
         )}
         aria-busy={isPending}
@@ -276,7 +276,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
       </div>
 
       <ul
-        className={cn('space-y-3 md:hidden', isPending && 'pointer-events-none opacity-70')}
+        className={cn('space-y-3 lg:hidden', isPending && 'pointer-events-none opacity-70')}
         aria-busy={isPending}
         aria-label="Vehicles"
       >

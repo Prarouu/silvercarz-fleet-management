@@ -26,12 +26,12 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
   return (
     <MotionSection delay={0.28} aria-label="Recent bookings">
       <Card className="shadow-none">
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
             <CardTitle>Recent Bookings</CardTitle>
             <CardDescription>Latest 10 hires across the fleet</CardDescription>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="self-start">
             <Link href={ROUTES.bookings}>Manage bookings</Link>
           </Button>
         </CardHeader>
@@ -50,7 +50,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
           ) : (
             <>
               {/* Desktop / tablet table */}
-              <div className="hidden overflow-hidden rounded-xl border border-border md:block">
+              <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
                 <table className="w-full caption-bottom text-sm">
                   <TableHeader>
                     <TableRow className="bg-table-header hover:bg-table-header">
@@ -82,10 +82,10 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                         <TableCell className="font-medium tabular-nums">
                           {booking.invoice_number}
                         </TableCell>
-                        <TableCell className="max-w-[10rem] truncate">
+                        <TableCell className="max-w-[8rem] truncate md:max-w-[10rem] lg:max-w-[14rem]">
                           {booking.customer_name}
                         </TableCell>
-                        <TableCell className="max-w-[11rem]">
+                        <TableCell className="max-w-[9rem] md:max-w-[11rem] lg:max-w-[14rem]">
                           <p className="truncate font-medium">{booking.vehicle.vehicle_name}</p>
                           <p className="truncate text-xs text-muted-foreground tabular-nums">
                             {booking.vehicle.vehicle_number}

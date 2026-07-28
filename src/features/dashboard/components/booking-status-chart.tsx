@@ -65,7 +65,7 @@ export function BookingStatusChart({ data }: BookingStatusChartProps) {
         </CardHeader>
         <CardContent>
           {hasData ? (
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem] sm:items-center">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-center lg:grid-cols-[minmax(0,1fr)_12rem]">
               <div
                 className="mx-auto h-56 w-full max-w-xs"
                 role="img"

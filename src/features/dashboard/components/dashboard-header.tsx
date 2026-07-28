@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { appConfig } from '@/config';
+import { useLiveNow } from '@/features/dashboard/hooks/use-live-now';
 import { resolveGreeting } from '@/features/dashboard/lib/greeting';
 import { formatDate } from '@/lib/format';
 
@@ -24,14 +23,8 @@ type DashboardHeaderProps = {
  * Subtitle: "Manage your fleet efficiently."
  */
 export function DashboardHeader({ asOfDate }: DashboardHeaderProps) {
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const greeting = resolveGreeting(now);
+  const now = useLiveNow();
+  const greeting = now ? resolveGreeting(now) : 'Welcome';
 
   return (
     <header className="space-y-1.5" aria-label="Dashboard greeting">
@@ -44,7 +37,13 @@ export function DashboardHeader({ asOfDate }: DashboardHeaderProps) {
           <span className="mx-2 text-border" aria-hidden="true">
             ·
           </span>
-          <time dateTime={now.toISOString()}>{formatClock(now)}</time>
+          {now ? (
+            <time dateTime={now.toISOString()}>{formatClock(now)}</time>
+          ) : (
+            <span className="inline-block min-w-[7.5rem]" aria-hidden="true">
+              --:--:-- --
+            </span>
+          )}
         </p>
       </div>
       <p className="text-body text-muted-foreground">Manage your fleet efficiently.</p>
