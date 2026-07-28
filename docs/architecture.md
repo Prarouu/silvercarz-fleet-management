@@ -18,6 +18,7 @@ See also:
 - [Create Booking UI](./bookings-create.md) — `/bookings/new` shared `BookingForm`
 - [Edit Booking UI](./bookings-edit.md) — `/bookings/[id]/edit` reuses `BookingForm`
 - [Vehicles data layer](./vehicles-data-layer.md) — repository, service, Server Actions
+- [Vehicle Availability Engine](./vehicle-availability.md) — centralized availability states & sync
 - [Vehicles list UI](./vehicles-list.md) — `/vehicles` fleet table, search, filters, pagination
 - [Create Vehicle UI](./vehicles-create.md) — `/vehicles/new` Add Vehicle form + image upload
 - [Edit Vehicle UI](./vehicles-edit.md) — `/vehicles/[id]/edit` reuses `VehicleForm`

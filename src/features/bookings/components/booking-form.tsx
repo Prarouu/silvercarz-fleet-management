@@ -31,6 +31,7 @@ import {
   BOOKING_PAYMENT_OPTIONS,
   createBookingFormDefaults,
   formatVehicleOptionLabel,
+  isVehicleSelectionBlocked,
   parseOptionalNumber,
   validateCreateBookingForm,
   validateUpdateBookingForm,
@@ -526,7 +527,7 @@ export function BookingForm(props: BookingFormProps) {
             id="vehicle_id"
             label="Vehicle"
             required
-            description="Only active vehicles are listed."
+            description="Available vehicles can be selected. Booked, maintenance, and inactive vehicles are disabled."
             error={errors.vehicle_id?.message}
             className="sm:col-span-2"
           >
@@ -536,7 +537,20 @@ export function BookingForm(props: BookingFormProps) {
               render={({ field }) => (
                 <Select
                   value={field.value ? field.value : undefined}
-                  onValueChange={(value) => field.onChange(value ?? '')}
+                  onValueChange={(value) => {
+                    if (!value) {
+                      return;
+                    }
+                    const selected = vehicles.find((vehicle) => vehicle.id === value);
+                    if (
+                      selected &&
+                      isVehicleSelectionBlocked(selected) &&
+                      selected.id !== field.value
+                    ) {
+                      return;
+                    }
+                    field.onChange(value);
+                  }}
                   disabled={isLoading || vehicles.length === 0}
                 >
                   <SelectTrigger
@@ -545,21 +559,36 @@ export function BookingForm(props: BookingFormProps) {
                       id: 'vehicle_id',
                       required: true,
                       error: errors.vehicle_id?.message,
-                      description: 'Only active vehicles are listed.',
+                      description:
+                        'Available vehicles can be selected. Booked, maintenance, and inactive vehicles are disabled.',
                     })}
                   >
                     <SelectValue
                       placeholder={
-                        vehicles.length === 0 ? 'No active vehicles available' : 'Select vehicle'
+                        vehicles.length === 0 ? 'No vehicles available' : 'Select vehicle'
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {formatVehicleOptionLabel(vehicle)}
-                      </SelectItem>
-                    ))}
+                    {vehicles.map((vehicle) => {
+                      const blocked =
+                        isVehicleSelectionBlocked(vehicle) && vehicle.id !== field.value;
+
+                      return (
+                        <SelectItem
+                          key={vehicle.id}
+                          value={vehicle.id}
+                          disabled={blocked}
+                          aria-label={
+                            blocked
+                              ? `${formatVehicleOptionLabel(vehicle)} (not selectable)`
+                              : formatVehicleOptionLabel(vehicle)
+                          }
+                        >
+                          {formatVehicleOptionLabel(vehicle)}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}

@@ -54,6 +54,12 @@ export interface BookingRepository {
   search(search: string, query?: BookingListQuery): Promise<PaginatedResult<BookingWithVehicle>>;
   count(filters?: BookingListFilters): Promise<number>;
   /**
+   * Returns non-cancelled, non-draft bookings that can drive availability state
+   * (confirmed / ongoing / completed history for date windows).
+   * Used by the Availability Engine — not for UI lists.
+   */
+  findLifecycleBookingsForVehicle(vehicleId: string): Promise<Booking[]>;
+  /**
    * Returns non-cancelled bookings for a vehicle that overlap a date range.
    * Used by the service availability check (architecture ready).
    */
@@ -343,6 +349,25 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
       }
 
       return count ?? 0;
+    },
+
+    async findLifecycleBookingsForVehicle(vehicleId) {
+      const { data, error } = await client
+        .from('bookings')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .in('status', [
+          BOOKING_STATUSES.confirmed,
+          BOOKING_STATUSES.ongoing,
+          BOOKING_STATUSES.completed,
+        ])
+        .order('delivery_date', { ascending: true });
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      return data ?? [];
     },
 
     async findOverlappingForVehicle(params) {

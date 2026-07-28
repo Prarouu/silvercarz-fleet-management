@@ -36,7 +36,9 @@ Rules:
 src/features/vehicles/
 ├── actions/           # Next.js Server Actions (thin)
 ├── repository/        # Supabase queries
-├── service/           # Business logic + ApiResponse orchestration
+├── service/           # Business logic + Availability Engine
+│   ├── vehicle-service.ts
+│   └── availability.service.ts
 ├── errors.ts          # Domain AppError factories
 ├── types.ts           # Re-exports from @/types
 └── index.ts           # Public feature barrel
@@ -93,12 +95,13 @@ Responsibilities:
 - Zod validation (`createVehicleSchema`, `updateVehicleSchema`, list/search schemas)
 - Permission checks (`vehicles:read` / `vehicles:write` / `vehicles:delete`)
 - Vehicle number uniqueness (normalized uppercase, no spaces)
-- Soft-delete rules (`is_active → false`)
-- Availability helper (active check only — booking conflicts later)
-- `requireActiveVehicle` for future hire / booking flows
+- Soft-delete rules (`is_active → false` + `availability_status → inactive`)
+- Availability Engine (`availability.service.ts`) — status sync, bookability
+- `requireActiveVehicle` for hire / booking flows
 
 Public methods return `ApiResponse<T>` via `fromPromise` — never raw Supabase
-errors.
+errors. See [vehicle-availability.md](./vehicle-availability.md) for lifecycle
+rules and integration points.
 
 ## Server Actions
 

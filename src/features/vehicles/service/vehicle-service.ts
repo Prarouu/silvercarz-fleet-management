@@ -19,6 +19,11 @@ import {
   getVehicleRepository,
   type VehicleRepository,
 } from '@/features/vehicles/repository';
+import {
+  createAvailabilityService,
+  getAvailabilityService,
+  type AvailabilityService,
+} from '@/features/vehicles/service/availability.service';
 import { PERMISSIONS, requirePermission } from '@/lib/auth';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
@@ -40,10 +45,12 @@ import {
   type CreateVehicleValues,
   type UpdateVehicleValues,
 } from '@/validations';
+import { VEHICLE_AVAILABILITY_STATUSES } from '@/types/enums';
 
 export interface VehicleServiceDeps {
   readonly repository?: VehicleRepository;
   readonly client?: TypedSupabaseClient;
+  readonly availabilityService?: AvailabilityService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -172,6 +179,21 @@ export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleServ
     return getVehicleRepository();
   }
 
+  function getAvailability(): AvailabilityService {
+    if (deps.availabilityService) {
+      return deps.availabilityService;
+    }
+
+    if (deps.client) {
+      return createAvailabilityService({
+        client: deps.client,
+        requirePermission: requirePerm,
+      });
+    }
+
+    return getAvailabilityService();
+  }
+
   const service: VehicleService = {
     createVehicle(input) {
       return fromPromise(async () => {
@@ -203,7 +225,39 @@ export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleServ
           await ensureVehicleNumberUnique(repository, payload.vehicle_number, id);
         }
 
-        return repository.update(id, payload);
+        // Keep roster + availability aligned on soft-retire / reactivate.
+        if (payload.is_active === false) {
+          payload.availability_status = VEHICLE_AVAILABILITY_STATUSES.inactive;
+        } else if (
+          payload.is_active === true &&
+          (existing.availability_status === VEHICLE_AVAILABILITY_STATUSES.inactive ||
+            payload.availability_status === VEHICLE_AVAILABILITY_STATUSES.inactive)
+        ) {
+          payload.availability_status =
+            payload.availability_status === VEHICLE_AVAILABILITY_STATUSES.inactive
+              ? VEHICLE_AVAILABILITY_STATUSES.available
+              : (payload.availability_status ?? VEHICLE_AVAILABILITY_STATUSES.available);
+        }
+
+        if (payload.availability_status === VEHICLE_AVAILABILITY_STATUSES.inactive) {
+          payload.is_active = false;
+        }
+
+        const updated = await repository.update(id, payload);
+
+        // After reactivating, recalculate from open bookings when status is booking-derived.
+        if (
+          payload.is_active === true &&
+          updated.availability_status !== VEHICLE_AVAILABILITY_STATUSES.maintenance &&
+          updated.availability_status !== VEHICLE_AVAILABILITY_STATUSES.inactive
+        ) {
+          const synced = await getAvailability().syncAvailabilityFromBookings(id);
+          if (synced.success) {
+            return synced.data;
+          }
+        }
+
+        return updated;
       });
     },
 
@@ -331,23 +385,7 @@ export function createVehicleService(deps: VehicleServiceDeps = {}): VehicleServ
     },
 
     isVehicleAvailable(query) {
-      return fromPromise(async () => {
-        await requirePerm(PERMISSIONS.vehiclesRead);
-        const repository = await getRepository();
-        const vehicle = await repository.findById(query.vehicleId);
-
-        if (!vehicle) {
-          throw createVehicleNotFoundError();
-        }
-
-        // Active roster + available status today.
-        // Future: honor deliveryDate / returnDate / excludeBookingId for conflicts.
-        if (!vehicle.is_active || vehicle.availability_status !== 'available') {
-          return false;
-        }
-
-        return true;
-      });
+      return getAvailability().checkAvailability(query);
     },
 
     requireActiveVehicle(id) {

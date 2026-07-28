@@ -37,6 +37,42 @@ export function createInactiveVehicleError(): AppError {
   );
 }
 
+export function createVehicleUnavailableForBookingError(
+  status?: 'booked' | 'reserved' | 'maintenance' | 'inactive',
+): AppError {
+  switch (status) {
+    case 'maintenance':
+      return new AppError(
+        'This vehicle is under maintenance and cannot be booked.',
+        VEHICLE_ERROR_CODES.inactive,
+      );
+    case 'inactive':
+      return new AppError(
+        'This vehicle is inactive and cannot be booked.',
+        VEHICLE_ERROR_CODES.inactive,
+      );
+    case 'booked':
+      return new AppError(
+        'This vehicle is currently booked and cannot be selected.',
+        VEHICLE_ERROR_CODES.inactive,
+      );
+    case 'reserved':
+      return new AppError(
+        'This vehicle is reserved for another hire and cannot be selected.',
+        VEHICLE_ERROR_CODES.inactive,
+      );
+    default:
+      return new AppError(
+        'This vehicle is not available for booking.',
+        VEHICLE_ERROR_CODES.inactive,
+      );
+  }
+}
+
+export function createInvalidAvailabilityStatusError(): AppError {
+  return new AppError('Select a valid availability status.', VEHICLE_ERROR_CODES.validation);
+}
+
 export function createUnauthorizedVehicleAccessError(): AppError {
   return new AppError(
     'You do not have permission to access this vehicle.',

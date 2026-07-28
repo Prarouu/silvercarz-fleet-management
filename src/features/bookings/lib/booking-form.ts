@@ -5,12 +5,20 @@
  * this module only shapes UX values.
  */
 
-import type { Booking, BookingStatus, PaymentMethod, RentalMode, SelectOption } from '@/types';
+import type {
+  Booking,
+  BookingStatus,
+  PaymentMethod,
+  RentalMode,
+  SelectOption,
+  VehicleAvailabilityStatus,
+} from '@/types';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_VALUES,
   RENTAL_MODES,
+  VEHICLE_AVAILABILITY_STATUS_LABELS,
 } from '@/types';
 import {
   createBookingSchema,
@@ -56,6 +64,10 @@ export type VehicleSelectOption = {
   readonly id: string;
   readonly vehicle_name: string;
   readonly vehicle_number: string;
+  readonly availability_status?: VehicleAvailabilityStatus;
+  readonly is_active?: boolean;
+  /** When true, option is shown but not selectable (booked / maintenance / inactive). */
+  readonly disabled?: boolean;
 };
 
 export type BookingFormFieldErrors = Partial<Record<keyof BookingFormValues, string>>;
@@ -259,5 +271,28 @@ export function parseOptionalNumber(raw: string): number | null {
 }
 
 export function formatVehicleOptionLabel(vehicle: VehicleSelectOption): string {
-  return `${vehicle.vehicle_name} (${vehicle.vehicle_number})`;
+  const base = `${vehicle.vehicle_name} (${vehicle.vehicle_number})`;
+
+  if (!vehicle.availability_status || vehicle.availability_status === 'available') {
+    return base;
+  }
+
+  return `${base} — ${VEHICLE_AVAILABILITY_STATUS_LABELS[vehicle.availability_status]}`;
+}
+
+/** Vehicles that must never be newly selected on a booking form. */
+export function isVehicleSelectionBlocked(vehicle: VehicleSelectOption): boolean {
+  if (vehicle.disabled) {
+    return true;
+  }
+
+  if (vehicle.is_active === false) {
+    return true;
+  }
+
+  return (
+    vehicle.availability_status === 'booked' ||
+    vehicle.availability_status === 'maintenance' ||
+    vehicle.availability_status === 'inactive'
+  );
 }

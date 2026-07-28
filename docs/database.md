@@ -32,13 +32,13 @@ Text relationships:
 
 ## Enums
 
-| Enum                   | Values                                                    | Used on                        |
-| ---------------------- | --------------------------------------------------------- | ------------------------------ |
-| `fuel_type`            | `petrol`, `diesel`, `cng`, `electric`, `hybrid`           | `vehicles.fuel_type`           |
-| `vehicle_availability` | `available`, `booked`, `maintenance`                      | `vehicles.availability_status` |
-| `rental_mode`          | `with_driver`, `without_driver`                           | `bookings.mode`                |
-| `payment_method`       | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other` | `bookings.payment_method`      |
-| `booking_status`       | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled` | `bookings.status`              |
+| Enum                   | Values                                                       | Used on                        |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------ |
+| `fuel_type`            | `petrol`, `diesel`, `cng`, `electric`, `hybrid`              | `vehicles.fuel_type`           |
+| `vehicle_availability` | `available`, `booked`, `reserved`, `maintenance`, `inactive` | `vehicles.availability_status` |
+| `rental_mode`          | `with_driver`, `without_driver`                              | `bookings.mode`                |
+| `payment_method`       | `cash`, `upi`, `card`, `bank_transfer`, `cheque`, `other`    | `bookings.payment_method`      |
+| `booking_status`       | `draft`, `confirmed`, `ongoing`, `completed`, `cancelled`    | `bookings.status`              |
 
 Extend enums with `ALTER TYPE … ADD VALUE`. Never rename or reorder existing
 values in production.
@@ -173,6 +173,7 @@ Triggers:
 | `20260727090000_extend_vehicles_for_creation.sql`         | Vehicle profile fields, availability, images |
 | `20260728140000_create_invoice_sequences.sql`             | Yearly invoice counters + atomic RPCs        |
 | `20260728150000_sync_invoice_sequences_from_bookings.sql` | Seed counters from existing bookings         |
+| `20260728160000_extend_vehicle_availability_statuses.sql` | Adds `reserved` + `inactive` availability    |
 
 Apply order matters: profiles migration first (for `created_by` FK and
 `current_user_role()`).
@@ -195,8 +196,10 @@ Idempotency: enums use `DO $$ … EXCEPTION WHEN duplicate_object`, tables use
 
 - Separate `customers` / `drivers` tables (denormalized on bookings for MVP)
 - Soft-delete columns beyond `is_active` / `cancelled`
-- Overlap exclusion constraints for vehicle double-booking (partial index is
-  prepared; hard exclusion can land with availability logic)
+- Hard exclusion constraints for vehicle double-booking (partial index is
+  prepared; Availability Engine + overlap queries cover application rules)
+
+See [vehicle-availability.md](./vehicle-availability.md) for lifecycle rules.
 
 Invoice sequences are documented in [invoice-numbering.md](./invoice-numbering.md)
 (`invoice_sequences` + `next_invoice_sequence` / `peek_next_invoice_sequence`).

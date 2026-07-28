@@ -300,7 +300,7 @@ export type Database = {
     Enums: {
       app_role: 'owner' | 'manager';
       fuel_type: 'petrol' | 'diesel' | 'cng' | 'electric' | 'hybrid';
-      vehicle_availability: 'available' | 'booked' | 'maintenance';
+      vehicle_availability: 'available' | 'booked' | 'maintenance' | 'reserved' | 'inactive';
       rental_mode: 'with_driver' | 'without_driver';
       payment_method: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'other';
       booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';

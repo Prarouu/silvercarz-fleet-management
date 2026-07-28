@@ -39,9 +39,9 @@ export function createInvoiceGenerationError(cause?: unknown): AppError {
   );
 }
 
-export function createVehicleUnavailableError(): AppError {
+export function createVehicleUnavailableError(message?: string): AppError {
   return new AppError(
-    'This vehicle is not available for the selected dates.',
+    message ?? 'This vehicle is not available for the selected dates.',
     BOOKING_ERROR_CODES.vehicleUnavailable,
   );
 }

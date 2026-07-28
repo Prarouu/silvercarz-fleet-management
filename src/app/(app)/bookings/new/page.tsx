@@ -21,6 +21,9 @@ export default async function NewBookingPage() {
         id: vehicle.id,
         vehicle_name: vehicle.vehicle_name,
         vehicle_number: vehicle.vehicle_number,
+        availability_status: vehicle.availability_status,
+        is_active: vehicle.is_active,
+        disabled: false,
       }))
     : [];
 

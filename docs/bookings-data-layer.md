@@ -70,10 +70,13 @@ Responsibilities:
 - Invoice uniqueness (belt-and-suspenders with DB unique constraint)
 - Date integrity
 - Duration / km / amount calculations
-- Vehicle availability (overlap query; drafts/cancelled skip enforcement)
+- Vehicle availability via Availability Engine + overlap query
+  (drafts/cancelled skip enforcement; syncs vehicle status after writes)
 
 Public methods return `ApiResponse<T>` via `fromPromise` — never raw Supabase
 errors. `previewNextInvoiceNumber` returns a plain string for the create form.
+
+See [vehicle-availability.md](./vehicle-availability.md).
 
 ## Server Actions
 

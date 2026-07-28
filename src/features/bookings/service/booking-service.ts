@@ -31,7 +31,13 @@ import {
   getInvoiceNumberService,
   type InvoiceNumberService,
 } from '@/features/bookings/service/invoice-number.service';
+import {
+  createAvailabilityService,
+  getAvailabilityService,
+  type AvailabilityService,
+} from '@/features/vehicles/service/availability.service';
 import { PERMISSIONS, requirePermission, type AuthUser } from '@/lib/auth';
+import { AppError } from '@/lib/errors';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
 import type {
@@ -58,6 +64,7 @@ export interface BookingServiceDeps {
   readonly repository?: BookingRepository;
   readonly client?: TypedSupabaseClient;
   readonly invoiceNumberService?: InvoiceNumberService;
+  readonly availabilityService?: AvailabilityService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -124,6 +131,7 @@ async function ensureInvoiceUnique(
 
 async function ensureVehicleAvailable(
   repository: BookingRepository,
+  availability: AvailabilityService,
   params: {
     vehicleId: string;
     deliveryDate: string;
@@ -135,6 +143,15 @@ async function ensureVehicleAvailable(
 ): Promise<void> {
   if (params.status === BOOKING_STATUSES.cancelled || params.status === BOOKING_STATUSES.draft) {
     return;
+  }
+
+  try {
+    await availability.assertVehicleBookable(params.vehicleId);
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw createVehicleUnavailableError(error.message);
+    }
+    throw error;
   }
 
   const overlaps = await repository.findOverlappingForVehicle({
@@ -276,12 +293,36 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getInvoiceNumberService();
   }
 
+  function getAvailability(): AvailabilityService {
+    if (deps.availabilityService) {
+      return deps.availabilityService;
+    }
+
+    if (deps.client) {
+      return createAvailabilityService({
+        client: deps.client,
+        requirePermission: requirePerm,
+      });
+    }
+
+    return getAvailabilityService();
+  }
+
+  async function syncVehicleAvailability(vehicleId: string | null | undefined): Promise<void> {
+    if (!vehicleId) {
+      return;
+    }
+
+    await getAvailability().syncAvailabilityFromBookings(vehicleId);
+  }
+
   const service: BookingService = {
     createBooking(input) {
       return fromPromise(async () => {
         const actor = await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
         const invoiceService = getInvoiceService();
+        const availability = getAvailability();
         const values = parseCreateInput(input);
 
         const invoiceNumber = await invoiceService.generateNextInvoiceNumber({
@@ -290,14 +331,16 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const payload = applyCreateDerivedFields(values, actor, invoiceNumber);
 
         await ensureInvoiceUnique(repository, payload.invoice_number);
-        await ensureVehicleAvailable(repository, {
+        await ensureVehicleAvailable(repository, availability, {
           vehicleId: payload.vehicle_id,
           deliveryDate: payload.delivery_date,
           returnDate: payload.return_date,
           status: payload.status,
         });
 
-        return repository.create(payload);
+        const created = await repository.create(payload);
+        await syncVehicleAvailability(created.vehicle_id);
+        return created;
       });
     },
 
@@ -305,6 +348,7 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
       return fromPromise(async () => {
         await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
+        const availability = getAvailability();
         const existing = await repository.findById(id);
 
         if (!existing) {
@@ -320,7 +364,7 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const returnDate = payload.return_date ?? existing.return_date;
         const status = payload.status ?? existing.status;
 
-        await ensureVehicleAvailable(repository, {
+        await ensureVehicleAvailable(repository, availability, {
           vehicleId,
           deliveryDate,
           returnDate,
@@ -328,7 +372,14 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
           status,
         });
 
-        return repository.update(id, payload);
+        const updated = await repository.update(id, payload);
+
+        await syncVehicleAvailability(existing.vehicle_id);
+        if (updated.vehicle_id !== existing.vehicle_id) {
+          await syncVehicleAvailability(updated.vehicle_id);
+        }
+
+        return updated;
       });
     },
 
@@ -342,7 +393,9 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
           throw createBookingNotFoundError();
         }
 
-        return repository.softDelete(id);
+        const cancelled = await repository.softDelete(id);
+        await syncVehicleAvailability(existing.vehicle_id);
+        return cancelled;
       });
     },
 
@@ -350,7 +403,10 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
       return fromPromise(async () => {
         await requirePerm(PERMISSIONS.bookingsDelete);
         const repository = await getRepository();
+        const existing = await repository.findById(id);
+        const vehicleId = existing?.vehicle_id;
         await repository.delete(id);
+        await syncVehicleAvailability(vehicleId);
         return null;
       });
     },

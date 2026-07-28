@@ -4,11 +4,12 @@
  */
 
 export {
+  formatVehicleOptionLabel,
+  isVehicleSelectionBlocked,
   BOOKING_PAYMENT_OPTIONS,
   CREATE_BOOKING_PAYMENT_OPTIONS,
   bookingToFormValues,
   createBookingFormDefaults,
-  formatVehicleOptionLabel,
   parseOptionalNumber,
   toCreateBookingInput,
   toUpdateBookingInput,
