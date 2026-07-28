@@ -42,6 +42,7 @@ export {
   createBookingNotFoundError,
   createBookingValidationError,
   createDuplicateInvoiceError,
+  createInvoiceGenerationError,
   createInvalidBookingDatesError,
   createUnauthorizedBookingAccessError,
   createVehicleUnavailableError,
@@ -61,9 +62,14 @@ export {
   calculateTotalAmount,
   calculateTotalKilometers,
   createBookingService,
+  createInvoiceNumberService,
   getBookingService,
+  getInvoiceNumberService,
   type BookingService,
   type BookingServiceDeps,
+  type GenerateInvoiceNumberOptions,
+  type InvoiceNumberService,
+  type InvoiceNumberServiceDeps,
 } from './service';
 
 export {

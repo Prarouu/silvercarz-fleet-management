@@ -2,7 +2,10 @@
  * Pure booking calculation helpers (no I/O).
  *
  * Used by the booking service to fill derived fields before persistence.
+ * Invoice formatting lives in `@/config/invoice` and the invoice number service.
  */
+
+import { formatInvoiceNumber, invoiceConfig, resolveInvoiceYear } from '@/config/invoice';
 
 /**
  * Inclusive rental duration in days.
@@ -56,16 +59,17 @@ function roundMoney(value: number): number {
 }
 
 /**
- * Placeholder for future sequential invoice generation.
- * Callers still supply `invoice_number` today; this documents the extension point.
+ * Formats a known sequence into the canonical invoice number.
+ * Prefer `InvoiceNumberService` for allocation; this is for display / tests only.
  */
 export function buildInvoiceNumberSuggestion(params: {
   readonly prefix?: string;
   readonly sequence: number;
   readonly issuedOn?: string;
 }): string {
-  const prefix = params.prefix ?? 'SC';
-  const year = (params.issuedOn ?? new Date().toISOString().slice(0, 10)).slice(0, 4);
-  const sequence = String(params.sequence).padStart(5, '0');
-  return `${prefix}-${year}-${sequence}`;
+  return formatInvoiceNumber({
+    prefix: (params.prefix ?? invoiceConfig.prefix).toUpperCase(),
+    year: resolveInvoiceYear(params.issuedOn),
+    sequence: params.sequence,
+  });
 }

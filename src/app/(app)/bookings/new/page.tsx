@@ -1,10 +1,9 @@
-import { countBookings } from '@/features/bookings/actions/list-bookings';
+import { getBookingService } from '@/features/bookings/service';
 import { CreateBookingPage } from '@/features/bookings/components/create-booking-page';
-import { buildInvoiceNumberSuggestion } from '@/features/bookings/service/booking-calculations';
 import { listVehicles } from '@/features/vehicles/actions/list-vehicles';
 
 export default async function NewBookingPage() {
-  const [vehiclesResponse, countResponse] = await Promise.all([
+  const [vehiclesResponse, previewInvoiceNumber] = await Promise.all([
     listVehicles({
       isActive: true,
       available: true,
@@ -12,7 +11,9 @@ export default async function NewBookingPage() {
       sortBy: 'vehicle_name',
       sortOrder: 'asc',
     }),
-    countBookings({ includeCancelled: true }),
+    getBookingService()
+      .previewNextInvoiceNumber()
+      .catch(() => ''),
   ]);
 
   const vehicles = vehiclesResponse.success
@@ -23,16 +24,10 @@ export default async function NewBookingPage() {
       }))
     : [];
 
-  const sequence = countResponse.success ? countResponse.data + 1 : 1;
-  const suggestedInvoiceNumber = buildInvoiceNumberSuggestion({
-    sequence,
-    issuedOn: new Date().toISOString().slice(0, 10),
-  });
-
   return (
     <CreateBookingPage
       vehicles={vehicles}
-      suggestedInvoiceNumber={suggestedInvoiceNumber}
+      suggestedInvoiceNumber={previewInvoiceNumber || undefined}
       vehiclesError={
         vehiclesResponse.success
           ? undefined

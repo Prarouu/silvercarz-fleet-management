@@ -113,6 +113,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      invoice_sequences: {
+        Row: {
+          id: string;
+          prefix: string;
+          year: number;
+          current_sequence: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          prefix: string;
+          year: number;
+          current_sequence?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          prefix?: string;
+          year?: number;
+          current_sequence?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       bookings: {
         Row: {
           id: string;
@@ -247,6 +274,20 @@ export type Database = {
       is_active_staff: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
+      };
+      next_invoice_sequence: {
+        Args: {
+          p_prefix: string;
+          p_year: number;
+        };
+        Returns: number;
+      };
+      peek_next_invoice_sequence: {
+        Args: {
+          p_prefix: string;
+          p_year: number;
+        };
+        Returns: number;
       };
     };
     Enums: {

@@ -7,24 +7,27 @@ the same form — see [bookings-edit.md](./bookings-edit.md).
 
 ```
 /bookings/new (Server Component)
-  → listVehicles({ isActive, available }) + countBookings()
+  → listVehicles({ isActive, available }) + previewNextInvoiceNumber()
   → CreateBookingPage
        ├── Breadcrumb + PageHeader
        └── BookingForm mode="create" (client)
-            → React Hook Form
+            → React Hook Form (invoice read-only)
             → createBookingSchema (shared Zod)
             → createBooking() Server Action
-                 → Booking Service → Repository
+                 → Booking Service
+                      → InvoiceNumberService.generateNextInvoiceNumber()
+                      → Repository
 ```
 
 Rules:
 
-1. The route loads active vehicles and a suggested invoice number on the server.
+1. The route loads active vehicles and a non-allocating invoice preview on the server.
 2. The client form owns UX state, derived calculations, and submission.
 3. Validation reuses `@/validations` (`createBookingSchema`) — no duplicated rules.
 4. UI never imports Supabase or the booking repository.
 5. On success, redirect to the Booking List.
 6. Create and Edit share one `BookingForm` component; mode props control differences.
+7. Invoice numbers are read-only; allocation happens once in the booking service.
 
 ## Route
 
@@ -63,10 +66,11 @@ surfaced without raw database messages.
 ```
 Fill form
   → Client Zod validation
-  → createBooking(payload)
-  → Service auth + uniqueness + availability + derived fields
+  → createBooking(payload)   // invoice_number omitted from client
+  → Service allocates invoice via InvoiceNumberService (once)
+  → Uniqueness + availability + derived fields
   → Repository insert
-  → Success toast
+  → Success toast (shows final invoice)
   → Redirect to /bookings
 ```
 
@@ -83,9 +87,9 @@ Reusable helpers from `booking-calculations.ts`:
 | Booking amount   | `(daily_charge × duration) + (km_rate × total_km)`    |
 | Total amount     | Equals booking amount for MVP (caution kept separate) |
 
-Invoice number is prefilled with `buildInvoiceNumberSuggestion` from booking
-count + 1. Staff can edit it; automatic sequencing can replace the suggestion
-later without changing the field.
+Invoice number is previewed on the server via `peek_next_invoice_sequence` and
+shown in a read-only field. The authoritative number is allocated once on save
+through `next_invoice_sequence`. See [invoice-numbering.md](./invoice-numbering.md).
 
 ## Vehicle selector
 

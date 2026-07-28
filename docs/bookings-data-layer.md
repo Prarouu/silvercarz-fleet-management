@@ -66,14 +66,14 @@ Responsibilities:
 
 - Zod validation (`createBookingSchema`, `updateBookingSchema`, list/search schemas)
 - Permission checks (`bookings:read` / `bookings:write` / `bookings:delete`)
-- Invoice uniqueness
+- Automatic invoice allocation via `InvoiceNumberService` (create only)
+- Invoice uniqueness (belt-and-suspenders with DB unique constraint)
 - Date integrity
 - Duration / km / amount calculations
 - Vehicle availability (overlap query; drafts/cancelled skip enforcement)
-- Invoice number suggestion helper (sequence placeholder for later)
 
 Public methods return `ApiResponse<T>` via `fromPromise` — never raw Supabase
-errors.
+errors. `previewNextInvoiceNumber` returns a plain string for the create form.
 
 ## Server Actions
 
@@ -110,6 +110,7 @@ Domain codes in `BOOKING_ERROR_CODES`:
 | ----------------------------- | ----------------------------- |
 | `booking_not_found`           | Missing id / invoice          |
 | `duplicate_invoice`           | Unique invoice conflict       |
+| `invoice_generation_failed`   | Sequence RPC / format failure |
 | `vehicle_unavailable`         | Overlapping active hire       |
 | `invalid_booking_dates`       | Return before delivery        |
 | `unauthorized_booking_access` | Reserved for finer ACL        |
@@ -126,17 +127,17 @@ Pure helpers in `service/booking-calculations.ts`:
 - Total kilometers from odometer
 - Booking amount = daily × duration + km rate × km
 - Total amount (MVP) = booking amount (caution kept separate)
-- `buildInvoiceNumberSuggestion` for future sequential invoices
+- `buildInvoiceNumberSuggestion` — pure formatter (prefer `InvoiceNumberService`)
+
+Invoice allocation is documented in [invoice-numbering.md](./invoice-numbering.md).
 
 ## Future extension points
 
 1. **DB transactions** — pass one `TypedSupabaseClient` into repository + related writers.
-2. **Invoice sequences** — replace caller-supplied numbers with `suggestInvoiceNumber` + a counter table.
-3. **Cursor pagination** — honor `BookingListQuery.cursor` beside offset/`range`.
-4. **Stricter availability** — Postgres exclusion constraints; service already calls overlap lookup.
-5. **Role divergence** — remove `'all'` from managers for `bookings:delete` when needed.
-6. **UI** — list screen at `/bookings` (see [bookings-list.md](./bookings-list.md));
-   pages call Server Actions only; no repository imports in components.
+2. **Cursor pagination** — honor `BookingListQuery.cursor` beside offset/`range`.
+3. **Stricter availability** — Postgres exclusion constraints; service already calls overlap lookup.
+4. **Role divergence** — remove `'all'` from managers for `bookings:delete` when needed.
+5. **Company settings** — override invoice prefix via service deps / settings table.
 
 ## List query note
 

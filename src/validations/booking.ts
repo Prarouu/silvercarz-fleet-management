@@ -25,7 +25,7 @@ import {
 } from '@/validations/shared';
 
 const bookingFieldsSchema = z.object({
-  invoice_number: invoiceNumberSchema,
+  invoice_number: invoiceNumberSchema.optional(),
   vehicle_id: entityIdSchema,
   mode: rentalModeSchema,
   customer_name: requiredString('Customer name is required.').max(

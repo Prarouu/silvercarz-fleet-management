@@ -13,6 +13,7 @@ See also:
 - [Database](./database.md) — vehicles, bookings, ER diagram, indexes, RLS
 - [Types & validation](./types-and-validation.md) — domain models, enums, Zod schemas
 - [Bookings data layer](./bookings-data-layer.md) — repository, service, Server Actions
+- [Invoice numbering](./invoice-numbering.md) — automatic SC-YYYY-XXXX allocation
 - [Bookings list UI](./bookings-list.md) — `/bookings` table, search, filters, pagination
 - [Create Booking UI](./bookings-create.md) — `/bookings/new` shared `BookingForm`
 - [Edit Booking UI](./bookings-edit.md) — `/bookings/[id]/edit` reuses `BookingForm`

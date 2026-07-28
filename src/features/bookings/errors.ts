@@ -9,6 +9,7 @@ import { AppError, ERROR_CODES } from '@/lib/errors';
 export const BOOKING_ERROR_CODES = {
   notFound: 'booking_not_found',
   duplicateInvoice: 'duplicate_invoice',
+  invoiceGenerationFailed: 'invoice_generation_failed',
   vehicleUnavailable: 'vehicle_unavailable',
   invalidDates: 'invalid_booking_dates',
   unauthorized: 'unauthorized_booking_access',
@@ -27,6 +28,14 @@ export function createDuplicateInvoiceError(invoiceNumber?: string): AppError {
   return new AppError(
     `A booking with this invoice number already exists${suffix}.`,
     BOOKING_ERROR_CODES.duplicateInvoice,
+  );
+}
+
+export function createInvoiceGenerationError(cause?: unknown): AppError {
+  return new AppError(
+    'Unable to generate an invoice number. Please try again.',
+    BOOKING_ERROR_CODES.invoiceGenerationFailed,
+    { cause },
   );
 }
 

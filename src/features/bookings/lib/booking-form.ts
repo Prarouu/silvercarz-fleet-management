@@ -148,7 +148,6 @@ export function bookingToFormValues(booking: Booking): BookingFormValues {
 /** Map form values into the create-booking schema input shape. */
 export function toCreateBookingInput(values: BookingFormValues) {
   return {
-    invoice_number: values.invoice_number,
     mode: values.mode,
     invoice_date: values.invoice_date || undefined,
     customer_name: values.customer_name,

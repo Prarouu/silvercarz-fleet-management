@@ -211,6 +211,13 @@ export function BookingForm(props: BookingFormProps) {
             });
           }
 
+          if (result.error.code === 'invoice_generation_failed') {
+            setError('invoice_number', {
+              type: 'server',
+              message: result.error.message,
+            });
+          }
+
           if (result.error.code === 'vehicle_unavailable') {
             setError('vehicle_id', {
               type: 'server',
@@ -307,19 +314,28 @@ export function BookingForm(props: BookingFormProps) {
             id="invoice_number"
             label="Invoice Number"
             required
-            description="Manual for now — automatic sequence generation will use this field."
+            description={
+              mode === 'create'
+                ? 'Assigned automatically when you save. Preview may change if another booking is created first.'
+                : 'Invoice numbers are permanent and cannot be edited.'
+            }
             error={errors.invoice_number?.message}
           >
             <Input
-              autoFocus
               autoComplete="off"
-              placeholder="SC-2026-00001"
+              readOnly
+              tabIndex={-1}
+              placeholder="SC-2026-0001"
               disabled={isLoading}
+              className="bg-muted/40"
               {...fieldAriaProps({
                 id: 'invoice_number',
                 required: true,
                 error: errors.invoice_number?.message,
-                description: 'Manual for now — automatic sequence generation will use this field.',
+                description:
+                  mode === 'create'
+                    ? 'Assigned automatically when you save. Preview may change if another booking is created first.'
+                    : 'Invoice numbers are permanent and cannot be edited.',
               })}
               {...register('invoice_number')}
             />
@@ -385,6 +401,7 @@ export function BookingForm(props: BookingFormProps) {
             error={errors.customer_name?.message}
           >
             <Input
+              autoFocus={mode === 'create'}
               autoComplete="name"
               placeholder="Customer full name"
               disabled={isLoading}

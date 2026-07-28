@@ -21,12 +21,16 @@ import {
   type BookingRepository,
 } from '@/features/bookings/repository';
 import {
-  buildInvoiceNumberSuggestion,
   calculateBookingAmount,
   calculateDurationDays,
   calculateTotalAmount,
   calculateTotalKilometers,
 } from '@/features/bookings/service/booking-calculations';
+import {
+  createInvoiceNumberService,
+  getInvoiceNumberService,
+  type InvoiceNumberService,
+} from '@/features/bookings/service/invoice-number.service';
 import { PERMISSIONS, requirePermission, type AuthUser } from '@/lib/auth';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
@@ -53,6 +57,7 @@ import { BOOKING_STATUSES } from '@/types/enums';
 export interface BookingServiceDeps {
   readonly repository?: BookingRepository;
   readonly client?: TypedSupabaseClient;
+  readonly invoiceNumberService?: InvoiceNumberService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -73,8 +78,8 @@ export interface BookingService {
     query?: BookingListQuery,
   ): Promise<ApiResponse<PaginatedResult<BookingWithVehicle>>>;
   countBookings(filters?: BookingListFilters): Promise<ApiResponse<number>>;
-  /** Extension point for sequential invoice numbers. */
-  suggestInvoiceNumber(sequence: number, issuedOn?: string): string;
+  /** Non-allocating preview for the create form. */
+  previewNextInvoiceNumber(issuedOn?: string): Promise<string>;
 }
 
 function assertValidDates(deliveryDate: string, returnDate: string): void {
@@ -147,6 +152,7 @@ async function ensureVehicleAvailable(
 function applyCreateDerivedFields(
   values: CreateBookingValues,
   actor: AuthUser,
+  invoiceNumber: string,
 ): BookingCreateInput {
   assertValidDates(values.delivery_date, values.return_date);
 
@@ -168,6 +174,7 @@ function applyCreateDerivedFields(
 
   return {
     ...values,
+    invoice_number: invoiceNumber,
     duration,
     total_kilometers: totalKilometers,
     booking_amount: bookingAmount,
@@ -257,13 +264,30 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getBookingRepository();
   }
 
+  function getInvoiceService(): InvoiceNumberService {
+    if (deps.invoiceNumberService) {
+      return deps.invoiceNumberService;
+    }
+
+    if (deps.client) {
+      return createInvoiceNumberService({ client: deps.client });
+    }
+
+    return getInvoiceNumberService();
+  }
+
   const service: BookingService = {
     createBooking(input) {
       return fromPromise(async () => {
         const actor = await requirePerm(PERMISSIONS.bookingsWrite);
         const repository = await getRepository();
+        const invoiceService = getInvoiceService();
         const values = parseCreateInput(input);
-        const payload = applyCreateDerivedFields(values, actor);
+
+        const invoiceNumber = await invoiceService.generateNextInvoiceNumber({
+          issuedOn: values.invoice_date,
+        });
+        const payload = applyCreateDerivedFields(values, actor, invoiceNumber);
 
         await ensureInvoiceUnique(repository, payload.invoice_number);
         await ensureVehicleAvailable(repository, {
@@ -288,11 +312,8 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         }
 
         const values = parseUpdateInput(input);
-        const payload = applyUpdateDerivedFields(existing, values);
-
-        if (payload.invoice_number) {
-          await ensureInvoiceUnique(repository, payload.invoice_number, id);
-        }
+        const { invoice_number: _ignoredInvoice, ...safeValues } = values;
+        const payload = applyUpdateDerivedFields(existing, safeValues);
 
         const vehicleId = payload.vehicle_id ?? existing.vehicle_id;
         const deliveryDate = payload.delivery_date ?? existing.delivery_date;
@@ -438,8 +459,8 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
       });
     },
 
-    suggestInvoiceNumber(sequence, issuedOn) {
-      return buildInvoiceNumberSuggestion({ sequence, issuedOn });
+    previewNextInvoiceNumber(issuedOn) {
+      return getInvoiceService().previewNextInvoiceNumber({ issuedOn });
     },
   };
 
