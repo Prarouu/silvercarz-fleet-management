@@ -117,9 +117,13 @@ See [booking-conflict-detection.md](./booking-conflict-detection.md).
 
 ## Migration
 
-| File                                                      | Purpose                      |
-| --------------------------------------------------------- | ---------------------------- |
-| `20260728160000_extend_vehicle_availability_statuses.sql` | Adds `reserved` + `inactive` |
+| File                                                             | Purpose                                         |
+| ---------------------------------------------------------------- | ----------------------------------------------- |
+| `20260728160000_extend_vehicle_availability_statuses.sql`        | Adds `reserved` + `inactive`                    |
+| `20260728180000_backfill_vehicle_availability_from_bookings.sql` | One-time status backfill from existing bookings |
 
 Apply with `pnpm dlx supabase db push`, then regenerate `src/types/database.ts`
 if needed (hand-updated for this phase).
+
+The fleet list and create-booking pages also call `syncAllAvailabilityFromBookings`
+so environments that have not yet applied the SQL migration self-heal on load.

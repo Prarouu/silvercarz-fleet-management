@@ -71,6 +71,7 @@ export {
   getVehicle,
   getVehicleByNumber,
   listVehicles,
+  reconcileVehicleAvailability,
   removeVehicleImageAction,
   searchVehicles,
   updateVehicle,

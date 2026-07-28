@@ -93,6 +93,13 @@ export interface AvailabilityService {
    */
   syncAvailabilityFromBookings(vehicleId: string): Promise<ApiResponse<Vehicle>>;
   /**
+   * Reconciles every fleet vehicle against booking lifecycle.
+   * Fixes rows left stale before the Availability Engine (e.g. pre-existing hires).
+   */
+  syncAllAvailabilityFromBookings(): Promise<
+    ApiResponse<{ readonly scanned: number; readonly updated: number }>
+  >;
+  /**
    * Pure transition helper — derives the booking-driven status from open hires.
    * Does not touch the database. Used by sync and future schedulers.
    */
@@ -425,6 +432,46 @@ export function createAvailabilityService(deps: AvailabilityServiceDeps = {}): A
         return vehicleRepository.update(vehicleId, {
           availability_status: nextStatus,
         });
+      });
+    },
+
+    syncAllAvailabilityFromBookings() {
+      return fromPromise(async () => {
+        const vehicleRepository = await getVehicleRepo();
+        const pageSize = 200;
+        let page = 1;
+        let scanned = 0;
+        let updated = 0;
+        let hasNextPage = true;
+
+        while (hasNextPage) {
+          const result = await vehicleRepository.list({
+            includeInactive: true,
+            page,
+            pageSize,
+            sortBy: 'created_at',
+            sortOrder: 'asc',
+          });
+
+          for (const vehicle of result.data) {
+            scanned += 1;
+            const synced = await service.syncAvailabilityFromBookings(vehicle.id);
+
+            if (synced.success && synced.data.availability_status !== vehicle.availability_status) {
+              updated += 1;
+            }
+          }
+
+          hasNextPage = result.meta.hasNextPage;
+          page += 1;
+
+          // Safety cap for runaway pagination in misconfigured environments.
+          if (page > 50) {
+            break;
+          }
+        }
+
+        return { scanned, updated };
       });
     },
   };

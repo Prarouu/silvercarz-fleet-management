@@ -1,8 +1,11 @@
 import { getBookingService } from '@/features/bookings/service';
 import { CreateBookingPage } from '@/features/bookings/components/create-booking-page';
-import { listVehicles } from '@/features/vehicles/actions/list-vehicles';
+import { listVehicles, reconcileVehicleAvailability } from '@/features/vehicles/actions';
 
 export default async function NewBookingPage() {
+  // Keep bookable-vehicle options in sync with existing hires.
+  await reconcileVehicleAvailability();
+
   const [vehiclesResponse, previewInvoiceNumber] = await Promise.all([
     listVehicles({
       isActive: true,
