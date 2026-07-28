@@ -325,7 +325,7 @@ export function BookingForm(props: BookingFormProps) {
               autoComplete="off"
               readOnly
               tabIndex={-1}
-              placeholder="SC-2026-0001"
+              placeholder="SC-2026-00001"
               disabled={isLoading}
               className="bg-muted/40"
               {...fieldAriaProps({

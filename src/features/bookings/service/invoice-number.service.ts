@@ -1,7 +1,7 @@
 /**
  * Invoice number service — database-backed, concurrency-safe allocation.
  *
- * Format: `{prefix}-{year}-{sequence}` (e.g. SC-2026-0001).
+ * Format: `{prefix}-{year}-{sequence}` (e.g. SC-2026-00001).
  * Never call from React components or Server Actions directly for allocation —
  * booking creation goes through the booking service, which calls this once.
  */

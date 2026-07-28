@@ -275,6 +275,13 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      max_booking_invoice_sequence: {
+        Args: {
+          p_prefix: string;
+          p_year: number;
+        };
+        Returns: number;
+      };
       next_invoice_sequence: {
         Args: {
           p_prefix: string;

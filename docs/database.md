@@ -166,12 +166,13 @@ Triggers:
 
 ## Migration notes
 
-| File                                              | Purpose                                      |
-| ------------------------------------------------- | -------------------------------------------- |
-| `20260726120000_create_profiles.sql`              | Profiles, roles, auth RLS                    |
-| `20260726140000_create_vehicles_and_bookings.sql` | Vehicles, bookings, business RLS             |
-| `20260727090000_extend_vehicles_for_creation.sql` | Vehicle profile fields, availability, images |
-| `20260728140000_create_invoice_sequences.sql`     | Yearly invoice counters + atomic RPCs        |
+| File                                                      | Purpose                                      |
+| --------------------------------------------------------- | -------------------------------------------- |
+| `20260726120000_create_profiles.sql`                      | Profiles, roles, auth RLS                    |
+| `20260726140000_create_vehicles_and_bookings.sql`         | Vehicles, bookings, business RLS             |
+| `20260727090000_extend_vehicles_for_creation.sql`         | Vehicle profile fields, availability, images |
+| `20260728140000_create_invoice_sequences.sql`             | Yearly invoice counters + atomic RPCs        |
+| `20260728150000_sync_invoice_sequences_from_bookings.sql` | Seed counters from existing bookings         |
 
 Apply order matters: profiles migration first (for `created_by` FK and
 `current_user_role()`).
