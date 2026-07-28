@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { bookingDetailPath } from '@/constants/routes';
 import { CALENDAR_EVENT_VARIANT_CLASSES } from '@/features/calendar/lib/calendar-events';
 import type { CalendarEvent } from '@/features/calendar/types';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -35,9 +36,17 @@ export function CalendarMobileAgenda({ events, className }: CalendarMobileAgenda
                 aria-label={`${event.vehicleName}, ${event.customerName}. Open booking details.`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="truncate font-medium">{event.vehicleName}</p>
-                    <p className="truncate text-xs opacity-90">{event.registrationNumber}</p>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <VehicleThumbnail
+                      imagePath={event.vehicleImagePath}
+                      alt={`${event.vehicleName} photo`}
+                      size="xs"
+                      className="border-current/20 bg-background/40"
+                    />
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="truncate font-medium">{event.vehicleName}</p>
+                      <p className="truncate text-xs opacity-90">{event.registrationNumber}</p>
+                    </div>
                   </div>
                   <Badge variant={event.badgeVariant}>{event.statusLabel}</Badge>
                 </div>

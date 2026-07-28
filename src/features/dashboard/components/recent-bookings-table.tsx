@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import { MotionSection } from '@/features/dashboard/components/motion';
+import { VehicleInline } from '@/features/vehicles/components/vehicle-inline';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { bookingDetailPath, ROUTES } from '@/constants/routes';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -85,11 +87,14 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                         <TableCell className="max-w-[8rem] truncate md:max-w-[10rem] lg:max-w-[14rem]">
                           {booking.customer_name}
                         </TableCell>
-                        <TableCell className="max-w-[9rem] md:max-w-[11rem] lg:max-w-[14rem]">
-                          <p className="truncate font-medium">{booking.vehicle.vehicle_name}</p>
-                          <p className="truncate text-xs text-muted-foreground tabular-nums">
-                            {booking.vehicle.vehicle_number}
-                          </p>
+                        <TableCell>
+                          <VehicleInline
+                            imagePath={booking.vehicle.image_path}
+                            name={booking.vehicle.vehicle_name}
+                            number={booking.vehicle.vehicle_number}
+                            size="xs"
+                            className="max-w-[14rem]"
+                          />
                         </TableCell>
                         <TableCell className="whitespace-nowrap tabular-nums">
                           {formatDate(booking.delivery_date)}
@@ -123,12 +128,19 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                       aria-label={`Open booking ${booking.invoice_number}`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <p className="font-medium tabular-nums">{booking.invoice_number}</p>
-                          <p className="truncate text-sm">{booking.customer_name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
-                          </p>
+                        <div className="flex min-w-0 items-start gap-3">
+                          <VehicleThumbnail
+                            imagePath={booking.vehicle.image_path}
+                            alt={`${booking.vehicle.vehicle_name} photo`}
+                            size="md"
+                          />
+                          <div className="min-w-0 space-y-1">
+                            <p className="font-medium tabular-nums">{booking.invoice_number}</p>
+                            <p className="truncate text-sm">{booking.customer_name}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
+                            </p>
+                          </div>
                         </div>
                         <BookingStatusBadge booking={booking} />
                       </div>

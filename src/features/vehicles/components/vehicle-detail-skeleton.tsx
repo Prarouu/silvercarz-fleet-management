@@ -66,7 +66,7 @@ export function VehicleDetailSkeleton() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="space-y-3 rounded-xl p-4 ring-1 ring-foreground/10">
             <div className="flex items-start justify-between gap-3">

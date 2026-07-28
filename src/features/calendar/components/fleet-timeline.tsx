@@ -5,6 +5,7 @@ import { CALENDAR_EVENT_VARIANT_CLASSES } from '@/features/calendar/lib/calendar
 import { enumerateDates } from '@/features/calendar/lib/calendar-range';
 import type { FleetTimelineRow } from '@/features/calendar/types';
 import { VehicleAvailabilityBadge } from '@/features/vehicles/components/vehicle-availability-badge';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +42,7 @@ export function FleetTimeline({ rows, rangeStart, rangeEnd, className }: FleetTi
           </p>
           <div className="min-w-[36rem] space-y-3">
             <div className="flex gap-3">
-              <div className="w-44 shrink-0 px-1 text-xs font-medium text-muted-foreground">
+              <div className="w-52 shrink-0 px-1 text-xs font-medium text-muted-foreground">
                 Vehicle
               </div>
               <div
@@ -61,10 +62,19 @@ export function FleetTimeline({ rows, rangeStart, rangeEnd, className }: FleetTi
 
             {rows.map((row) => (
               <div key={row.vehicleId} className="flex gap-3">
-                <div className="flex w-44 shrink-0 flex-col justify-center gap-1 rounded-md bg-muted/30 px-2 py-2">
-                  <p className="truncate text-sm font-medium">{row.vehicleName}</p>
-                  <p className="truncate text-xs text-muted-foreground">{row.registrationNumber}</p>
-                  <VehicleAvailabilityBadge availability={row.availabilityStatus} />
+                <div className="flex w-52 shrink-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-2">
+                  <VehicleThumbnail
+                    imagePath={row.vehicleImagePath}
+                    alt={`${row.vehicleName} photo`}
+                    size="xs"
+                  />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="truncate text-sm font-medium">{row.vehicleName}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {row.registrationNumber}
+                    </p>
+                    <VehicleAvailabilityBadge availability={row.availabilityStatus} />
+                  </div>
                 </div>
 
                 <div className="relative min-h-12 min-w-0 flex-1 rounded-md bg-muted/20">

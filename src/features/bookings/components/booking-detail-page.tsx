@@ -15,6 +15,7 @@ import { BookingPricingSummary } from '@/features/bookings/components/booking-pr
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import { pricingFromBooking } from '@/features/bookings/service/pricing.service';
 import { getBookingStatusPresentation } from '@/features/bookings/service/status.service';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import {
   FUEL_TYPE_LABELS,
@@ -193,6 +194,19 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
         </BookingDetailSection>
 
         <BookingDetailSection title="Vehicle Information">
+          <div className="mb-4 flex items-center gap-3">
+            <VehicleThumbnail
+              imagePath={booking.vehicle.image_path}
+              alt={`${booking.vehicle.vehicle_name} photo`}
+              size="md"
+            />
+            <div className="min-w-0">
+              <p className="truncate font-medium">{booking.vehicle.vehicle_name}</p>
+              <p className="truncate text-sm text-muted-foreground tabular-nums">
+                {booking.vehicle.vehicle_number}
+              </p>
+            </div>
+          </div>
           <dl className="grid gap-4 sm:grid-cols-2">
             <BookingDetailField label="Vehicle Name" value={booking.vehicle.vehicle_name} />
             <BookingDetailField

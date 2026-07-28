@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { VehicleAvailabilityBadge } from '@/features/vehicles/components/vehicle-availability-badge';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { MotionSection } from '@/features/dashboard/components/motion';
 import type { DashboardFleetSnapshotItem } from '@/features/dashboard/types';
 import { bookingDetailPath, ROUTES, vehicleDetailPath } from '@/constants/routes';
@@ -51,17 +52,24 @@ export function FleetSnapshot({ items }: FleetSnapshotProps) {
                   <li key={item.vehicleId}>
                     {index > 0 ? <Separator className="my-3" /> : null}
                     <div className="flex flex-col gap-2 rounded-lg p-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-1">
-                        <Link
-                          href={vehicleDetailPath(item.vehicleId)}
-                          className="block truncate font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                        >
-                          {item.vehicleName}
-                        </Link>
-                        <p className="text-sm text-muted-foreground tabular-nums">
-                          {item.registrationNumber}
-                        </p>
-                        <VehicleAvailabilityBadge availability={item.availability} />
+                      <div className="flex min-w-0 items-start gap-3">
+                        <VehicleThumbnail
+                          imagePath={item.imagePath}
+                          alt={`${item.vehicleName} photo`}
+                          size="sm"
+                        />
+                        <div className="min-w-0 space-y-1">
+                          <Link
+                            href={vehicleDetailPath(item.vehicleId)}
+                            className="block truncate font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                          >
+                            {item.vehicleName}
+                          </Link>
+                          <p className="text-sm text-muted-foreground tabular-nums">
+                            {item.registrationNumber}
+                          </p>
+                          <VehicleAvailabilityBadge availability={item.availability} />
+                        </div>
                       </div>
                       <div className="space-y-1 text-sm sm:max-w-[14rem] sm:text-right">
                         <p className="text-muted-foreground">

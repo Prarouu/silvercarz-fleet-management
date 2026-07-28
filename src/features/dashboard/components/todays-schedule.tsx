@@ -15,6 +15,7 @@ import {
 } from '@/features/bookings/service/status.service';
 import { MotionSection } from '@/features/dashboard/components/motion';
 import type { DashboardScheduleItem } from '@/features/dashboard/types';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { bookingDetailPath, ROUTES } from '@/constants/routes';
 import { formatDate } from '@/lib/format';
 
@@ -58,16 +59,23 @@ export function TodaysSchedule({ items }: TodaysScheduleProps) {
                       href={bookingDetailPath(item.bookingId)}
                       className="group flex flex-col gap-2 rounded-lg p-2 transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="min-w-0 space-y-0.5">
-                        <p className="truncate font-medium group-hover:underline">
-                          {item.vehicleName}{' '}
-                          <span className="font-normal text-muted-foreground">
-                            ({item.vehicleNumber})
-                          </span>
-                        </p>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {item.customerName}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <VehicleThumbnail
+                          imagePath={item.vehicleImagePath}
+                          alt={`${item.vehicleName} photo`}
+                          size="sm"
+                        />
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="truncate font-medium group-hover:underline">
+                            {item.vehicleName}{' '}
+                            <span className="font-normal text-muted-foreground">
+                              ({item.vehicleNumber})
+                            </span>
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {item.customerName}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <div className="text-xs text-muted-foreground tabular-nums sm:text-right">

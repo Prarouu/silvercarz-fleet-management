@@ -30,7 +30,7 @@ export function DashboardSkeleton() {
           <Skeleton className="h-8 w-32" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card key={index} size="sm" className="shadow-none">
               <CardHeader className="space-y-2">

@@ -70,7 +70,7 @@ export function BookingPricingSummary({
         </p>
       </header>
 
-      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         {items.map((item) => (
           <div key={item.label} className="min-w-0 space-y-1">
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

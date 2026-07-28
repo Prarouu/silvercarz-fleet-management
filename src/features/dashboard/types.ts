@@ -46,6 +46,7 @@ export type DashboardScheduleItem = {
   readonly invoiceNumber: string;
   readonly vehicleName: string;
   readonly vehicleNumber: string;
+  readonly vehicleImagePath: string | null;
   readonly customerName: string;
   readonly deliveryDate: string;
   readonly returnDate: string;
@@ -56,6 +57,7 @@ export type DashboardFleetSnapshotItem = {
   readonly vehicleId: string;
   readonly vehicleName: string;
   readonly registrationNumber: string;
+  readonly imagePath: string | null;
   readonly availability: VehicleAvailabilityStatus;
   readonly currentBooking: {
     readonly bookingId: string;

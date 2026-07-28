@@ -73,7 +73,7 @@ const CARDS = [
 export function DashboardKpiGrid({ kpis, className }: DashboardKpiGridProps) {
   return (
     <section
-      className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6', className)}
+      className={cn('grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-6', className)}
       aria-label="Fleet management KPIs"
     >
       {CARDS.map((card, index) => (

@@ -63,6 +63,7 @@ export type VehicleSelectOption = {
   readonly id: string;
   readonly vehicle_name: string;
   readonly vehicle_number: string;
+  readonly image_path?: string | null;
   readonly availability_status?: VehicleAvailabilityStatus;
   readonly is_active?: boolean;
   /** Default daily rate used to seed the Pricing Engine inputs. */

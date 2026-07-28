@@ -73,7 +73,7 @@ type CalendarSummaryCardsProps = {
 export function CalendarSummaryCards({ summary, className }: CalendarSummaryCardsProps) {
   return (
     <section
-      className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6', className)}
+      className={cn('grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-6', className)}
       aria-label="Fleet calendar summary"
     >
       {CARDS.map((card) => {
@@ -82,16 +82,18 @@ export function CalendarSummaryCards({ summary, className }: CalendarSummaryCard
 
         return (
           <Card key={card.key} size="sm" className="shadow-none">
-            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-              <div className="space-y-1">
-                <CardDescription>{card.title}</CardDescription>
-                <CardTitle className="font-heading text-2xl font-semibold tracking-tight tabular-nums">
+            <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 sm:gap-3">
+              <div className="min-w-0 space-y-1">
+                <CardDescription className="line-clamp-2 text-pretty sm:line-clamp-none">
+                  {card.title}
+                </CardDescription>
+                <CardTitle className="font-heading text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                   {formatNumber(count)}
                 </CardTitle>
               </div>
               <div
                 className={cn(
-                  'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                  'flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-9',
                   card.iconClassName,
                 )}
                 aria-hidden="true"
@@ -99,7 +101,7 @@ export function CalendarSummaryCards({ summary, className }: CalendarSummaryCard
                 <Icon className="size-4" />
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="hidden sm:block">
               <p className="text-xs text-muted-foreground">{card.description}</p>
             </CardContent>
           </Card>

@@ -48,6 +48,7 @@ export type CalendarEvent = {
   readonly vehicleId: string;
   readonly vehicleName: string;
   readonly registrationNumber: string;
+  readonly vehicleImagePath: string | null;
   readonly customerName: string;
   readonly driverName: string | null;
   readonly deliveryDate: string;
@@ -75,6 +76,7 @@ export type FleetTimelineRow = {
   readonly vehicleId: string;
   readonly vehicleName: string;
   readonly registrationNumber: string;
+  readonly vehicleImagePath: string | null;
   readonly availabilityStatus: VehicleAvailabilityStatus;
   readonly blocks: readonly FleetOccupancyBlock[];
 };
@@ -86,6 +88,7 @@ export type CalendarAgendaItem = {
   readonly customerName: string;
   readonly vehicleName: string;
   readonly registrationNumber: string;
+  readonly vehicleImagePath: string | null;
   readonly date: string;
   readonly deliveryDate: string;
   readonly returnDate: string;

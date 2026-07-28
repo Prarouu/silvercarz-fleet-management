@@ -133,6 +133,7 @@ function buildTimeline(params: {
       vehicleId: vehicle.id,
       vehicleName: vehicle.vehicle_name,
       registrationNumber: vehicle.vehicle_number,
+      vehicleImagePath: vehicle.image_path,
       availabilityStatus: resolveAvailabilityFromBookings(
         vehicle,
         vehicleBookings,

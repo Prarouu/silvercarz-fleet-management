@@ -43,16 +43,18 @@ export function KpiCard({
         className,
       )}
     >
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="space-y-1">
-          <CardDescription>{title}</CardDescription>
-          <CardTitle className="font-heading text-2xl font-semibold tracking-tight tabular-nums">
+      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 sm:gap-3">
+        <div className="min-w-0 space-y-1">
+          <CardDescription className="line-clamp-2 text-pretty sm:line-clamp-none">
+            {title}
+          </CardDescription>
+          <CardTitle className="font-heading text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
             {formatNumber(value)}
           </CardTitle>
         </div>
         <div
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-lg',
+            'flex size-8 shrink-0 items-center justify-center rounded-lg sm:size-9',
             iconClassName ?? 'bg-primary/15 text-primary',
           )}
           aria-hidden="true"
@@ -60,7 +62,7 @@ export function KpiCard({
           <Icon className="size-4" />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="hidden sm:block">
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>

@@ -24,6 +24,7 @@ export default async function NewBookingPage() {
         id: vehicle.id,
         vehicle_name: vehicle.vehicle_name,
         vehicle_number: vehicle.vehicle_number,
+        image_path: vehicle.image_path,
         availability_status: vehicle.availability_status,
         is_active: vehicle.is_active,
         default_daily_rate: vehicle.default_daily_rate,

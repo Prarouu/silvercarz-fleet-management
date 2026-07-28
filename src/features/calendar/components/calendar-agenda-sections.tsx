@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/table';
 import { bookingDetailPath } from '@/constants/routes';
 import type { CalendarAgendaItem } from '@/features/calendar/types';
+import { VehicleInline } from '@/features/vehicles/components/vehicle-inline';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -43,12 +45,19 @@ function AgendaMobileCard({
         aria-label={`Open booking ${item.invoiceNumber}`}
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="font-medium text-primary tabular-nums">{item.invoiceNumber}</p>
-            <p className="truncate text-sm">{item.customerName}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {item.vehicleName} · {item.registrationNumber}
-            </p>
+          <div className="flex min-w-0 items-start gap-3">
+            <VehicleThumbnail
+              imagePath={item.vehicleImagePath}
+              alt={`${item.vehicleName} photo`}
+              size="sm"
+            />
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium text-primary tabular-nums">{item.invoiceNumber}</p>
+              <p className="truncate text-sm">{item.customerName}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {item.vehicleName} · {item.registrationNumber}
+              </p>
+            </div>
           </div>
           <Badge variant={item.badgeVariant} aria-label={`Status: ${item.statusLabel}`}>
             {item.statusLabel}
@@ -104,12 +113,13 @@ export function UpcomingPickups({ items }: UpcomingPickupsProps) {
                       {item.customerName}
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-[10rem] space-y-0.5 lg:max-w-[14rem]">
-                        <p className="truncate">{item.vehicleName}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.registrationNumber}
-                        </p>
-                      </div>
+                      <VehicleInline
+                        imagePath={item.vehicleImagePath}
+                        name={item.vehicleName}
+                        number={item.registrationNumber}
+                        size="xs"
+                        className="max-w-[14rem]"
+                      />
                     </TableCell>
                     <TableCell className="whitespace-nowrap tabular-nums">
                       {formatDate(item.date)}
@@ -186,12 +196,13 @@ export function UpcomingReturns({ items }: UpcomingReturnsProps) {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-[10rem] space-y-0.5 lg:max-w-[14rem]">
-                        <p className="truncate">{item.vehicleName}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {item.registrationNumber}
-                        </p>
-                      </div>
+                      <VehicleInline
+                        imagePath={item.vehicleImagePath}
+                        name={item.vehicleName}
+                        number={item.registrationNumber}
+                        size="xs"
+                        className="max-w-[14rem]"
+                      />
                     </TableCell>
                     <TableCell className="max-w-[10rem] truncate lg:max-w-[14rem]">
                       {item.customerName}

@@ -46,6 +46,7 @@ import {
   BOOKING_DISPLAY_STATUSES,
   getBookingStatusPresentation,
 } from '@/features/bookings/service/status.service';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { cn } from '@/lib/utils';
 import { RENTAL_MODE_OPTIONS, type BookingStatus } from '@/types';
 
@@ -720,8 +721,16 @@ export function BookingForm(props: BookingFormProps) {
                               ? `${formatVehicleOptionLabel(vehicle)} (not selectable)`
                               : formatVehicleOptionLabel(vehicle)
                           }
+                          className="py-2"
                         >
-                          {formatVehicleOptionLabel(vehicle)}
+                          <span className="flex items-center gap-2.5">
+                            <VehicleThumbnail
+                              imagePath={vehicle.image_path}
+                              alt={`${vehicle.vehicle_name} photo`}
+                              size="xs"
+                            />
+                            <span className="truncate">{formatVehicleOptionLabel(vehicle)}</span>
+                          </span>
                         </SelectItem>
                       );
                     })}
@@ -730,6 +739,33 @@ export function BookingForm(props: BookingFormProps) {
               )}
             />
           </BookingFormField>
+
+          {selectedVehicleId
+            ? (() => {
+                const selected = vehicles.find((vehicle) => vehicle.id === selectedVehicleId);
+                if (!selected) {
+                  return null;
+                }
+                return (
+                  <div className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2">
+                    <VehicleThumbnail
+                      imagePath={selected.image_path}
+                      alt={`${selected.vehicle_name} photo`}
+                      size="md"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        Selected vehicle
+                      </p>
+                      <p className="truncate font-medium">{selected.vehicle_name}</p>
+                      <p className="truncate text-sm text-muted-foreground tabular-nums">
+                        {selected.vehicle_number}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()
+            : null}
 
           <BookingFormField
             id="driver_name"
