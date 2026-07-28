@@ -7,7 +7,6 @@
 
 import type {
   Booking,
-  BookingStatus,
   PaymentMethod,
   RentalMode,
   SelectOption,
@@ -186,16 +185,13 @@ export function toCreateBookingInput(values: BookingFormValues) {
     payment_method: values.payment_method,
     total_amount: values.total_amount ?? 0,
     notes: values.notes,
-    status: 'confirmed' as const,
+    // Lifecycle status is owned by the Status Service on the server.
   };
 }
 
-/** Map form values into the update-booking schema input shape. */
-export function toUpdateBookingInput(values: BookingFormValues, status: BookingStatus) {
-  return {
-    ...toCreateBookingInput(values),
-    status,
-  };
+/** Map form values into the update-booking schema input shape (no manual status). */
+export function toUpdateBookingInput(values: BookingFormValues) {
+  return toCreateBookingInput(values);
 }
 
 function mapZodFieldErrors(
@@ -237,17 +233,18 @@ export function validateCreateBookingForm(
 /**
  * Full-form validation for edit (same field rules as create).
  * Uses `createBookingSchema` so partial update schema cannot skip required fields.
+ * Status is never accepted from the client — Status Service owns lifecycle.
  */
 export function validateUpdateBookingForm(
   values: BookingFormValues,
-  status: BookingStatus,
 ):
   | { success: true; data: UpdateBookingValues }
   | { success: false; fieldErrors: BookingFormFieldErrors; formError: string } {
-  const parsed = createBookingSchema.safeParse(toUpdateBookingInput(values, status));
+  const parsed = createBookingSchema.safeParse(toUpdateBookingInput(values));
 
   if (parsed.success) {
-    return { success: true, data: parsed.data };
+    const { status: _ignoredStatus, ...data } = parsed.data;
+    return { success: true, data };
   }
 
   const fieldErrors = mapZodFieldErrors(parsed.error.issues);

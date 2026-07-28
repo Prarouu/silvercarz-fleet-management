@@ -66,6 +66,8 @@ export function EditBookingPage({
           mode="edit"
           bookingId={booking.id}
           bookingStatus={booking.status}
+          deliveryDate={booking.delivery_date}
+          returnDate={booking.return_date}
           defaultValues={bookingToFormValues(booking)}
           vehicles={vehicles}
         />

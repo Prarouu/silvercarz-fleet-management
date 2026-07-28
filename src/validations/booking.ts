@@ -24,6 +24,17 @@ import {
   requiredString,
 } from '@/validations/shared';
 
+/** List filter values — Status Engine display statuses (+ legacy DB enums). */
+const bookingListStatusSchema = z.enum([
+  'upcoming',
+  'active',
+  'completed',
+  'cancelled',
+  'draft',
+  'confirmed',
+  'ongoing',
+]);
+
 const bookingFieldsSchema = z.object({
   invoice_number: invoiceNumberSchema.optional(),
   vehicle_id: entityIdSchema,
@@ -72,7 +83,7 @@ export const updateBookingSchema = bookingFieldsSchema.partial().superRefine((da
 /** Form-friendly booking filters (camelCase query params). */
 export const bookingListFiltersSchema = z.object({
   search: z.string().trim().max(200).optional(),
-  status: bookingStatusSchema.optional(),
+  status: bookingListStatusSchema.optional(),
   vehicleId: entityIdSchema.optional(),
   mode: rentalModeSchema.optional(),
   paymentMethod: paymentMethodSchema.optional(),

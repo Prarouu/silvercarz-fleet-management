@@ -7,7 +7,10 @@
 import { formatDate } from '@/lib/format';
 import { AppError, ERROR_CODES } from '@/lib/errors';
 import type { BookingConflict } from '@/types/booking';
-import { BOOKING_STATUS_LABELS } from '@/types/enums';
+import {
+  BOOKING_DISPLAY_STATUS_LABELS,
+  resolveBookingDisplayStatus,
+} from '@/features/bookings/service/status.service';
 
 export const BOOKING_ERROR_CODES = {
   notFound: 'booking_not_found',
@@ -64,7 +67,12 @@ export function createBookingConflictError(
 
   const from = formatDate(conflict.deliveryDate);
   const to = formatDate(conflict.returnDate);
-  const statusLabel = BOOKING_STATUS_LABELS[conflict.status];
+  const display = resolveBookingDisplayStatus({
+    status: conflict.status,
+    delivery_date: conflict.deliveryDate,
+    return_date: conflict.returnDate,
+  });
+  const statusLabel = BOOKING_DISPLAY_STATUS_LABELS[display];
   const details = [
     conflict.invoiceNumber ? `Invoice ${conflict.invoiceNumber}` : null,
     conflict.customerName || null,

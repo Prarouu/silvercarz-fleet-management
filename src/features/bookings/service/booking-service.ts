@@ -37,6 +37,11 @@ import {
   type InvoiceNumberService,
 } from '@/features/bookings/service/invoice-number.service';
 import {
+  getBookingStatusService,
+  resolvePersistedBookingStatus,
+  type BookingStatusService,
+} from '@/features/bookings/service/status.service';
+import {
   createAvailabilityService,
   getAvailabilityService,
   type AvailabilityService,
@@ -71,6 +76,7 @@ export interface BookingServiceDeps {
   readonly invoiceNumberService?: InvoiceNumberService;
   readonly availabilityService?: AvailabilityService;
   readonly conflictService?: ConflictService;
+  readonly statusService?: BookingStatusService;
   /** Optional override for tests; defaults to `requirePermission`. */
   readonly requirePermission?: typeof requirePermission;
 }
@@ -196,6 +202,16 @@ function applyCreateDerivedFields(
   const totalAmount =
     values.total_amount > 0 ? values.total_amount : calculateTotalAmount(bookingAmount);
 
+  // Draft stays draft; otherwise Status Service owns lifecycle persistence.
+  const status =
+    values.status === BOOKING_STATUSES.draft
+      ? BOOKING_STATUSES.draft
+      : resolvePersistedBookingStatus({
+          status: values.status,
+          delivery_date: values.delivery_date,
+          return_date: values.return_date,
+        });
+
   return {
     ...values,
     invoice_number: invoiceNumber,
@@ -203,6 +219,7 @@ function applyCreateDerivedFields(
     total_kilometers: totalKilometers,
     booking_amount: bookingAmount,
     total_amount: totalAmount,
+    status,
     created_by: values.created_by ?? actor.id,
   };
 }
@@ -264,12 +281,25 @@ function applyUpdateDerivedFields(
         ? calculateTotalAmount(bookingAmount)
         : existing.total_amount;
 
+  // Manual status edits are ignored. Cancelled stays cancelled; otherwise
+  // Status Service recomputes lifecycle from dates (drafts graduate on save).
+  const { status: _ignoredClientStatus, ...safeWithoutStatus } = values;
+  const status =
+    existing.status === BOOKING_STATUSES.cancelled
+      ? BOOKING_STATUSES.cancelled
+      : resolvePersistedBookingStatus({
+          status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
+          delivery_date: deliveryDate,
+          return_date: returnDate,
+        });
+
   return {
-    ...values,
+    ...safeWithoutStatus,
     duration,
     total_kilometers: totalKilometers,
     booking_amount: bookingAmount,
     total_amount: totalAmount,
+    status,
   };
 }
 
@@ -327,6 +357,14 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getConflictService();
   }
 
+  function getStatus(): BookingStatusService {
+    if (deps.statusService) {
+      return deps.statusService;
+    }
+
+    return getBookingStatusService();
+  }
+
   async function syncVehicleAvailability(vehicleId: string | null | undefined): Promise<void> {
     if (!vehicleId) {
       return;
@@ -343,16 +381,26 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const invoiceService = getInvoiceService();
         const availability = getAvailability();
         const conflict = getConflict();
+        const statusEngine = getStatus();
         const values = parseCreateInput(input);
 
         assertValidDates(values.delivery_date, values.return_date);
+
+        const scheduleStatus =
+          values.status === BOOKING_STATUSES.draft
+            ? BOOKING_STATUSES.draft
+            : statusEngine.resolvePersistedStatus({
+                status: values.status,
+                delivery_date: values.delivery_date,
+                return_date: values.return_date,
+              });
 
         // Validate → operational status → conflict → invoice → save
         await ensureVehicleScheduleClear(availability, conflict, {
           vehicleId: values.vehicle_id,
           deliveryDate: values.delivery_date,
           returnDate: values.return_date,
-          status: values.status,
+          status: scheduleStatus,
         });
 
         const invoiceNumber = await invoiceService.generateNextInvoiceNumber({

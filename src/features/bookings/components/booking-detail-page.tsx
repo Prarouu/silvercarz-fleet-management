@@ -12,9 +12,9 @@ import { BookingDetailActions } from '@/features/bookings/components/booking-det
 import { BookingDetailField } from '@/features/bookings/components/booking-detail-field';
 import { BookingDetailSection } from '@/features/bookings/components/booking-detail-section';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
+import { getBookingStatusPresentation } from '@/features/bookings/service/status.service';
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import {
-  BOOKING_STATUS_LABELS,
   FUEL_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
   RENTAL_MODE_LABELS,
@@ -88,6 +88,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
     ? PAYMENT_METHOD_LABELS[booking.payment_method]
     : null;
   const totalLabel = formatOptionalCurrency(booking.total_amount);
+  const statusPresentation = getBookingStatusPresentation(booking);
 
   return (
     <PageContainer className="max-w-5xl">
@@ -101,7 +102,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
                 <h1 className="text-2xl font-semibold tracking-tight tabular-nums">
                   {booking.invoice_number}
                 </h1>
-                <BookingStatusBadge status={booking.status} />
+                <BookingStatusBadge booking={booking} />
               </div>
               <p className="text-base font-medium">{booking.customer_name}</p>
               <p className="text-sm text-muted-foreground">
@@ -115,6 +116,9 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
                 </span>
                 <span className="tabular-nums">{formatDate(booking.return_date)}</span>
               </p>
+              <p className="max-w-xl text-sm text-muted-foreground">
+                {statusPresentation.description}
+              </p>
             </div>
 
             <div className="shrink-0 rounded-xl border bg-muted/30 px-4 py-3 sm:min-w-[10rem] sm:text-right">
@@ -125,7 +129,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             </div>
           </div>
 
-          <BookingDetailActions bookingId={booking.id} />
+          <BookingDetailActions bookingId={booking.id} booking={booking} />
         </header>
       </div>
 
@@ -138,7 +142,29 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <BookingDetailField label="Invoice Number" value={booking.invoice_number} />
           <BookingDetailField label="Rental Mode" value={RENTAL_MODE_LABELS[booking.mode]} />
-          <BookingDetailField label="Status" value={BOOKING_STATUS_LABELS[booking.status]} />
+          <BookingDetailField
+            label="Status"
+            value={
+              <span className="inline-flex flex-col gap-1">
+                <BookingStatusBadge booking={booking} />
+                <span className="text-xs font-normal text-muted-foreground">
+                  {statusPresentation.kind === 'lifecycle'
+                    ? 'Lifecycle (automatic)'
+                    : statusPresentation.kind === 'terminal'
+                      ? 'Terminal'
+                      : 'Draft'}
+                </span>
+              </span>
+            }
+          />
+          <BookingDetailField
+            label="Lifecycle"
+            value={
+              statusPresentation.isComputed
+                ? statusPresentation.label
+                : `${statusPresentation.label} (overrides lifecycle)`
+            }
+          />
           <BookingDetailField label="Invoice Date" value={formatDate(booking.invoice_date)} />
           <BookingDetailField label="Created Date" value={formatDateTime(booking.created_at)} />
           {createdByLabel ? <BookingDetailField label="Created By" value={createdByLabel} /> : null}

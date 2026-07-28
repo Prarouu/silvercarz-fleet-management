@@ -30,6 +30,7 @@ src/features/bookings/
 ├── service/           # Business logic + ApiResponse orchestration
 │   ├── booking-service.ts
 │   ├── conflict.service.ts   # Conflict Detection Engine
+│   ├── status.service.ts     # Status Automation Engine
 │   ├── invoice-number.service.ts
 │   └── booking-calculations.ts
 ├── errors.ts          # Domain AppError factories
@@ -76,6 +77,8 @@ Responsibilities:
 - Duration / km / amount calculations
 - Vehicle availability via Availability Engine + **Conflict Detection Engine**
   (drafts/cancelled skip enforcement; syncs vehicle status after writes)
+- **Status Automation Engine** assigns persisted lifecycle status on create /
+  update; cancel soft-deletes to `cancelled`
 - Invoice allocation runs **after** conflict checks so failed creates do not
   consume sequence numbers
 

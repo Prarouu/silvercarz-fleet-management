@@ -18,8 +18,9 @@ import {
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
+import { BOOKING_DISPLAY_STATUS_OPTIONS } from '@/features/bookings/service/status.service';
 import { useDebounce } from '@/hooks';
-import { BOOKING_STATUS_OPTIONS, RENTAL_MODE_OPTIONS } from '@/types';
+import { RENTAL_MODE_OPTIONS } from '@/types';
 import { cn } from '@/lib/utils';
 
 const ALL_VALUE = '__all__';
@@ -122,7 +123,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_VALUE}>All statuses</SelectItem>
-                {BOOKING_STATUS_OPTIONS.map((option) => (
+                {BOOKING_DISPLAY_STATUS_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

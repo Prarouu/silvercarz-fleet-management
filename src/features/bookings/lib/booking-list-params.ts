@@ -3,13 +3,12 @@
  */
 
 import { PAGINATION } from '@/constants';
-import type { BookingListQuery, BookingSortField, SortOrder } from '@/types';
 import {
-  BOOKING_STATUS_VALUES,
-  RENTAL_MODE_VALUES,
-  isBookingStatus,
-  isRentalMode,
-} from '@/types/enums';
+  BOOKING_DISPLAY_STATUSES,
+  isBookingDisplayStatus,
+} from '@/features/bookings/service/status.service';
+import type { BookingListQuery, BookingSortField, SortOrder } from '@/types';
+import { RENTAL_MODE_VALUES, isBookingStatus, isRentalMode } from '@/types/enums';
 
 const SORT_FIELDS = new Set<BookingSortField>([
   'invoice_date',
@@ -18,6 +17,15 @@ const SORT_FIELDS = new Set<BookingSortField>([
   'created_at',
   'customer_name',
   'invoice_number',
+]);
+
+/** Display statuses offered in the list filter (omit future-only terminals). */
+const LIST_FILTER_STATUSES = new Set<string>([
+  BOOKING_DISPLAY_STATUSES.upcoming,
+  BOOKING_DISPLAY_STATUSES.active,
+  BOOKING_DISPLAY_STATUSES.completed,
+  BOOKING_DISPLAY_STATUSES.cancelled,
+  BOOKING_DISPLAY_STATUSES.draft,
 ]);
 
 export type BookingListUrlState = {
@@ -63,6 +71,23 @@ function parseSortOrder(value: string | undefined): SortOrder {
   return value === 'asc' ? 'asc' : 'desc';
 }
 
+function parseStatusFilter(value: string | undefined): string {
+  if (!value) {
+    return '';
+  }
+
+  if (LIST_FILTER_STATUSES.has(value) && isBookingDisplayStatus(value)) {
+    return value;
+  }
+
+  // Legacy persisted-enum URLs still accepted.
+  if (isBookingStatus(value)) {
+    return value;
+  }
+
+  return '';
+}
+
 /** Reads Next.js `searchParams` into a normalized list URL state. */
 export function parseBookingListUrlState(
   searchParams: Record<string, string | string[] | undefined>,
@@ -72,10 +97,7 @@ export function parseBookingListUrlState(
 
   return {
     search: firstValue(searchParams.q)?.trim() ?? '',
-    status:
-      statusRaw && isBookingStatus(statusRaw) && BOOKING_STATUS_VALUES.includes(statusRaw)
-        ? statusRaw
-        : '',
+    status: parseStatusFilter(statusRaw),
     mode: modeRaw && isRentalMode(modeRaw) && RENTAL_MODE_VALUES.includes(modeRaw) ? modeRaw : '',
     page: parsePositiveInt(firstValue(searchParams.page), PAGINATION.defaultPage),
     pageSize: parsePageSize(firstValue(searchParams.pageSize)),
@@ -86,15 +108,17 @@ export function parseBookingListUrlState(
 
 /** Maps URL state to the booking service list query. */
 export function toBookingListQuery(state: BookingListUrlState): BookingListQuery {
+  const status = state.status || undefined;
+
   return {
     search: state.search || undefined,
-    status: state.status && isBookingStatus(state.status) ? state.status : undefined,
+    status: status as BookingListQuery['status'],
     mode: state.mode && isRentalMode(state.mode) ? state.mode : undefined,
     page: state.page,
     pageSize: state.pageSize,
     sortBy: state.sortBy,
     sortOrder: state.sortOrder,
-    includeCancelled: state.status === 'cancelled' ? true : undefined,
+    includeCancelled: state.status === BOOKING_DISPLAY_STATUSES.cancelled ? true : undefined,
   };
 }
 

@@ -151,10 +151,54 @@ function buildSearchOrFilter(term: string, vehicleIds: readonly string[]): strin
 type FilterableBuilder = {
   eq: (column: string, value: unknown) => FilterableBuilder;
   neq: (column: string, value: unknown) => FilterableBuilder;
+  gt: (column: string, value: unknown) => FilterableBuilder;
   gte: (column: string, value: unknown) => FilterableBuilder;
+  lt: (column: string, value: unknown) => FilterableBuilder;
   lte: (column: string, value: unknown) => FilterableBuilder;
   or: (filters: string) => FilterableBuilder;
 };
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Apply Status Engine display-status filters (date-derived lifecycle + terminals).
+ * Mirrors `resolveBookingDisplayStatus` rules for list queries.
+ */
+function applyStatusFilter(builder: FilterableBuilder, status: string): FilterableBuilder {
+  const today = todayIsoDate();
+
+  switch (status) {
+    case 'cancelled':
+      return builder.eq('status', BOOKING_STATUSES.cancelled);
+    case 'draft':
+      return builder.eq('status', BOOKING_STATUSES.draft);
+    case 'upcoming':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .gt('delivery_date', today);
+    case 'active':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .lte('delivery_date', today)
+        .gte('return_date', today);
+    case 'completed':
+      return builder
+        .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.draft)
+        .lt('return_date', today);
+    // Legacy persisted-enum filters (still accepted for older URLs / callers)
+    case BOOKING_STATUSES.confirmed:
+    case BOOKING_STATUSES.ongoing:
+    case BOOKING_STATUSES.completed:
+      return builder.eq('status', status);
+    default:
+      return builder.eq('status', status);
+  }
+}
 
 function applyNonSearchFilters(
   builder: FilterableBuilder,
@@ -163,7 +207,7 @@ function applyNonSearchFilters(
   let next = builder;
 
   if (filters?.status) {
-    next = next.eq('status', filters.status);
+    next = applyStatusFilter(next, filters.status);
   } else if (!filters?.includeCancelled) {
     next = next.neq('status', BOOKING_STATUSES.cancelled);
   }

@@ -148,7 +148,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'status',
         header: 'Status',
         enableSorting: false,
-        cell: ({ row }) => <BookingStatusBadge status={row.original.status} />,
+        cell: ({ row }) => <BookingStatusBadge booking={row.original} />,
       },
       {
         id: 'total_amount',
@@ -320,7 +320,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <BookingStatusBadge status={booking.status} />
+                  <BookingStatusBadge booking={booking} />
                   <BookingRowActions
                     bookingId={booking.id}
                     invoiceNumber={booking.invoice_number}

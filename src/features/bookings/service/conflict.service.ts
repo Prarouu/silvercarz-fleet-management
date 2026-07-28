@@ -22,6 +22,11 @@ import {
   getBookingRepository,
   type BookingRepository,
 } from '@/features/bookings/repository';
+import {
+  BOOKING_DISPLAY_STATUS_LABELS,
+  isScheduleBlockingBooking,
+  resolveBookingDisplayStatus,
+} from '@/features/bookings/service/status.service';
 import { formatDate } from '@/lib/format';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
@@ -33,12 +38,12 @@ import type {
   BookingConflictResult,
   BookingStatus,
 } from '@/types';
-import { BOOKING_STATUSES, BOOKING_STATUS_LABELS } from '@/types/enums';
+import { BOOKING_STATUSES } from '@/types/enums';
 
 /**
  * Statuses that occupy the vehicle calendar and block overlapping hires.
+ * Aligned with Status Service schedule-blocking display states (upcoming / active).
  * Cancelled, draft, and completed never block (completed frees the vehicle).
- * Reserved for future: rejected.
  */
 export const CONFLICT_BLOCKING_STATUSES = [
   BOOKING_STATUSES.confirmed,
@@ -153,7 +158,12 @@ function toConflict(booking: Booking): BookingConflict {
 function buildConflictMessage(conflict: BookingConflict): string {
   const from = formatDate(conflict.deliveryDate);
   const to = formatDate(conflict.returnDate);
-  const statusLabel = BOOKING_STATUS_LABELS[conflict.status];
+  const display = resolveBookingDisplayStatus({
+    status: conflict.status,
+    delivery_date: conflict.deliveryDate,
+    return_date: conflict.returnDate,
+  });
+  const statusLabel = BOOKING_DISPLAY_STATUS_LABELS[display];
   const details = [
     conflict.invoiceNumber ? `Invoice ${conflict.invoiceNumber}` : null,
     conflict.customerName || null,
@@ -202,9 +212,7 @@ export function createConflictService(deps: ConflictServiceDeps = {}): ConflictS
           excludeBookingId: params.excludeBookingId,
         });
 
-        const conflicts = overlaps
-          .filter((row) => isConflictBlockingStatus(row.status))
-          .map(toConflict);
+        const conflicts = overlaps.filter((row) => isScheduleBlockingBooking(row)).map(toConflict);
 
         if (conflicts.length === 0) {
           return {
@@ -263,7 +271,7 @@ export function createConflictService(deps: ConflictServiceDeps = {}): ConflictS
           excludeBookingId: params.excludeBookingId,
         });
 
-        const blocking = overlaps.filter((row) => isConflictBlockingStatus(row.status));
+        const blocking = overlaps.filter((row) => isScheduleBlockingBooking(row));
 
         if (blocking.length === 0) {
           return {

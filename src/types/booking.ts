@@ -36,7 +36,12 @@ export type BookingSortField =
 /** Common list / filter inputs for booking queries. */
 export interface BookingListFilters {
   readonly search?: string;
-  readonly status?: BookingStatus;
+  /**
+   * Display status from the Status Automation Engine
+   * (`upcoming` | `active` | `completed` | `cancelled` | `draft`).
+   * Lifecycle filters use delivery/return dates — not raw DB enum equality.
+   */
+  readonly status?: 'upcoming' | 'active' | 'completed' | 'cancelled' | 'draft' | BookingStatus;
   readonly vehicleId?: string;
   readonly mode?: RentalMode;
   readonly paymentMethod?: PaymentMethod;

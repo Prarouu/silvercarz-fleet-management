@@ -22,6 +22,10 @@ import {
   type ConflictService,
 } from '@/features/bookings/service/conflict.service';
 import {
+  BOOKING_DISPLAY_STATUSES,
+  resolveBookingDisplayStatus,
+} from '@/features/bookings/service/status.service';
+import {
   createInvalidAvailabilityStatusError,
   createUnauthorizedVehicleAccessError,
   createVehicleNotFoundError,
@@ -39,7 +43,6 @@ import { fromPromise } from '@/services';
 import type {
   ApiResponse,
   Booking,
-  BookingStatus,
   PaginatedResult,
   Vehicle,
   VehicleAvailabilityQuery,
@@ -47,7 +50,6 @@ import type {
   VehicleListQuery,
 } from '@/types';
 import {
-  BOOKING_STATUSES,
   VEHICLE_AVAILABILITY_STATUSES,
   VEHICLE_BOOKING_DERIVED_STATUSES,
   isVehicleAvailabilityStatus,
@@ -112,11 +114,6 @@ export interface AvailabilityService {
 
 const BOOKING_DERIVED_SET = new Set<string>(VEHICLE_BOOKING_DERIVED_STATUSES);
 
-const ACTIVE_HIRE_STATUSES = new Set<BookingStatus>([
-  BOOKING_STATUSES.confirmed,
-  BOOKING_STATUSES.ongoing,
-]);
-
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -126,16 +123,18 @@ function isBookingDerivedStatus(status: VehicleAvailabilityStatus): boolean {
 }
 
 /**
- * Centralized state transitions from booking dates / status.
+ * Centralized state transitions from booking lifecycle (Status Service).
  *
  * Rules (as-of date):
  * - Soft-retired / inactive roster → inactive
  * - Manual maintenance (when not overwritten by roster) → maintenance
- * - Any active hire covering as-of → booked
- * - Else any future active hire → reserved
+ * - Any ACTIVE hire (Status Service) → booked
+ * - Else any UPCOMING hire → reserved
  * - Else → available
  *
- * Completed / cancelled / draft bookings never drive reserved/booked.
+ * Completed / cancelled / draft never drive reserved/booked.
+ * Lifecycle classification is owned by the Booking Status Automation Engine —
+ * do not reimplement date windows here.
  */
 export function resolveAvailabilityFromBookings(
   vehicle: Pick<Vehicle, 'is_active' | 'availability_status'>,
@@ -157,19 +156,11 @@ export function resolveAvailabilityFromBookings(
   let hasFutureHire = false;
 
   for (const booking of bookings) {
-    if (!ACTIVE_HIRE_STATUSES.has(booking.status)) {
-      continue;
-    }
+    const display = resolveBookingDisplayStatus(booking, asOfDate);
 
-    if (booking.status === BOOKING_STATUSES.ongoing) {
+    if (display === BOOKING_DISPLAY_STATUSES.active) {
       hasCurrentHire = true;
-      continue;
-    }
-
-    // confirmed: use date window relative to as-of
-    if (booking.delivery_date <= asOfDate && booking.return_date >= asOfDate) {
-      hasCurrentHire = true;
-    } else if (booking.delivery_date > asOfDate) {
+    } else if (display === BOOKING_DISPLAY_STATUSES.upcoming) {
       hasFutureHire = true;
     }
   }

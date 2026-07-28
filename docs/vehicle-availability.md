@@ -41,15 +41,17 @@ Roster flag `vehicles.is_active` remains separate; soft-delete sets both
 
 Transitions are centralized in `resolveAvailabilityFromBookings` /
 `syncAvailabilityFromBookings` — never hardcode them in UI or actions.
+Hire classification (upcoming vs active vs completed) is owned by the
+[Booking Status Automation Engine](./booking-status-automation.md).
 
 ```
-Booking created (confirmed, future dates)
+Booking upcoming (Status Service)
   → reserved
 
-Booking starts (delivery ≤ today ≤ return, or status = ongoing)
+Booking active (Status Service)
   → booked
 
-Booking ends (no remaining active / future hires)
+Booking completed / no remaining upcoming or active hires
   → available
 
 Booking cancelled / deleted
@@ -94,7 +96,8 @@ Manual `maintenance` is preserved during booking sync. Soft-retired /
 
 Friendly messages are returned via `ApiResponse` — never raw Postgres errors.
 
-See [booking-conflict-detection.md](./booking-conflict-detection.md).
+See [booking-conflict-detection.md](./booking-conflict-detection.md) and
+[booking-status-automation.md](./booking-status-automation.md).
 
 ## UI surfaces
 

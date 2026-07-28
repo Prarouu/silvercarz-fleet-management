@@ -52,7 +52,7 @@ export function VehicleRecentBookingsTable({ bookings }: VehicleRecentBookingsTa
                   </span>
                 </TableCell>
                 <TableCell className="px-3 py-2.5">
-                  <BookingStatusBadge status={booking.status} />
+                  <BookingStatusBadge booking={booking} />
                 </TableCell>
                 <TableCell className="px-3 py-2.5 text-right">
                   <span className="font-medium tabular-nums">
@@ -79,7 +79,7 @@ export function VehicleRecentBookingsTable({ bookings }: VehicleRecentBookingsTa
                   </Link>
                   <p className="truncate text-sm text-muted-foreground">{booking.customer_name}</p>
                 </div>
-                <BookingStatusBadge status={booking.status} />
+                <BookingStatusBadge booking={booking} />
               </div>
               <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
                 <div className="min-w-0">

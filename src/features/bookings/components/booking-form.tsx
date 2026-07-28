@@ -21,12 +21,14 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ROUTES } from '@/constants/routes';
 import { createBooking } from '@/features/bookings/actions/create-booking';
+import { deleteBooking } from '@/features/bookings/actions/delete-booking';
 import { updateBooking } from '@/features/bookings/actions/update-booking';
 import {
   BookingFormField,
   fieldAriaProps,
 } from '@/features/bookings/components/booking-form-field';
 import { BookingFormSection } from '@/features/bookings/components/booking-form-section';
+import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import {
   BOOKING_PAYMENT_OPTIONS,
   createBookingFormDefaults,
@@ -38,6 +40,10 @@ import {
   type BookingFormValues,
   type VehicleSelectOption,
 } from '@/features/bookings/lib/booking-form';
+import {
+  BOOKING_DISPLAY_STATUSES,
+  getBookingStatusPresentation,
+} from '@/features/bookings/service/status.service';
 import {
   calculateBookingAmount,
   calculateDurationDays,
@@ -61,6 +67,8 @@ type EditBookingFormProps = BookingFormBaseProps & {
   readonly mode: 'edit';
   readonly bookingId: string;
   readonly bookingStatus: BookingStatus;
+  readonly deliveryDate: string;
+  readonly returnDate: string;
   readonly defaultValues: BookingFormValues;
 };
 
@@ -70,6 +78,9 @@ type PaymentMethodValue = NonNullable<BookingFormValues['payment_method']>;
 
 const UNSAVED_CHANGES_MESSAGE =
   'You have unsaved changes. Leave this page? Your edits will be lost.';
+
+const CANCEL_BOOKING_MESSAGE =
+  'Cancel this booking? The vehicle will be released according to availability rules.';
 
 export function BookingForm(props: BookingFormProps) {
   const { vehicles, className, mode } = props;
@@ -160,6 +171,16 @@ export function BookingForm(props: BookingFormProps) {
 
   const isLoading = isSubmitting || isPending;
   const formError = errors.root?.message;
+  const editStatusPresentation =
+    mode === 'edit'
+      ? getBookingStatusPresentation({
+          status: props.bookingStatus,
+          delivery_date: deliveryDate || props.deliveryDate,
+          return_date: returnDate || props.returnDate,
+        })
+      : null;
+  const isCancelled =
+    mode === 'edit' && editStatusPresentation?.status === BOOKING_DISPLAY_STATUSES.cancelled;
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -181,6 +202,32 @@ export function BookingForm(props: BookingFormProps) {
     }
 
     router.push(ROUTES.bookings);
+  };
+
+  const handleCancelBooking = () => {
+    if (mode !== 'edit' || isCancelled) {
+      return;
+    }
+
+    if (!window.confirm(CANCEL_BOOKING_MESSAGE)) {
+      return;
+    }
+
+    clearErrors('root');
+    startTransition(async () => {
+      const result = await deleteBooking(props.bookingId);
+
+      if (!result.success) {
+        setError('root', { type: 'server', message: result.error.message });
+        return;
+      }
+
+      toast.success('Booking cancelled', {
+        description: `Invoice ${result.data.invoice_number} was cancelled.`,
+      });
+      router.push(ROUTES.bookings);
+      router.refresh();
+    });
   };
 
   const onSubmit = handleSubmit((values) => {
@@ -249,7 +296,7 @@ export function BookingForm(props: BookingFormProps) {
       return;
     }
 
-    const validated = validateUpdateBookingForm(values, props.bookingStatus);
+    const validated = validateUpdateBookingForm(values);
 
     if (!validated.success) {
       for (const [field, message] of Object.entries(validated.fieldErrors)) {
@@ -369,7 +416,11 @@ export function BookingForm(props: BookingFormProps) {
               control={control}
               name="mode"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={isLoading || isCancelled}
+                >
                   <SelectTrigger
                     className="w-full"
                     {...fieldAriaProps({
@@ -400,7 +451,7 @@ export function BookingForm(props: BookingFormProps) {
           >
             <Input
               type="date"
-              disabled={isLoading}
+              disabled={isLoading || isCancelled}
               {...fieldAriaProps({
                 id: 'invoice_date',
                 required: true,
@@ -409,6 +460,46 @@ export function BookingForm(props: BookingFormProps) {
               {...register('invoice_date')}
             />
           </BookingFormField>
+
+          {mode === 'edit' && editStatusPresentation ? (
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+              <Label id="booking-status-label">Status</Label>
+              <div
+                className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                role="group"
+                aria-labelledby="booking-status-label"
+              >
+                <div className="space-y-1">
+                  <BookingStatusBadge
+                    booking={{
+                      status: props.bookingStatus,
+                      delivery_date: deliveryDate || props.deliveryDate,
+                      return_date: returnDate || props.returnDate,
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editStatusPresentation.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Lifecycle status updates automatically from delivery and return dates. It cannot
+                    be edited manually.
+                  </p>
+                </div>
+                {!isCancelled ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 text-destructive"
+                    disabled={isLoading}
+                    onClick={handleCancelBooking}
+                    aria-label="Cancel this booking"
+                  >
+                    Cancel Booking
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </BookingFormSection>
 
@@ -997,7 +1088,18 @@ export function BookingForm(props: BookingFormProps) {
       </BookingFormSection>
 
       <div className="sticky bottom-0 z-20 -mx-4 mt-2 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-backdrop-filter:bg-background/80 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
-        <div className="flex w-full items-center justify-end gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          {mode === 'edit' && !isCancelled ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-9 min-w-28 text-destructive sm:min-h-8"
+              disabled={isLoading}
+              onClick={handleCancelBooking}
+            >
+              Cancel Booking
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -1005,12 +1107,12 @@ export function BookingForm(props: BookingFormProps) {
             disabled={isLoading}
             onClick={handleCancel}
           >
-            Cancel
+            Back
           </Button>
           <Button
             type="submit"
             className="min-h-9 min-w-32 sm:min-h-8"
-            disabled={isLoading}
+            disabled={isLoading || isCancelled}
             aria-busy={isLoading}
           >
             {isLoading ? (
