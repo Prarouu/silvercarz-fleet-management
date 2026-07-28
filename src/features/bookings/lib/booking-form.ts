@@ -65,6 +65,12 @@ export type VehicleSelectOption = {
   readonly vehicle_number: string;
   readonly availability_status?: VehicleAvailabilityStatus;
   readonly is_active?: boolean;
+  /** Default daily rate used to seed the Pricing Engine inputs. */
+  readonly default_daily_rate?: number | null;
+  /** Default extra kilometer rate for the Pricing Engine. */
+  readonly extra_kilometer_rate?: number | null;
+  /** Default security / caution deposit. */
+  readonly security_deposit?: number | null;
   /** When true, option is shown but not selectable (booked / maintenance / inactive). */
   readonly disabled?: boolean;
 };

@@ -54,7 +54,8 @@ Edit entry point from details: **Edit Booking** → `bookingEditPath(id)`.
 | Customer Information | Name, contact, address, city, state, ZIP, document submitted           |
 | Vehicle Information  | Name, number, fuel type, driver name                                   |
 | Trip Information     | Delivery/return, duration, place, fuel range, odometer, total km       |
-| Payment Information  | Daily charge, km rate, booking amount, caution, payment method, total  |
+| Payment Information  | Rates, rental/km charges, amount paid, caution, balance, grand total   |
+| Pricing summary      | Full `PricingSummary` from the Pricing Engine                          |
 | Notes                | Notes text, or a compact empty state when blank                        |
 | Timeline             | Created / last updated audit trail                                     |
 

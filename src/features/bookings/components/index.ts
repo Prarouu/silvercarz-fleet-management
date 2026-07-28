@@ -5,6 +5,7 @@ export { BookingDetailSkeleton } from './booking-detail-skeleton';
 export { BookingForm } from './booking-form';
 export { BookingList } from './booking-list';
 export { BookingListSkeleton } from './booking-list-skeleton';
+export { BookingPricingSummary } from './booking-pricing-summary';
 export { BookingStatusBadge } from './booking-status-badge';
 export { CreateBookingForm } from './create-booking-form';
 export { CreateBookingPage } from './create-booking-page';

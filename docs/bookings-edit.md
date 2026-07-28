@@ -77,9 +77,9 @@ Edit fields
   → Redirect to /bookings
 ```
 
-Derived fields (duration, total km, amounts) keep the same live calculations as
-Create. Status is not edited in the form — the existing booking status is sent
-with the update payload.
+Derived fields (duration, total km, grand total) are owned by the
+[Pricing Engine](./booking-pricing-engine.md) (`previewPricing`), same as Create.
+Status is not edited in the form — Status Service owns lifecycle on save.
 
 ## Unsaved changes
 

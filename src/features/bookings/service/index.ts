@@ -7,6 +7,23 @@ export {
 } from './booking-calculations';
 
 export {
+  assertPricingInput,
+  calculateChargeableKilometers,
+  calculatePricing,
+  calculateRentalDays,
+  createPricingService,
+  getPricingService,
+  previewPricing,
+  pricingFromBooking,
+  pricingToPersistedFields,
+  roundMoney,
+  type PricingBookingSource,
+  type PricingInput,
+  type PricingService,
+  type PricingSummary,
+} from './pricing.service';
+
+export {
   createInvoiceNumberService,
   getInvoiceNumberService,
   type GenerateInvoiceNumberOptions,

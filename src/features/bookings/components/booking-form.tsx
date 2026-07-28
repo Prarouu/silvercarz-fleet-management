@@ -28,6 +28,7 @@ import {
   fieldAriaProps,
 } from '@/features/bookings/components/booking-form-field';
 import { BookingFormSection } from '@/features/bookings/components/booking-form-section';
+import { BookingPricingSummary } from '@/features/bookings/components/booking-pricing-summary';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import {
   BOOKING_PAYMENT_OPTIONS,
@@ -40,16 +41,11 @@ import {
   type BookingFormValues,
   type VehicleSelectOption,
 } from '@/features/bookings/lib/booking-form';
+import { previewPricing } from '@/features/bookings/service/pricing.service';
 import {
   BOOKING_DISPLAY_STATUSES,
   getBookingStatusPresentation,
 } from '@/features/bookings/service/status.service';
-import {
-  calculateBookingAmount,
-  calculateDurationDays,
-  calculateTotalAmount,
-  calculateTotalKilometers,
-} from '@/features/bookings/service/booking-calculations';
 import { cn } from '@/lib/utils';
 import { RENTAL_MODE_OPTIONS, type BookingStatus } from '@/types';
 
@@ -114,60 +110,87 @@ export function BookingForm(props: BookingFormProps) {
   const duration = useWatch({ control, name: 'duration' });
   const totalKilometers = useWatch({ control, name: 'total_kilometers' });
   const bookingAmountValue = useWatch({ control, name: 'booking_amount' });
+  const cautionMoneyValue = useWatch({ control, name: 'caution_money' });
   const totalAmountValue = useWatch({ control, name: 'total_amount' });
+  const selectedVehicleId = useWatch({ control, name: 'vehicle_id' });
+
+  // Pricing Engine owns every derived money / distance value shown on the form.
+  const pricing = previewPricing({
+    dailyRate: dailyCharge ?? 0,
+    extraKilometerRate: kilometerRate,
+    deliveryDate: deliveryDate || undefined,
+    returnDate: returnDate || undefined,
+    startOdometer,
+    endOdometer,
+    amountPaid: bookingAmountValue ?? 0,
+    securityDeposit: cautionMoneyValue ?? 0,
+  });
 
   useEffect(() => {
-    if (!deliveryDate || !returnDate) {
+    const nextDuration = pricing.rentalDays > 0 ? pricing.rentalDays : null;
+    if (nextDuration === duration) {
       return;
     }
-
-    const nextDuration = calculateDurationDays(deliveryDate, returnDate);
-    const nextValue = nextDuration > 0 ? nextDuration : null;
-    if (nextValue === duration) {
-      return;
-    }
-    setValue('duration', nextValue, {
+    setValue('duration', nextDuration, {
       shouldValidate: false,
       shouldDirty: false,
     });
-  }, [deliveryDate, returnDate, duration, setValue]);
+  }, [pricing.rentalDays, duration, setValue]);
 
   useEffect(() => {
-    const nextKm = calculateTotalKilometers(startOdometer, endOdometer);
-    if (nextKm === totalKilometers) {
+    if (pricing.totalKilometers === totalKilometers) {
       return;
     }
-    setValue('total_kilometers', nextKm, { shouldValidate: false, shouldDirty: false });
-  }, [startOdometer, endOdometer, totalKilometers, setValue]);
-
-  useEffect(() => {
-    if (dailyCharge == null || duration == null || duration <= 0) {
-      return;
-    }
-
-    const bookingAmount = calculateBookingAmount({
-      dailyCharge,
-      durationDays: duration,
-      kilometerRate,
-      totalKilometers,
+    setValue('total_kilometers', pricing.totalKilometers, {
+      shouldValidate: false,
+      shouldDirty: false,
     });
-    const totalAmount = calculateTotalAmount(bookingAmount);
+  }, [pricing.totalKilometers, totalKilometers, setValue]);
 
-    if (bookingAmount !== bookingAmountValue) {
-      setValue('booking_amount', bookingAmount, { shouldValidate: false, shouldDirty: false });
+  useEffect(() => {
+    if (pricing.grandTotal === totalAmountValue) {
+      return;
     }
-    if (totalAmount !== totalAmountValue) {
-      setValue('total_amount', totalAmount, { shouldValidate: false, shouldDirty: false });
+    setValue('total_amount', pricing.grandTotal, {
+      shouldValidate: false,
+      shouldDirty: false,
+    });
+  }, [pricing.grandTotal, totalAmountValue, setValue]);
+
+  useEffect(() => {
+    if (!selectedVehicleId || mode === 'edit') {
+      return;
     }
-  }, [
-    dailyCharge,
-    duration,
-    kilometerRate,
-    totalKilometers,
-    bookingAmountValue,
-    totalAmountValue,
-    setValue,
-  ]);
+
+    const vehicle = vehicles.find((option) => option.id === selectedVehicleId);
+    if (!vehicle) {
+      return;
+    }
+
+    if (vehicle.default_daily_rate != null && dailyCharge == null) {
+      setValue('daily_charge', vehicle.default_daily_rate, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+
+    if (vehicle.extra_kilometer_rate != null && kilometerRate == null) {
+      setValue('kilometer_rate', vehicle.extra_kilometer_rate, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+
+    if (
+      vehicle.security_deposit != null &&
+      (cautionMoneyValue == null || cautionMoneyValue === 0)
+    ) {
+      setValue('caution_money', vehicle.security_deposit, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [selectedVehicleId, vehicles, mode, dailyCharge, kilometerRate, cautionMoneyValue, setValue]);
 
   const isLoading = isSubmitting || isPending;
   const formError = errors.root?.message;
@@ -776,7 +799,7 @@ export function BookingForm(props: BookingFormProps) {
 
       <BookingFormSection
         title="Pricing"
-        description="Charges, distance, and duration. Derived fields update automatically."
+        description="Rates and distance. Derived fields come from the Pricing Engine."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <BookingFormField
@@ -897,7 +920,7 @@ export function BookingForm(props: BookingFormProps) {
           <BookingFormField
             id="total_kilometers"
             label="Total Kilometers"
-            description="Calculated from odometer readings."
+            description="Calculated by the Pricing Engine from odometer readings."
             error={errors.total_kilometers?.message}
           >
             <Input
@@ -911,7 +934,7 @@ export function BookingForm(props: BookingFormProps) {
               {...fieldAriaProps({
                 id: 'total_kilometers',
                 error: errors.total_kilometers?.message,
-                description: 'Calculated from odometer readings.',
+                description: 'Calculated by the Pricing Engine from odometer readings.',
               })}
             />
           </BookingFormField>
@@ -944,17 +967,19 @@ export function BookingForm(props: BookingFormProps) {
             />
           </BookingFormField>
         </div>
+
+        <BookingPricingSummary pricing={pricing} live className="mt-2" />
       </BookingFormSection>
 
       <BookingFormSection
         title="Payment"
-        description="Amounts collected for this booking. Caution money is tracked separately."
+        description="Amount paid and security deposit. Grand total is owned by the Pricing Engine."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <BookingFormField
             id="booking_amount"
             label="Booking Amount"
-            description="Auto-calculated from per-day charge, duration, and km rate."
+            description="Amount paid toward this hire (advance). Not the grand total."
             error={errors.booking_amount?.message}
           >
             <Controller
@@ -973,7 +998,7 @@ export function BookingForm(props: BookingFormProps) {
                   {...fieldAriaProps({
                     id: 'booking_amount',
                     error: errors.booking_amount?.message,
-                    description: 'Auto-calculated from per-day charge, duration, and km rate.',
+                    description: 'Amount paid toward this hire (advance). Not the grand total.',
                   })}
                 />
               )}
@@ -983,6 +1008,7 @@ export function BookingForm(props: BookingFormProps) {
           <BookingFormField
             id="caution_money"
             label="Caution Money"
+            description="Security deposit — tracked separately from remaining balance."
             error={errors.caution_money?.message}
           >
             <Controller
@@ -1001,6 +1027,7 @@ export function BookingForm(props: BookingFormProps) {
                   {...fieldAriaProps({
                     id: 'caution_money',
                     error: errors.caution_money?.message,
+                    description: 'Security deposit — tracked separately from remaining balance.',
                   })}
                 />
               )}
@@ -1046,30 +1073,23 @@ export function BookingForm(props: BookingFormProps) {
 
           <BookingFormField
             id="total_amount"
-            label="Total Amount"
-            description="Defaults to booking amount; ready for future total rules."
+            label="Grand Total"
+            description="Calculated by the Pricing Engine (rental + kilometer charges)."
             error={errors.total_amount?.message}
           >
-            <Controller
-              control={control}
-              name="total_amount"
-              render={({ field }) => (
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  disabled={isLoading}
-                  value={field.value ?? ''}
-                  onBlur={field.onBlur}
-                  onChange={(event) => field.onChange(parseOptionalNumber(event.target.value) ?? 0)}
-                  {...fieldAriaProps({
-                    id: 'total_amount',
-                    error: errors.total_amount?.message,
-                    description: 'Defaults to booking amount; ready for future total rules.',
-                  })}
-                />
-              )}
+            <Input
+              type="number"
+              inputMode="decimal"
+              readOnly
+              tabIndex={-1}
+              disabled={isLoading}
+              value={totalAmountValue ?? ''}
+              className="bg-muted/40"
+              {...fieldAriaProps({
+                id: 'total_amount',
+                error: errors.total_amount?.message,
+                description: 'Calculated by the Pricing Engine (rental + kilometer charges).',
+              })}
             />
           </BookingFormField>
         </div>

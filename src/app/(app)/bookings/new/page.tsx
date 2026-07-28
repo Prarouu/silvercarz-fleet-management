@@ -26,6 +26,9 @@ export default async function NewBookingPage() {
         vehicle_number: vehicle.vehicle_number,
         availability_status: vehicle.availability_status,
         is_active: vehicle.is_active,
+        default_daily_rate: vehicle.default_daily_rate,
+        extra_kilometer_rate: vehicle.extra_kilometer_rate,
+        security_deposit: vehicle.security_deposit,
         disabled: false,
       }))
     : [];

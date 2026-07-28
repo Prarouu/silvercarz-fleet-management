@@ -29,13 +29,16 @@ src/features/bookings/
 ├── repository/        # Supabase queries
 ├── service/           # Business logic + ApiResponse orchestration
 │   ├── booking-service.ts
+│   ├── pricing.service.ts    # Pricing Engine (money math)
 │   ├── conflict.service.ts   # Conflict Detection Engine
 │   ├── status.service.ts     # Status Automation Engine
 │   ├── invoice-number.service.ts
-│   └── booking-calculations.ts
-├── errors.ts          # Domain AppError factories
-├── types.ts           # Re-exports from @/types
-└── index.ts           # Public feature barrel
+│   └── booking-calculations.ts  # Invoice helpers + legacy re-exports
+├── components/        # List / form / details UI
+├── lib/               # Form helpers, list params
+├── errors.ts
+├── types.ts
+└── index.ts
 ```
 
 ## Repository pattern
@@ -135,13 +138,16 @@ UI should read `ApiResponse.error.message` only — never PostgREST payloads.
 
 ## Calculations
 
-Pure helpers in `service/booking-calculations.ts`:
+All hire money math lives in the **Pricing Engine**
+(`service/pricing.service.ts`). See [booking-pricing-engine.md](./booking-pricing-engine.md).
 
 - Inclusive duration days (same-day = 1)
 - Total kilometers from odometer
-- Booking amount = daily × duration + km rate × km
-- Total amount (MVP) = booking amount (caution kept separate)
-- `buildInvoiceNumberSuggestion` — pure formatter (prefer `InvoiceNumberService`)
+- Rental charge + kilometer charge → subtotal / grand total
+- Remaining balance = grand total − amount paid (`booking_amount`)
+- Caution / security deposit kept separate
+- `buildInvoiceNumberSuggestion` — pure formatter in `booking-calculations.ts`
+  (prefer `InvoiceNumberService`)
 
 Invoice allocation is documented in [invoice-numbering.md](./invoice-numbering.md).
 

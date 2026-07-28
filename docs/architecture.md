@@ -20,6 +20,8 @@ See also:
 - [Vehicles data layer](./vehicles-data-layer.md) — repository, service, Server Actions
 - [Vehicle Availability Engine](./vehicle-availability.md) — centralized availability states & sync
 - [Booking Conflict Detection](./booking-conflict-detection.md) — schedule overlap engine
+- [Booking Status Automation](./booking-status-automation.md) — lifecycle / badge engine
+- [Booking Pricing Engine](./booking-pricing-engine.md) — centralized hire money math
 - [Vehicles list UI](./vehicles-list.md) — `/vehicles` fleet table, search, filters, pagination
 - [Create Vehicle UI](./vehicles-create.md) — `/vehicles/new` Add Vehicle form + image upload
 - [Edit Vehicle UI](./vehicles-edit.md) — `/vehicles/[id]/edit` reuses `VehicleForm`

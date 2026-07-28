@@ -21,12 +21,6 @@ import {
   type BookingRepository,
 } from '@/features/bookings/repository';
 import {
-  calculateBookingAmount,
-  calculateDurationDays,
-  calculateTotalAmount,
-  calculateTotalKilometers,
-} from '@/features/bookings/service/booking-calculations';
-import {
   createConflictService,
   getConflictService,
   type ConflictService,
@@ -36,6 +30,10 @@ import {
   getInvoiceNumberService,
   type InvoiceNumberService,
 } from '@/features/bookings/service/invoice-number.service';
+import {
+  calculatePricing,
+  pricingToPersistedFields,
+} from '@/features/bookings/service/pricing.service';
 import {
   getBookingStatusService,
   resolvePersistedBookingStatus,
@@ -186,21 +184,18 @@ function applyCreateDerivedFields(
 ): BookingCreateInput {
   assertValidDates(values.delivery_date, values.return_date);
 
-  const duration =
-    values.duration ?? calculateDurationDays(values.delivery_date, values.return_date);
-  const totalKilometers =
-    values.total_kilometers ?? calculateTotalKilometers(values.start_odometer, values.end_odometer);
-  const bookingAmount =
-    values.booking_amount > 0
-      ? values.booking_amount
-      : calculateBookingAmount({
-          dailyCharge: values.daily_charge,
-          durationDays: duration,
-          kilometerRate: values.kilometer_rate,
-          totalKilometers,
-        });
-  const totalAmount =
-    values.total_amount > 0 ? values.total_amount : calculateTotalAmount(bookingAmount);
+  // Pricing Engine is the sole authority for duration, km, and money totals.
+  const pricing = calculatePricing({
+    dailyRate: values.daily_charge,
+    extraKilometerRate: values.kilometer_rate,
+    deliveryDate: values.delivery_date,
+    returnDate: values.return_date,
+    startOdometer: values.start_odometer,
+    endOdometer: values.end_odometer,
+    amountPaid: values.booking_amount,
+    securityDeposit: values.caution_money,
+  });
+  const priced = pricingToPersistedFields(pricing);
 
   // Draft stays draft; otherwise Status Service owns lifecycle persistence.
   const status =
@@ -215,10 +210,11 @@ function applyCreateDerivedFields(
   return {
     ...values,
     invoice_number: invoiceNumber,
-    duration,
-    total_kilometers: totalKilometers,
-    booking_amount: bookingAmount,
-    total_amount: totalAmount,
+    duration: priced.duration,
+    total_kilometers: priced.total_kilometers,
+    booking_amount: priced.booking_amount,
+    caution_money: priced.caution_money,
+    total_amount: priced.total_amount,
     status,
     created_by: values.created_by ?? actor.id,
   };
@@ -239,47 +235,23 @@ function applyUpdateDerivedFields(
   const dailyCharge = values.daily_charge ?? existing.daily_charge;
   const kilometerRate =
     values.kilometer_rate !== undefined ? values.kilometer_rate : existing.kilometer_rate;
+  const amountPaid =
+    values.booking_amount !== undefined ? values.booking_amount : existing.booking_amount;
+  const securityDeposit =
+    values.caution_money !== undefined ? values.caution_money : existing.caution_money;
 
-  const shouldRecalculateDuration =
-    values.duration === undefined &&
-    (values.delivery_date !== undefined || values.return_date !== undefined);
-  const duration = shouldRecalculateDuration
-    ? calculateDurationDays(deliveryDate, returnDate)
-    : (values.duration ?? existing.duration);
-
-  const shouldRecalculateKm =
-    values.total_kilometers === undefined &&
-    (values.start_odometer !== undefined || values.end_odometer !== undefined);
-  const totalKilometers = shouldRecalculateKm
-    ? calculateTotalKilometers(startOdometer, endOdometer)
-    : (values.total_kilometers ?? existing.total_kilometers);
-
-  const shouldRecalculateAmounts =
-    values.booking_amount === undefined &&
-    (values.daily_charge !== undefined ||
-      values.delivery_date !== undefined ||
-      values.return_date !== undefined ||
-      values.duration !== undefined ||
-      values.kilometer_rate !== undefined ||
-      values.start_odometer !== undefined ||
-      values.end_odometer !== undefined ||
-      values.total_kilometers !== undefined);
-
-  const bookingAmount = shouldRecalculateAmounts
-    ? calculateBookingAmount({
-        dailyCharge,
-        durationDays: duration ?? calculateDurationDays(deliveryDate, returnDate),
-        kilometerRate,
-        totalKilometers,
-      })
-    : (values.booking_amount ?? existing.booking_amount);
-
-  const totalAmount =
-    values.total_amount !== undefined
-      ? values.total_amount
-      : shouldRecalculateAmounts
-        ? calculateTotalAmount(bookingAmount)
-        : existing.total_amount;
+  // Always rematerialize derived money / distance via Pricing Engine.
+  const pricing = calculatePricing({
+    dailyRate: dailyCharge,
+    extraKilometerRate: kilometerRate,
+    deliveryDate,
+    returnDate,
+    startOdometer,
+    endOdometer,
+    amountPaid,
+    securityDeposit,
+  });
+  const priced = pricingToPersistedFields(pricing);
 
   // Manual status edits are ignored. Cancelled stays cancelled; otherwise
   // Status Service recomputes lifecycle from dates (drafts graduate on save).
@@ -295,10 +267,11 @@ function applyUpdateDerivedFields(
 
   return {
     ...safeWithoutStatus,
-    duration,
-    total_kilometers: totalKilometers,
-    booking_amount: bookingAmount,
-    total_amount: totalAmount,
+    duration: priced.duration,
+    total_kilometers: priced.total_kilometers,
+    booking_amount: priced.booking_amount,
+    caution_money: priced.caution_money,
+    total_amount: priced.total_amount,
     status,
   };
 }

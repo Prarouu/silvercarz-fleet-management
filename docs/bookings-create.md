@@ -45,8 +45,9 @@ List entry point: **New Booking** on `/bookings` links to `ROUTES.bookingsNew`.
 2. **Customer Information** — name, contact, address, city, state, ZIP, documents
 3. **Trip Information** — vehicle, driver, place, delivery / return dates
 4. **Pricing** — daily charge, duration, fuel, odometer, km total, km rate
-5. **Payment** — booking amount, caution money, payment method, total amount
-6. **Notes** — optional multi-line notes
+5. **Payment** — amount paid, caution money, payment method, grand total (engine)
+6. **Pricing summary** — live `BookingPricingSummary` from the Pricing Engine
+7. **Notes** — optional multi-line notes
 
 Sticky action bar (in-flow, safe-area aware): **Cancel** | **Save Booking**.
 
@@ -80,14 +81,17 @@ message (see [booking-conflict-detection.md](./booking-conflict-detection.md)).
 
 ## Automatic calculations
 
-Reusable helpers from `booking-calculations.ts`:
+Owned by the [Pricing Engine](./booking-pricing-engine.md)
+(`previewPricing` on the form, `calculatePricing` on save):
 
-| Field            | Source                                                |
-| ---------------- | ----------------------------------------------------- |
-| Duration         | Inclusive days from delivery → return                 |
-| Total kilometers | `end_odometer - start_odometer` when both set         |
-| Booking amount   | `(daily_charge × duration) + (km_rate × total_km)`    |
-| Total amount     | Equals booking amount for MVP (caution kept separate) |
+| Field              | Source                                                           |
+| ------------------ | ---------------------------------------------------------------- |
+| Duration           | Inclusive days from delivery → return (min 1)                    |
+| Total kilometers   | `end_odometer − start_odometer` when both set                    |
+| Rental / km charge | Daily rate × days + chargeable km × km rate                      |
+| Grand total        | Subtotal (+ future discount / GST) → persisted as `total_amount` |
+| Booking amount     | **Input** — amount paid (advance); not auto-overwritten          |
+| Remaining balance  | Grand total − amount paid (display only)                         |
 
 Invoice number is previewed on the server via `peek_next_invoice_sequence` and
 shown in a read-only field. The authoritative number is allocated once on save

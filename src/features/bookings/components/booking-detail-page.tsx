@@ -11,7 +11,9 @@ import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadc
 import { BookingDetailActions } from '@/features/bookings/components/booking-detail-actions';
 import { BookingDetailField } from '@/features/bookings/components/booking-detail-field';
 import { BookingDetailSection } from '@/features/bookings/components/booking-detail-section';
+import { BookingPricingSummary } from '@/features/bookings/components/booking-pricing-summary';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
+import { pricingFromBooking } from '@/features/bookings/service/pricing.service';
 import { getBookingStatusPresentation } from '@/features/bookings/service/status.service';
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import {
@@ -87,7 +89,9 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
   const paymentMethodLabel = booking.payment_method
     ? PAYMENT_METHOD_LABELS[booking.payment_method]
     : null;
-  const totalLabel = formatOptionalCurrency(booking.total_amount);
+  // Pricing Engine is the display authority — never recompute money math inline.
+  const pricing = pricingFromBooking(booking);
+  const totalLabel = formatOptionalCurrency(pricing.grandTotal);
   const statusPresentation = getBookingStatusPresentation(booking);
 
   return (
@@ -213,7 +217,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
               label="Return Date"
               value={<span className="tabular-nums">{formatDate(booking.return_date)}</span>}
             />
-            <BookingDetailField label="Duration" value={formatDuration(booking.duration)} />
+            <BookingDetailField label="Duration" value={formatDuration(pricing.rentalDays)} />
             <BookingDetailField label="Place To Visit" value={booking.place_to_visit} />
             <BookingDetailField label="Fuel Range" value={booking.fuel_range} />
             <BookingDetailField
@@ -226,7 +230,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             />
             <BookingDetailField
               label="Total Kilometers"
-              value={formatOptionalNumber(booking.total_kilometers, 'km')}
+              value={formatOptionalNumber(pricing.totalKilometers, 'km')}
             />
           </dl>
         </BookingDetailSection>
@@ -236,45 +240,67 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <BookingDetailField
               label="Per Day Charge"
               value={
-                <span className="tabular-nums">{formatOptionalCurrency(booking.daily_charge)}</span>
+                <span className="tabular-nums">{formatOptionalCurrency(pricing.dailyRate)}</span>
               }
             />
             <BookingDetailField
               label="Kilometer Rate"
               value={
                 <span className="tabular-nums">
-                  {formatOptionalCurrency(booking.kilometer_rate)}
+                  {formatOptionalCurrency(pricing.kilometerRate)}
                 </span>
               }
             />
             <BookingDetailField
-              label="Booking Amount"
+              label="Rental Charge"
+              value={
+                <span className="tabular-nums">{formatOptionalCurrency(pricing.rentalCharge)}</span>
+              }
+            />
+            <BookingDetailField
+              label="Km Charge"
               value={
                 <span className="tabular-nums">
-                  {formatOptionalCurrency(booking.booking_amount)}
+                  {formatOptionalCurrency(pricing.kilometerCharge)}
                 </span>
+              }
+            />
+            <BookingDetailField
+              label="Booking Amount (Paid)"
+              value={
+                <span className="tabular-nums">{formatOptionalCurrency(pricing.amountPaid)}</span>
               }
             />
             <BookingDetailField
               label="Caution Money"
               value={
                 <span className="tabular-nums">
-                  {formatOptionalCurrency(booking.caution_money)}
+                  {formatOptionalCurrency(pricing.securityDeposit)}
                 </span>
               }
             />
             <BookingDetailField label="Payment Method" value={paymentMethodLabel} />
             <BookingDetailField
-              label="Total Amount"
+              label="Remaining Balance"
+              value={
+                <span className="tabular-nums">
+                  {formatOptionalCurrency(pricing.remainingBalance)}
+                </span>
+              }
+            />
+            <BookingDetailField
+              label="Grand Total"
               value={
                 <span className="font-semibold tabular-nums">
-                  {formatOptionalCurrency(booking.total_amount)}
+                  {formatOptionalCurrency(pricing.grandTotal)}
                 </span>
               }
             />
           </dl>
         </BookingDetailSection>
       </div>
+
+      <BookingPricingSummary pricing={pricing} />
 
       <BookingDetailSection title="Notes">
         {notes ? (

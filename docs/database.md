@@ -74,35 +74,38 @@ Fleet inventory. One row per physical vehicle.
 
 One rental / invoice per row.
 
-| Column                            | Type             | Notes                                          |
-| --------------------------------- | ---------------- | ---------------------------------------------- |
-| `id`                              | `uuid` PK        | `gen_random_uuid()`                            |
-| `invoice_number`                  | `text` UNIQUE    | Human-facing invoice reference                 |
-| `vehicle_id`                      | `uuid` FK        | → `vehicles.id`                                |
-| `mode`                            | `rental_mode`    | With / without driver                          |
-| `customer_name`                   | `text`           | Required                                       |
-| `address` … `zip_code`            | `text`           | Optional address fields                        |
-| `place_to_visit`                  | `text`           | Trip destination note                          |
-| `document_submitted`              | `boolean`        | Default `false`                                |
-| `contact_number`                  | `text`           | Optional; non-blank when set                   |
-| `invoice_date`                    | `date`           | Defaults to UTC today                          |
-| `delivery_date`                   | `date`           | Hire start                                     |
-| `return_date`                     | `date`           | Must be ≥ `delivery_date`                      |
-| `driver_name`                     | `text`           | Optional (often set when `with_driver`)        |
-| `daily_charge`                    | `numeric(12,2)`  | ≥ 0                                            |
-| `fuel_range`                      | `text`           | Free-text fuel condition for MVP               |
-| `start_odometer` / `end_odometer` | `numeric(12,2)`  | ≥ 0; end ≥ start when both set                 |
-| `total_kilometers`                | `numeric(12,2)`  | ≥ 0 when set                                   |
-| `duration`                        | `numeric(8,2)`   | Days; > 0 when set                             |
-| `kilometer_rate`                  | `numeric(12,2)`  | ≥ 0 when set                                   |
-| `booking_amount`                  | `numeric(12,2)`  | ≥ 0                                            |
-| `caution_money`                   | `numeric(12,2)`  | ≥ 0                                            |
-| `payment_method`                  | `payment_method` | Nullable until payment recorded                |
-| `total_amount`                    | `numeric(12,2)`  | ≥ 0                                            |
-| `status`                          | `booking_status` | Default `confirmed`                            |
-| `notes`                           | `text`           | Free-form                                      |
-| `created_by`                      | `uuid` FK        | → `profiles.id`; auto-filled from `auth.uid()` |
-| `created_at` / `updated_at`       | `timestamptz`    | UTC                                            |
+| Column                            | Type             | Notes                                             |
+| --------------------------------- | ---------------- | ------------------------------------------------- |
+| `id`                              | `uuid` PK        | `gen_random_uuid()`                               |
+| `invoice_number`                  | `text` UNIQUE    | Human-facing invoice reference                    |
+| `vehicle_id`                      | `uuid` FK        | → `vehicles.id`                                   |
+| `mode`                            | `rental_mode`    | With / without driver                             |
+| `customer_name`                   | `text`           | Required                                          |
+| `address` … `zip_code`            | `text`           | Optional address fields                           |
+| `place_to_visit`                  | `text`           | Trip destination note                             |
+| `document_submitted`              | `boolean`        | Default `false`                                   |
+| `contact_number`                  | `text`           | Optional; non-blank when set                      |
+| `invoice_date`                    | `date`           | Defaults to UTC today                             |
+| `delivery_date`                   | `date`           | Hire start                                        |
+| `return_date`                     | `date`           | Must be ≥ `delivery_date`                         |
+| `driver_name`                     | `text`           | Optional (often set when `with_driver`)           |
+| `daily_charge`                    | `numeric(12,2)`  | ≥ 0                                               |
+| `fuel_range`                      | `text`           | Free-text fuel condition for MVP                  |
+| `start_odometer` / `end_odometer` | `numeric(12,2)`  | ≥ 0; end ≥ start when both set                    |
+| `total_kilometers`                | `numeric(12,2)`  | ≥ 0 when set                                      |
+| `duration`                        | `numeric(8,2)`   | Days; > 0 when set                                |
+| `kilometer_rate`                  | `numeric(12,2)`  | ≥ 0 when set                                      |
+| `booking_amount`                  | `numeric(12,2)`  | ≥ 0; **amount paid** (advance) toward the hire    |
+| `caution_money`                   | `numeric(12,2)`  | ≥ 0; security deposit (separate from balance)     |
+| `payment_method`                  | `payment_method` | Nullable until payment recorded                   |
+| `total_amount`                    | `numeric(12,2)`  | ≥ 0; **grand total** snapshot from Pricing Engine |
+
+Pricing line items (rental charge, km charge, remaining balance) are **not**
+stored — rematerialize via the [Pricing Engine](./booking-pricing-engine.md).
+| `status` | `booking_status` | Default `confirmed` |
+| `notes` | `text` | Free-form |
+| `created_by` | `uuid` FK | → `profiles.id`; auto-filled from `auth.uid()` |
+| `created_at` / `updated_at` | `timestamptz` | UTC |
 
 ## Indexes
 
