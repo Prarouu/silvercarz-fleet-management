@@ -13,7 +13,6 @@ import {
 } from '@/features/calendar/components/calendar-agenda-sections';
 import { CalendarFilters } from '@/features/calendar/components/calendar-filters';
 import { CalendarGrid } from '@/features/calendar/components/calendar-grid';
-import { CalendarMobileAgenda } from '@/features/calendar/components/calendar-mobile-agenda';
 import { CalendarSummaryCards } from '@/features/calendar/components/calendar-summary-cards';
 import { CalendarToolbar } from '@/features/calendar/components/calendar-toolbar';
 import { FleetTimeline } from '@/features/calendar/components/fleet-timeline';
@@ -82,16 +81,13 @@ export function CalendarPage({ state, data, errorMessage }: CalendarPageProps) {
       {data && !errorMessage ? (
         <>
           {!showEmpty || data.timeline.some((row) => row.blocks.length > 0) ? (
-            <>
-              <CalendarGrid
-                view={state.view}
-                rangeStart={data.rangeStart}
-                rangeEnd={data.rangeEnd}
-                events={data.events}
-                asOfDate={data.asOfDate}
-              />
-              <CalendarMobileAgenda events={data.events} />
-            </>
+            <CalendarGrid
+              view={state.view}
+              rangeStart={data.rangeStart}
+              rangeEnd={data.rangeEnd}
+              events={data.events}
+              asOfDate={data.asOfDate}
+            />
           ) : null}
 
           <FleetTimeline

@@ -29,7 +29,6 @@ export { getCalendarData } from './actions';
 export {
   CalendarFilters,
   CalendarGrid,
-  CalendarMobileAgenda,
   CalendarPage,
   CalendarSkeleton,
   CalendarSummaryCards,

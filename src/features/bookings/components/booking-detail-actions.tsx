@@ -2,7 +2,6 @@
 
 import { Ban, Pencil, Printer } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -25,7 +24,6 @@ type BookingDetailActionsProps = {
  * Lifecycle status is automatic; Cancel Booking is the terminal action.
  */
 export function BookingDetailActions({ bookingId, booking }: BookingDetailActionsProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const display = resolveBookingDisplayStatus(booking);
   const isCancelled = display === BOOKING_DISPLAY_STATUSES.cancelled;
@@ -54,8 +52,8 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
       toast.success('Booking cancelled', {
         description: `Invoice ${result.data.invoice_number} was cancelled.`,
       });
-      router.push(ROUTES.bookings);
-      router.refresh();
+      // Full navigation avoids soft-nav loops that leave the action bar stuck.
+      window.location.assign(ROUTES.bookings);
     });
   };
 
