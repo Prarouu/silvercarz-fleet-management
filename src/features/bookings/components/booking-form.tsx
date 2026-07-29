@@ -2,7 +2,7 @@
 
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useTransition } from 'react';
+import { useEffect, useId, useState, useTransition } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -84,6 +84,8 @@ export function BookingForm(props: BookingFormProps) {
   const router = useRouter();
   const formErrorId = useId();
   const [isPending, startTransition] = useTransition();
+  /** Prevents duplicate Server Action calls and keeps the sticky bar busy during hard redirect. */
+  const [hasStartedSave, setHasStartedSave] = useState(false);
 
   const initialValues =
     mode === 'edit' ? props.defaultValues : createBookingFormDefaults(props.suggestedInvoiceNumber);
@@ -193,7 +195,7 @@ export function BookingForm(props: BookingFormProps) {
     }
   }, [selectedVehicleId, vehicles, mode, dailyCharge, kilometerRate, cautionMoneyValue, setValue]);
 
-  const isLoading = isSubmitting || isPending;
+  const isLoading = isSubmitting || isPending || hasStartedSave;
   const formError = errors.root?.message;
   const editStatusPresentation =
     mode === 'edit'
@@ -208,6 +210,7 @@ export function BookingForm(props: BookingFormProps) {
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Skip while saving — a successful save navigates away with a full load.
       if (!isDirty || isLoading) {
         return;
       }
@@ -220,6 +223,12 @@ export function BookingForm(props: BookingFormProps) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [isDirty, isLoading]);
 
+  function goToBookingsList() {
+    // Full page navigation avoids App Router soft-nav + loading.tsx loops
+    // that leave the sticky Save button stuck after a successful create/update.
+    window.location.assign(ROUTES.bookings);
+  }
+
   const handleCancel = () => {
     if (isDirty && !window.confirm(UNSAVED_CHANGES_MESSAGE)) {
       return;
@@ -229,7 +238,7 @@ export function BookingForm(props: BookingFormProps) {
   };
 
   const handleCancelBooking = () => {
-    if (mode !== 'edit' || isCancelled) {
+    if (mode !== 'edit' || isCancelled || hasStartedSave) {
       return;
     }
 
@@ -238,10 +247,12 @@ export function BookingForm(props: BookingFormProps) {
     }
 
     clearErrors('root');
+    setHasStartedSave(true);
     startTransition(async () => {
       const result = await deleteBooking(props.bookingId);
 
       if (!result.success) {
+        setHasStartedSave(false);
         setError('root', { type: 'server', message: result.error.message });
         return;
       }
@@ -249,12 +260,15 @@ export function BookingForm(props: BookingFormProps) {
       toast.success('Booking cancelled', {
         description: `Invoice ${result.data.invoice_number} was cancelled.`,
       });
-      router.push(ROUTES.bookings);
-      router.refresh();
+      goToBookingsList();
     });
   };
 
   const onSubmit = handleSubmit((values) => {
+    if (hasStartedSave) {
+      return;
+    }
+
     clearErrors('root');
 
     if (mode === 'create') {
@@ -270,10 +284,12 @@ export function BookingForm(props: BookingFormProps) {
         return;
       }
 
+      setHasStartedSave(true);
       startTransition(async () => {
         const result = await createBooking(validated.data);
 
         if (!result.success) {
+          setHasStartedSave(false);
           setError('root', { type: 'server', message: result.error.message });
 
           if (result.error.code === 'duplicate_invoice') {
@@ -314,8 +330,7 @@ export function BookingForm(props: BookingFormProps) {
         toast.success('Booking created', {
           description: `Invoice ${result.data.invoice_number} was saved successfully.`,
         });
-        router.push(ROUTES.bookings);
-        router.refresh();
+        goToBookingsList();
       });
       return;
     }
@@ -332,10 +347,12 @@ export function BookingForm(props: BookingFormProps) {
       return;
     }
 
+    setHasStartedSave(true);
     startTransition(async () => {
       const result = await updateBooking(props.bookingId, validated.data);
 
       if (!result.success) {
+        setHasStartedSave(false);
         setError('root', { type: 'server', message: result.error.message });
 
         if (result.error.code === 'duplicate_invoice') {
@@ -376,8 +393,7 @@ export function BookingForm(props: BookingFormProps) {
       toast.success('Booking updated', {
         description: `Invoice ${result.data.invoice_number} was saved successfully.`,
       });
-      router.push(ROUTES.bookings);
-      router.refresh();
+      goToBookingsList();
     });
   });
 
@@ -389,6 +405,7 @@ export function BookingForm(props: BookingFormProps) {
     <form
       onSubmit={onSubmit}
       noValidate
+      autoComplete="off"
       className={cn('space-y-5 sm:space-y-6', className)}
       aria-describedby={formError ? formErrorId : undefined}
     >
@@ -540,7 +557,7 @@ export function BookingForm(props: BookingFormProps) {
           >
             <Input
               autoFocus={mode === 'create'}
-              autoComplete="name"
+              autoComplete="off"
               placeholder="Customer full name"
               disabled={isLoading}
               {...fieldAriaProps({
@@ -560,7 +577,7 @@ export function BookingForm(props: BookingFormProps) {
             <Input
               type="tel"
               inputMode="tel"
-              autoComplete="tel"
+              autoComplete="off"
               placeholder="+91 98765 43210"
               disabled={isLoading}
               {...fieldAriaProps({ id: 'contact_number', error: errors.contact_number?.message })}
@@ -576,6 +593,7 @@ export function BookingForm(props: BookingFormProps) {
           >
             <Textarea
               rows={2}
+              autoComplete="off"
               placeholder="Street address"
               disabled={isLoading}
               {...fieldAriaProps({ id: 'address', error: errors.address?.message })}
@@ -585,7 +603,7 @@ export function BookingForm(props: BookingFormProps) {
 
           <BookingFormField id="city" label="City" error={errors.city?.message}>
             <Input
-              autoComplete="address-level2"
+              autoComplete="off"
               placeholder="Nagpur"
               disabled={isLoading}
               {...fieldAriaProps({ id: 'city', error: errors.city?.message })}
@@ -595,7 +613,7 @@ export function BookingForm(props: BookingFormProps) {
 
           <BookingFormField id="state" label="State" error={errors.state?.message}>
             <Input
-              autoComplete="address-level1"
+              autoComplete="off"
               placeholder="Maharashtra"
               disabled={isLoading}
               {...fieldAriaProps({ id: 'state', error: errors.state?.message })}
@@ -611,7 +629,7 @@ export function BookingForm(props: BookingFormProps) {
           >
             <Input
               inputMode="numeric"
-              autoComplete="postal-code"
+              autoComplete="off"
               placeholder="440001"
               disabled={isLoading}
               {...fieldAriaProps({

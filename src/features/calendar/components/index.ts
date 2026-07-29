@@ -4,7 +4,6 @@ export { CalendarSummaryCards } from './calendar-summary-cards';
 export { CalendarFilters } from './calendar-filters';
 export { CalendarToolbar } from './calendar-toolbar';
 export { CalendarGrid } from './calendar-grid';
-export { CalendarMobileAgenda } from './calendar-mobile-agenda';
 export { FleetTimeline } from './fleet-timeline';
 export { UpcomingPickups, UpcomingReturns } from './calendar-agenda-sections';
 export { CalendarEventChip } from './calendar-event-chip';

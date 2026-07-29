@@ -113,7 +113,7 @@ Reusable URL filters (same pattern as bookings / vehicles toolbars):
 | Breakpoint               | Calendar surface                            |
 | ------------------------ | ------------------------------------------- |
 | Desktop / tablet (`md+`) | Day / Week / Month grid                     |
-| Mobile                   | Agenda / list view (`CalendarMobileAgenda`) |
+| Mobile                   | Fleet Timeline (month grid is desktop-only) |
 
 Avoid relying on horizontal scroll for the primary calendar; the fleet
 timeline may scroll horizontally when many days are visible.

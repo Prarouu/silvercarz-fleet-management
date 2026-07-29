@@ -39,12 +39,6 @@ export function CalendarSkeleton() {
         <Skeleton className="h-72 w-full rounded-xl" />
       </div>
 
-      <div className="space-y-2 md:hidden">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-24 w-full rounded-xl" />
-        ))}
-      </div>
-
       <Skeleton className="h-48 w-full rounded-xl" />
 
       <div className="grid gap-6 lg:grid-cols-2">
