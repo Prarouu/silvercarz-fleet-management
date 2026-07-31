@@ -20,9 +20,10 @@ import { VehicleDetailSection } from '@/features/vehicles/components/vehicle-det
 import { VehicleDetailStats } from '@/features/vehicles/components/vehicle-detail-stats';
 import { VehicleRecentBookings } from '@/features/vehicles/components/vehicle-recent-bookings';
 import { VehicleStatusBadge } from '@/features/vehicles/components/vehicle-status-badge';
-import { formatCurrency, formatDateTime, formatNumber } from '@/lib/format';
+import { formatCurrency, formatDateTime } from '@/lib/format';
 import {
   FUEL_TYPE_LABELS,
+  TRANSMISSION_TYPE_LABELS,
   VEHICLE_AVAILABILITY_STATUS_LABELS,
   type BookingWithVehicle,
   type Vehicle,
@@ -43,15 +44,6 @@ type VehicleDetailPageProps = {
 function formatOptionalCurrency(amount: number | null | undefined): string {
   const formatted = formatCurrency(amount);
   return formatted || '—';
-}
-
-function formatOptionalNumber(value: number | null | undefined, suffix?: string): string {
-  if (value === null || value === undefined) {
-    return '—';
-  }
-
-  const formatted = formatNumber(value);
-  return suffix ? `${formatted} ${suffix}` : formatted;
 }
 
 export function VehicleDetailPage({
@@ -121,7 +113,6 @@ export function VehicleDetailPage({
 
       <VehicleDetailStats
         stats={{
-          currentOdometer: vehicle.current_odometer,
           dailyRate: vehicle.default_daily_rate,
           fuelType: vehicle.fuel_type,
           totalBookings,
@@ -140,16 +131,6 @@ export function VehicleDetailPage({
               value={<span className="tabular-nums">{vehicle.vehicle_number}</span>}
             />
             <VehicleDetailField label="Brand" value={vehicle.brand} />
-            <VehicleDetailField label="Model" value={vehicle.model} />
-            <VehicleDetailField label="Variant" value={vehicle.variant} />
-            <VehicleDetailField
-              label="Year"
-              value={
-                vehicle.model_year !== null && vehicle.model_year !== undefined ? (
-                  <span className="tabular-nums">{vehicle.model_year}</span>
-                ) : null
-              }
-            />
             <VehicleDetailField label="Color" value={vehicle.color} />
             <VehicleDetailField
               label="Created Date"
@@ -170,26 +151,14 @@ export function VehicleDetailPage({
           <dl className="grid gap-4 sm:grid-cols-2">
             <VehicleDetailField label="Fuel Type" value={FUEL_TYPE_LABELS[vehicle.fuel_type]} />
             <VehicleDetailField
+              label="Transmission Type"
+              value={TRANSMISSION_TYPE_LABELS[vehicle.transmission_type]}
+            />
+            <VehicleDetailField
               label="Daily Rental Rate"
               value={
                 <span className="tabular-nums">
                   {formatOptionalCurrency(vehicle.default_daily_rate)}
-                </span>
-              }
-            />
-            <VehicleDetailField
-              label="Extra Kilometer Rate"
-              value={
-                <span className="tabular-nums">
-                  {formatOptionalCurrency(vehicle.extra_kilometer_rate)}
-                </span>
-              }
-            />
-            <VehicleDetailField
-              label="Security Deposit"
-              value={
-                <span className="tabular-nums">
-                  {formatOptionalCurrency(vehicle.security_deposit)}
                 </span>
               }
             />
@@ -199,9 +168,9 @@ export function VehicleDetailPage({
 
       <VehicleDetailSection
         title="Operational Information"
-        description="Availability, roster status, and odometer."
+        description="Availability and roster status."
       >
-        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="grid gap-4 sm:grid-cols-2">
           <VehicleDetailField
             label="Availability"
             value={
@@ -215,14 +184,6 @@ export function VehicleDetailPage({
           <VehicleDetailField
             label="Vehicle Status"
             value={<VehicleStatusBadge isActive={vehicle.is_active} />}
-          />
-          <VehicleDetailField
-            label="Current Odometer"
-            value={
-              <span className="tabular-nums">
-                {formatOptionalNumber(vehicle.current_odometer, 'km')}
-              </span>
-            }
           />
         </dl>
       </VehicleDetailSection>

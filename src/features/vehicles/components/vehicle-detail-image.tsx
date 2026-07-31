@@ -21,7 +21,7 @@ export function VehicleDetailImage({ imagePath, alt, className }: VehicleDetailI
   return (
     <div
       className={cn(
-        'relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border bg-muted/40 sm:aspect-square sm:max-w-[16rem]',
+        'relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-3xl border bg-muted/40 sm:aspect-square sm:max-w-[16rem]',
         className,
       )}
     >

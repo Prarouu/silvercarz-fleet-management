@@ -13,14 +13,6 @@ function money(value: number): string {
   return formatCurrency(value) || formatNumber(value) || '0';
 }
 
-function km(value: number | null): string {
-  if (value === null) {
-    return '—';
-  }
-
-  return `${formatNumber(value)} km`;
-}
-
 type SummaryItem = {
   readonly label: string;
   readonly value: string;
@@ -43,18 +35,15 @@ export function BookingPricingSummary({
     },
     { label: 'Daily rate', value: money(pricing.dailyRate) },
     { label: 'Rental charge', value: money(pricing.rentalCharge) },
-    { label: 'Total km', value: km(pricing.totalKilometers) },
-    { label: 'Km charge', value: money(pricing.kilometerCharge) },
     { label: 'Subtotal', value: money(pricing.subtotal) },
     { label: 'Amount paid', value: money(pricing.amountPaid) },
-    { label: 'Security deposit', value: money(pricing.securityDeposit) },
     { label: 'Remaining balance', value: money(pricing.remainingBalance), emphasize: true },
     { label: 'Grand total', value: money(pricing.grandTotal), emphasize: true },
   ];
 
   return (
     <section
-      className={cn('rounded-xl border bg-muted/20 p-4 sm:p-5', className)}
+      className={cn('rounded-3xl border bg-muted/20 p-4 sm:p-5', className)}
       aria-label="Pricing summary"
       {...(live
         ? {
@@ -65,12 +54,10 @@ export function BookingPricingSummary({
     >
       <header className="mb-3 space-y-1">
         <h3 className="text-sm font-semibold tracking-tight">Pricing summary</h3>
-        <p className="text-xs text-muted-foreground">
-          Calculated by the Pricing Engine. Security deposit is tracked separately.
-        </p>
+        <p className="text-xs text-muted-foreground">Calculated by the Pricing Engine.</p>
       </header>
 
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <div key={item.label} className="min-w-0 space-y-1">
             <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

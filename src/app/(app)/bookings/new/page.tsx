@@ -1,11 +1,9 @@
 import { getBookingService } from '@/features/bookings/service';
 import { CreateBookingPage } from '@/features/bookings/components/create-booking-page';
-import { listVehicles, reconcileVehicleAvailability } from '@/features/vehicles/actions';
+import { listVehicles } from '@/features/vehicles/actions';
 
 export default async function NewBookingPage() {
-  // Keep bookable-vehicle options in sync with existing hires.
-  await reconcileVehicleAvailability();
-
+  // Availability is kept fresh on booking write paths — no fleet-wide sync on read.
   const [vehiclesResponse, previewInvoiceNumber] = await Promise.all([
     listVehicles({
       isActive: true,
@@ -28,8 +26,6 @@ export default async function NewBookingPage() {
         availability_status: vehicle.availability_status,
         is_active: vehicle.is_active,
         default_daily_rate: vehicle.default_daily_rate,
-        extra_kilometer_rate: vehicle.extra_kilometer_rate,
-        security_deposit: vehicle.security_deposit,
         disabled: false,
       }))
     : [];

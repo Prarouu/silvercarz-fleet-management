@@ -9,6 +9,7 @@ import type { SelectOption } from '@/types/common';
 import type { Enums } from '@/types/database';
 
 export type FuelType = Enums<'fuel_type'>;
+export type TransmissionType = Enums<'transmission_type'>;
 export type VehicleAvailabilityStatus = Enums<'vehicle_availability'>;
 export type RentalMode = Enums<'rental_mode'>;
 export type PaymentMethod = Enums<'payment_method'>;
@@ -39,6 +40,31 @@ export const FUEL_TYPE_LABELS: Record<FuelType, string> = {
   cng: 'CNG',
   electric: 'Electric',
   hybrid: 'Hybrid',
+};
+
+/** Gearbox types common in the Indian passenger-car market. */
+export const TRANSMISSION_TYPES = {
+  manual: 'manual',
+  automatic: 'automatic',
+  amt: 'amt',
+  cvt: 'cvt',
+  dct: 'dct',
+} as const satisfies Record<string, TransmissionType>;
+
+export const TRANSMISSION_TYPE_VALUES = [
+  TRANSMISSION_TYPES.manual,
+  TRANSMISSION_TYPES.automatic,
+  TRANSMISSION_TYPES.amt,
+  TRANSMISSION_TYPES.cvt,
+  TRANSMISSION_TYPES.dct,
+] as const;
+
+export const TRANSMISSION_TYPE_LABELS: Record<TransmissionType, string> = {
+  manual: 'Manual',
+  automatic: 'Automatic',
+  amt: 'AMT',
+  cvt: 'CVT',
+  dct: 'DCT',
 };
 
 export const VEHICLE_AVAILABILITY_STATUSES = {
@@ -160,6 +186,12 @@ export const FUEL_TYPE_OPTIONS: SelectOption<FuelType>[] = FUEL_TYPE_VALUES.map(
   label: FUEL_TYPE_LABELS[value],
 }));
 
+export const TRANSMISSION_TYPE_OPTIONS: SelectOption<TransmissionType>[] =
+  TRANSMISSION_TYPE_VALUES.map((value) => ({
+    value,
+    label: TRANSMISSION_TYPE_LABELS[value],
+  }));
+
 export const VEHICLE_AVAILABILITY_STATUS_OPTIONS: SelectOption<VehicleAvailabilityStatus>[] =
   VEHICLE_AVAILABILITY_STATUS_VALUES.map((value) => ({
     value,
@@ -186,6 +218,7 @@ export const BOOKING_STATUS_OPTIONS: SelectOption<BookingStatus>[] = BOOKING_STA
 );
 
 const FUEL_TYPE_SET = new Set<string>(FUEL_TYPE_VALUES);
+const TRANSMISSION_TYPE_SET = new Set<string>(TRANSMISSION_TYPE_VALUES);
 const VEHICLE_AVAILABILITY_STATUS_SET = new Set<string>(VEHICLE_AVAILABILITY_STATUS_VALUES);
 const RENTAL_MODE_SET = new Set<string>(RENTAL_MODE_VALUES);
 const PAYMENT_METHOD_SET = new Set<string>(PAYMENT_METHOD_VALUES);
@@ -193,6 +226,10 @@ const BOOKING_STATUS_SET = new Set<string>(BOOKING_STATUS_VALUES);
 
 export function isFuelType(value: unknown): value is FuelType {
   return typeof value === 'string' && FUEL_TYPE_SET.has(value);
+}
+
+export function isTransmissionType(value: unknown): value is TransmissionType {
+  return typeof value === 'string' && TRANSMISSION_TYPE_SET.has(value);
 }
 
 export function isVehicleAvailabilityStatus(value: unknown): value is VehicleAvailabilityStatus {

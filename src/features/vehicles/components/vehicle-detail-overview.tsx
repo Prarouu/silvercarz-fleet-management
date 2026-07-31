@@ -36,16 +36,6 @@ export function VehicleDetailOverview({ vehicle, availability }: VehicleDetailOv
 
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <VehicleDetailField label="Brand" value={vehicle.brand} />
-            <VehicleDetailField label="Model" value={vehicle.model} />
-            <VehicleDetailField label="Variant" value={vehicle.variant} />
-            <VehicleDetailField
-              label="Year"
-              value={
-                vehicle.model_year !== null && vehicle.model_year !== undefined ? (
-                  <span className="tabular-nums">{vehicle.model_year}</span>
-                ) : null
-              }
-            />
             <VehicleDetailField label="Color" value={vehicle.color} />
             <VehicleDetailField
               label="Registration Number"

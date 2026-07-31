@@ -58,13 +58,21 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-tone-gold: var(--tone-gold);
+  --color-tone-gold-foreground: var(--tone-gold-foreground);
+  --color-tone-mint: var(--tone-mint);
+  --color-tone-mint-foreground: var(--tone-mint-foreground);
+  --color-tone-lavender: var(--tone-lavender);
+  --color-tone-lavender-foreground: var(--tone-lavender-foreground);
+  --color-tone-ink: var(--tone-ink);
+  --color-tone-ink-foreground: var(--tone-ink-foreground);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 1.75);
+  --radius-4xl: calc(var(--radius) * 2);
   --shadow-card: var(--elevation-card);
   --shadow-dropdown: var(--elevation-dropdown);
   --shadow-dialog: var(--elevation-dialog);
@@ -109,7 +117,7 @@
   --chart-3: #059669;
   --chart-4: #2563eb;
   --chart-5: #111827;
-  --radius: 0.625rem;
+  --radius: 1rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #111827;
   --sidebar-primary: #f4b400;
@@ -124,7 +132,15 @@
   --surface-foreground: #111827;
   --surface-secondary: #f3f4f6;
   --surface-secondary-foreground: #111827;
-  --elevation-card: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  --tone-gold: #f5d5a8;
+  --tone-gold-foreground: #1c1917;
+  --tone-mint: #b8e0c8;
+  --tone-mint-foreground: #0f1f17;
+  --tone-lavender: #d5cef0;
+  --tone-lavender-foreground: #1a1625;
+  --tone-ink: #1c1c1e;
+  --tone-ink-foreground: #f9fafb;
+  --elevation-card: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.04);
   --elevation-dropdown: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04);
   --elevation-dialog: 0 16px 40px -12px rgb(0 0 0 / 0.16), 0 4px 12px -4px rgb(0 0 0 / 0.08);
   --elevation-popover: 0 8px 24px -6px rgb(0 0 0 / 0.1), 0 2px 8px -2px rgb(0 0 0 / 0.06);
@@ -180,6 +196,14 @@
   --surface-foreground: #f9fafb;
   --surface-secondary: #1f2430;
   --surface-secondary-foreground: #f9fafb;
+  --tone-gold: #4a3c1c;
+  --tone-gold-foreground: #fde68a;
+  --tone-mint: #1c4338;
+  --tone-mint-foreground: #a7f3d0;
+  --tone-lavender: #3a3352;
+  --tone-lavender-foreground: #ddd6fe;
+  --tone-ink: #2a2f3a;
+  --tone-ink-foreground: #f9fafb;
   --auth-glow: rgb(244 180 0 / 0.16);
   --auth-wash-top: #171a21;
   --auth-wash-bottom: #0f1115;
@@ -232,6 +256,14 @@
   --surface-foreground: #111827;
   --surface-secondary: #f1f5f9;
   --surface-secondary-foreground: #111827;
+  --tone-gold: #f5d5a8;
+  --tone-gold-foreground: #1c1917;
+  --tone-mint: #b8e0c8;
+  --tone-mint-foreground: #0f1f17;
+  --tone-lavender: #c7d7f5;
+  --tone-lavender-foreground: #172554;
+  --tone-ink: #1c1c1e;
+  --tone-ink-foreground: #f8fafc;
   --auth-glow: rgb(37 99 235 / 0.12);
   --auth-wash-top: #ffffff;
   --auth-wash-bottom: #f1f5f9;
@@ -283,6 +315,14 @@
   --surface-foreground: #f8fafc;
   --surface-secondary: #1e293b;
   --surface-secondary-foreground: #f8fafc;
+  --tone-gold: #4a3c1c;
+  --tone-gold-foreground: #fde68a;
+  --tone-mint: #1c4338;
+  --tone-mint-foreground: #a7f3d0;
+  --tone-lavender: #1e3a5f;
+  --tone-lavender-foreground: #bfdbfe;
+  --tone-ink: #1e2a3c;
+  --tone-ink-foreground: #f8fafc;
   --auth-glow: rgb(59 130 246 / 0.18);
   --auth-wash-top: #111827;
   --auth-wash-bottom: #0b1220;
@@ -335,6 +375,14 @@
   --surface-foreground: #ffffff;
   --surface-secondary: #242424;
   --surface-secondary-foreground: #ffffff;
+  --tone-gold: #f5d5a8;
+  --tone-gold-foreground: #1c1917;
+  --tone-mint: #b8e0c8;
+  --tone-mint-foreground: #0f1f17;
+  --tone-lavender: #d5cef0;
+  --tone-lavender-foreground: #1a1625;
+  --tone-ink: #0a0a0a;
+  --tone-ink-foreground: #ffffff;
   --auth-glow: rgb(255 213 74 / 0.14);
   --auth-wash-top: #1a1a1a;
   --auth-wash-bottom: #111111;
@@ -352,6 +400,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Reserve scrollbar space so appearing scrollbars do not shift layout */
+    scrollbar-gutter: stable;
   }
   ::selection {
     @apply bg-primary text-primary-foreground;
@@ -411,5 +461,27 @@
     line-height: 1rem;
     font-weight: 400;
     color: var(--muted-foreground);
+  }
+  /** Uppercase metric / eyebrow label (design language). */
+  .text-metric {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  /** Hero numeric value on metric cards. */
+  .text-metric-value {
+    font-size: 1.75rem;
+    line-height: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 640px) {
+    .text-metric-value {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
   }
 }

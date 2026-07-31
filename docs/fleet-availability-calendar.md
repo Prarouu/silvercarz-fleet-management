@@ -12,7 +12,6 @@ Feature: [`src/features/calendar/`](../src/features/calendar/)
 Managers can instantly see:
 
 - Which vehicles are booked vs available
-- Upcoming pickups and returns
 - Vehicle occupancy across a date window
 
 This module is **read / navigate only**. It does not edit bookings, does not
@@ -54,12 +53,11 @@ UI never imports repositories.
 6. Map bookings → calendar events with Status Engine presentation.
 7. Build fleet timeline occupancy using Status schedule-blocking rules +
    Availability Engine `resolveAvailabilityFromBookings`.
-8. Build upcoming pickups / returns from a short future horizon.
 
 ## Data loading strategy
 
 - **Lazy / range-scoped** — never load full booking history.
-- Soft caps: calendar viewport ≤ 500 rows; agenda horizon ≤ 300 rows.
+- Soft caps: calendar viewport ≤ 500 rows.
 - Default view: **Week** (Mon–Sun). Day and Month supported.
 - Year view is reserved in types (`CALENDAR_VIEWS.year`) but not rendered.
 - Optional `from` / `to` URL params override the view-derived range for data.

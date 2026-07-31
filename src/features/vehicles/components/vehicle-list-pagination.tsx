@@ -69,7 +69,7 @@ export function VehicleListPagination({ state, meta, className }: VehicleListPag
   return (
     <nav
       className={cn(
-        'flex flex-col gap-3 rounded-xl border bg-card px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4',
+        'flex flex-col gap-3 rounded-3xl border bg-card px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4',
         isPending && 'opacity-80',
         className,
       )}

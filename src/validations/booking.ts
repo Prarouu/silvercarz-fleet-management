@@ -12,14 +12,12 @@ import {
   invoiceNumberSchema,
   isoDateSchema,
   moneySchema,
-  nonNegativeNumberSchema,
   optionalContactNumberSchema,
   optionalNullableStringSchema,
   optionalZipCodeSchema,
   paymentMethodSchema,
   positiveNumberSchema,
   refineDateRange,
-  refineOdometerRange,
   rentalModeSchema,
   requiredString,
 } from '@/validations/shared';
@@ -56,13 +54,8 @@ const bookingFieldsSchema = z.object({
   driver_name: optionalNullableStringSchema,
   daily_charge: moneySchema,
   fuel_range: optionalNullableStringSchema,
-  start_odometer: nonNegativeNumberSchema.nullable().optional(),
-  end_odometer: nonNegativeNumberSchema.nullable().optional(),
-  total_kilometers: nonNegativeNumberSchema.nullable().optional(),
   duration: positiveNumberSchema.nullable().optional(),
-  kilometer_rate: moneySchema.nullable().optional(),
   booking_amount: moneySchema.default(0),
-  caution_money: moneySchema.default(0),
   payment_method: paymentMethodSchema.nullable().optional(),
   total_amount: moneySchema.default(0),
   status: bookingStatusSchema.default('confirmed'),
@@ -72,12 +65,10 @@ const bookingFieldsSchema = z.object({
 
 export const createBookingSchema = bookingFieldsSchema.superRefine((data, ctx) => {
   refineDateRange(data.delivery_date, data.return_date, ctx);
-  refineOdometerRange(data.start_odometer, data.end_odometer, ctx);
 });
 
 export const updateBookingSchema = bookingFieldsSchema.partial().superRefine((data, ctx) => {
   refineDateRange(data.delivery_date, data.return_date, ctx);
-  refineOdometerRange(data.start_odometer, data.end_odometer, ctx);
 });
 
 /** Form-friendly booking filters (camelCase query params). */

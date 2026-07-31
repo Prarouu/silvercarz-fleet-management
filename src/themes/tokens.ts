@@ -55,6 +55,18 @@ export interface SemanticColorTokens {
   chart3: string;
   chart4: string;
   chart5: string;
+  /** Soft gold / peach metric surface (brand-tinted pastel). */
+  toneGold: string;
+  toneGoldForeground: string;
+  /** Soft mint metric surface (success family). */
+  toneMint: string;
+  toneMintForeground: string;
+  /** Soft lavender metric surface (tertiary accent). */
+  toneLavender: string;
+  toneLavenderForeground: string;
+  /** Charcoal / ink metric surface for high-contrast dark cards. */
+  toneInk: string;
+  toneInkForeground: string;
 }
 
 export interface PortalThemeDefinition {
@@ -85,23 +97,23 @@ export const spacing = {
   16: '4rem',
 } as const;
 
-/** Border-radius scale. */
+/** Border-radius scale — soft squircles for panels, moderate for controls. */
 export const radius = {
   none: '0',
-  sm: '0.375rem',
-  md: '0.5rem',
-  lg: '0.625rem',
-  xl: '0.875rem',
-  '2xl': '1.125rem',
+  sm: '0.5rem',
+  md: '0.75rem',
+  lg: '1rem',
+  xl: '1.25rem',
+  '2xl': '1.5rem',
   full: '9999px',
-  /** Base radius used by shadcn `--radius`. */
-  base: '0.625rem',
+  /** Base radius used by shadcn `--radius` (drives card squircles via 3xl). */
+  base: '1rem',
 } as const;
 
-/** Elevation / shadow tokens. */
+/** Elevation / shadow tokens — soft, low-contrast (reference language is mostly flat). */
 export const shadows = {
   none: 'none',
-  card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
+  card: '0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.04)',
   dropdown: '0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04)',
   dialog: '0 16px 40px -12px rgb(0 0 0 / 0.16), 0 4px 12px -4px rgb(0 0 0 / 0.08)',
   popover: '0 8px 24px -6px rgb(0 0 0 / 0.1), 0 2px 8px -2px rgb(0 0 0 / 0.06)',
@@ -117,6 +129,10 @@ export const typography = {
   small: { size: '0.75rem', lineHeight: '1rem', weight: '400' },
   label: { size: '0.875rem', lineHeight: '1.25rem', weight: '500' },
   helper: { size: '0.75rem', lineHeight: '1rem', weight: '400' },
+  /** Uppercase metric / eyebrow labels (design language). */
+  metric: { size: '0.75rem', lineHeight: '1rem', weight: '500' },
+  /** Hero numeric values on metric cards. */
+  metricValue: { size: '1.875rem', lineHeight: '2.25rem', weight: '700' },
 } as const;
 
 /** Icon size tokens (Tailwind `size-*` equivalents). */

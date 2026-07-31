@@ -95,8 +95,9 @@ export interface AvailabilityService {
    */
   syncAvailabilityFromBookings(vehicleId: string): Promise<ApiResponse<Vehicle>>;
   /**
-   * Reconciles every fleet vehicle against booking lifecycle.
-   * Fixes rows left stale before the Availability Engine (e.g. pre-existing hires).
+   * Batch-reconciles every fleet vehicle against booking lifecycle.
+   * For manual/ops repairs only — not for normal page reads.
+   * Write paths should call `syncAvailabilityFromBookings` for a single vehicle.
    */
   syncAllAvailabilityFromBookings(): Promise<
     ApiResponse<{ readonly scanned: number; readonly updated: number }>
@@ -429,11 +430,13 @@ export function createAvailabilityService(deps: AvailabilityServiceDeps = {}): A
     syncAllAvailabilityFromBookings() {
       return fromPromise(async () => {
         const vehicleRepository = await getVehicleRepo();
+        const bookingRepository = await getBookingRepo();
         const pageSize = 200;
         let page = 1;
         let scanned = 0;
         let updated = 0;
         let hasNextPage = true;
+        const asOfDate = resolveToday();
 
         while (hasNextPage) {
           const result = await vehicleRepository.list({
@@ -444,13 +447,64 @@ export function createAvailabilityService(deps: AvailabilityServiceDeps = {}): A
             sortOrder: 'asc',
           });
 
-          for (const vehicle of result.data) {
-            scanned += 1;
-            const synced = await service.syncAvailabilityFromBookings(vehicle.id);
+          const vehicles = result.data;
+          scanned += vehicles.length;
 
-            if (synced.success && synced.data.availability_status !== vehicle.availability_status) {
-              updated += 1;
+          const bookings = await bookingRepository.findLifecycleBookingsForVehicles(
+            vehicles.map((vehicle) => vehicle.id),
+          );
+
+          const bookingsByVehicle = new Map<string, Booking[]>();
+          for (const booking of bookings) {
+            const list = bookingsByVehicle.get(booking.vehicle_id) ?? [];
+            list.push(booking);
+            bookingsByVehicle.set(booking.vehicle_id, list);
+          }
+
+          const updates = vehicles.flatMap((vehicle) => {
+            const nextStatus = resolveAvailabilityFromBookings(
+              vehicle,
+              bookingsByVehicle.get(vehicle.id) ?? [],
+              asOfDate,
+            );
+
+            // Never clobber an explicit maintenance lock via booking sync unless
+            // the vehicle was already on a booking-derived status (or inactive roster).
+            if (
+              vehicle.availability_status === VEHICLE_AVAILABILITY_STATUSES.maintenance &&
+              nextStatus !== VEHICLE_AVAILABILITY_STATUSES.maintenance &&
+              nextStatus !== VEHICLE_AVAILABILITY_STATUSES.inactive
+            ) {
+              return [];
             }
+
+            if (vehicle.availability_status === nextStatus) {
+              return [];
+            }
+
+            if (
+              !isBookingDerivedStatus(nextStatus) &&
+              nextStatus !== VEHICLE_AVAILABILITY_STATUSES.inactive &&
+              nextStatus !== VEHICLE_AVAILABILITY_STATUSES.maintenance
+            ) {
+              return [];
+            }
+
+            return [{ id: vehicle.id, availability_status: nextStatus }];
+          });
+
+          // Persist changed rows with bounded concurrency (not sequential N+1).
+          const concurrency = 8;
+          for (let index = 0; index < updates.length; index += concurrency) {
+            const chunk = updates.slice(index, index + concurrency);
+            await Promise.all(
+              chunk.map((patch) =>
+                vehicleRepository.update(patch.id, {
+                  availability_status: patch.availability_status,
+                }),
+              ),
+            );
+            updated += chunk.length;
           }
 
           hasNextPage = result.meta.hasNextPage;

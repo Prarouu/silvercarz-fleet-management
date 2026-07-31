@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 
 const SIZE_CLASSES = {
   xs: 'size-8 rounded-md [&_svg]:size-3.5',
-  sm: 'size-10 rounded-lg [&_svg]:size-4',
-  md: 'size-12 rounded-lg [&_svg]:size-5',
-  lg: 'size-16 rounded-lg sm:size-[4.5rem] [&_svg]:size-6',
+  sm: 'size-10 rounded-xl [&_svg]:size-4',
+  md: 'size-12 rounded-xl [&_svg]:size-5',
+  lg: 'size-16 rounded-2xl sm:size-[4.5rem] [&_svg]:size-6',
 } as const;
 
 export type VehicleThumbnailSize = keyof typeof SIZE_CLASSES;

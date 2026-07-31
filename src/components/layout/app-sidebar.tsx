@@ -4,6 +4,7 @@ import { Car } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { IconWell } from '@/components/shared/icon-well';
 import {
   Sidebar,
   SidebarContent,
@@ -55,17 +56,16 @@ function NavMenu({ items }: { items: readonly NavItem[] }) {
 export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <SidebarHeader className="p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip={appConfig.name}>
+            <SidebarMenuButton asChild size="lg" tooltip={appConfig.name} className="rounded-2xl">
               <Link href={ROUTES.dashboard}>
-                <div
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-                  aria-hidden="true"
-                >
-                  <Car className="size-4" />
-                </div>
+                <IconWell
+                  icon={Car}
+                  tone="default"
+                  className="bg-primary text-primary-foreground"
+                />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-semibold">{appConfig.name}</span>
                   <span className="text-caption truncate text-muted-foreground">
@@ -80,7 +80,9 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Operations</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-metric text-muted-foreground/80">
+            Operations
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <NavMenu items={mainNavItems} />
           </SidebarGroupContent>

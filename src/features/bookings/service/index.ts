@@ -2,13 +2,11 @@ export {
   calculateBookingAmount,
   calculateDurationDays,
   calculateTotalAmount,
-  calculateTotalKilometers,
   buildInvoiceNumberSuggestion,
 } from './booking-calculations';
 
 export {
   assertPricingInput,
-  calculateChargeableKilometers,
   calculatePricing,
   calculateRentalDays,
   createPricingService,

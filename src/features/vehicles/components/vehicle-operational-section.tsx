@@ -4,7 +4,6 @@ import { Controller } from 'react-hook-form';
 
 import { FormField, fieldAriaProps } from '@/components/shared/form-field';
 import { FormSection } from '@/components/shared/form-section';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -15,7 +14,6 @@ import {
 import type { VehicleFormSectionProps } from '@/features/vehicles/components/vehicle-form-section-types';
 import {
   VEHICLE_STATUS_OPTIONS,
-  parseOptionalNumber,
   type VehicleStatusValue,
 } from '@/features/vehicles/lib/vehicle-form';
 import { VEHICLE_AVAILABILITY_STATUS_OPTIONS, type VehicleAvailabilityStatus } from '@/types';
@@ -35,41 +33,9 @@ export function VehicleOperationalSection({ control, errors, isLoading }: Vehicl
   return (
     <FormSection
       title="Operational Information"
-      description="Current meter reading and fleet status."
+      description="Fleet availability and roster status."
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <FormField
-          id="current_odometer"
-          label="Current Odometer"
-          required
-          description="Kilometers."
-          error={errors.current_odometer?.message}
-        >
-          <Controller
-            control={control}
-            name="current_odometer"
-            render={({ field }) => (
-              <Input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                placeholder="0"
-                disabled={isLoading}
-                value={field.value ?? ''}
-                onBlur={field.onBlur}
-                onChange={(event) => field.onChange(parseOptionalNumber(event.target.value))}
-                {...fieldAriaProps({
-                  id: 'current_odometer',
-                  required: true,
-                  error: errors.current_odometer?.message,
-                  description: 'Kilometers.',
-                })}
-              />
-            )}
-          />
-        </FormField>
-
+      <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           id="availability_status"
           label="Availability Status"

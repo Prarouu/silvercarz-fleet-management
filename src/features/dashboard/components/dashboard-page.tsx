@@ -11,7 +11,6 @@ import { DashboardKpiGrid } from '@/features/dashboard/components/dashboard-kpi-
 import { DashboardQuickActions } from '@/features/dashboard/components/dashboard-quick-actions';
 import { DashboardWelcome } from '@/features/dashboard/components/dashboard-welcome';
 import { FleetAvailabilityChart } from '@/features/dashboard/components/fleet-availability-chart';
-import { FleetSnapshot } from '@/features/dashboard/components/fleet-snapshot';
 import { RecentBookingsTable } from '@/features/dashboard/components/recent-bookings-table';
 import { TodaysSchedule } from '@/features/dashboard/components/todays-schedule';
 import type { DashboardData } from '@/features/dashboard/types';
@@ -23,7 +22,7 @@ type DashboardPageProps = {
 
 /**
  * Admin Dashboard composition.
- * Layout: Header → Welcome → Quick Actions → KPIs → Charts → Schedule + Fleet → Recent.
+ * Layout: Header → Welcome → Quick Actions → KPIs → Charts → Schedule → Recent.
  */
 export function DashboardPage({ data, errorMessage }: DashboardPageProps) {
   const router = useRouter();
@@ -71,10 +70,7 @@ export function DashboardPage({ data, errorMessage }: DashboardPageProps) {
           <FleetAvailabilityChart data={data.fleetAvailabilityChart} />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TodaysSchedule items={data.todaysSchedule} />
-          <FleetSnapshot items={data.fleetSnapshot} />
-        </div>
+        <TodaysSchedule items={data.todaysSchedule} />
 
         <RecentBookingsTable bookings={data.recentBookings} />
       </div>

@@ -5,8 +5,8 @@ import 'server-only';
  * Route Handlers.
  *
  * Reads and writes the auth session from request cookies via `next/headers`.
- * A new client must be created per request (never cached in a module-level
- * variable), because it is bound to the current request's cookies.
+ * Use `React.cache` so layout + services share one client per request.
+ * Do not store the client in a module-level variable across requests.
  *
  * Do NOT use in Client Components — import from `@/lib/supabase/client`
  * there instead. The `server-only` import above makes client-side imports
@@ -15,11 +15,12 @@ import 'server-only';
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 import { supabaseConfig } from '@/lib/supabase/config';
 import type { Database } from '@/types/database';
 
-export async function createSupabaseServerClient() {
+export const createSupabaseServerClient = cache(async () => {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseConfig.url, supabaseConfig.anonKey, {
@@ -40,4 +41,4 @@ export async function createSupabaseServerClient() {
       },
     },
   });
-}
+});

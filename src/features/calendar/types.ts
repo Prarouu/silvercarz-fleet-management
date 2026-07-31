@@ -81,23 +81,6 @@ export type FleetTimelineRow = {
   readonly blocks: readonly FleetOccupancyBlock[];
 };
 
-/** Pickup / return agenda row. */
-export type CalendarAgendaItem = {
-  readonly bookingId: string;
-  readonly invoiceNumber: string;
-  readonly customerName: string;
-  readonly vehicleName: string;
-  readonly registrationNumber: string;
-  readonly vehicleImagePath: string | null;
-  readonly date: string;
-  readonly deliveryDate: string;
-  readonly returnDate: string;
-  readonly displayStatus: BookingDisplayStatus;
-  readonly statusLabel: string;
-  readonly badgeVariant: BookingStatusBadgeVariant;
-  readonly remainingBalance: number | null;
-};
-
 export type CalendarVehicleOption = {
   readonly id: string;
   readonly label: string;
@@ -111,8 +94,6 @@ export type CalendarPageData = {
   readonly summary: CalendarSummary;
   readonly events: readonly CalendarEvent[];
   readonly timeline: readonly FleetTimelineRow[];
-  readonly upcomingPickups: readonly CalendarAgendaItem[];
-  readonly upcomingReturns: readonly CalendarAgendaItem[];
   readonly vehicles: readonly CalendarVehicleOption[];
   readonly fleet: readonly Vehicle[];
 };

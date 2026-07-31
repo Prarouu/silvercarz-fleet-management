@@ -20,10 +20,10 @@ export function ErrorState({
 }) {
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-muted/15 px-6 py-14 text-center sm:py-16"
+      className="flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl border border-dashed bg-muted/15 px-6 py-14 text-center sm:py-16"
       role="alert"
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+      <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive/10">
         <AlertTriangle className="size-6 text-destructive" aria-hidden="true" />
       </div>
       <div className="space-y-1.5">

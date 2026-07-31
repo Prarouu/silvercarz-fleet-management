@@ -3,7 +3,6 @@
  */
 
 export type {
-  CalendarAgendaItem,
   CalendarEvent,
   CalendarPageData,
   CalendarQuery,
@@ -28,15 +27,11 @@ export { getCalendarData } from './actions';
 
 export {
   CalendarFilters,
-  CalendarGrid,
   CalendarPage,
   CalendarSkeleton,
   CalendarSummaryCards,
   CalendarToolbar,
-  CalendarEventChip,
   FleetTimeline,
-  UpcomingPickups,
-  UpcomingReturns,
 } from './components';
 
 export {

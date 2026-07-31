@@ -68,7 +68,7 @@ export function VehicleRecentBookingsTable({ bookings }: VehicleRecentBookingsTa
       <ul className="space-y-3 md:hidden" aria-label="Recent bookings">
         {bookings.map((booking) => (
           <li key={booking.id}>
-            <article className="rounded-xl border bg-card p-4">
+            <article className="rounded-3xl border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <Link

@@ -10,30 +10,12 @@ import {
   fuelTypeSchema,
   isoDateSchema,
   moneySchema,
-  odometerSchema,
   optionalNullableStringSchema,
   requiredString,
+  transmissionTypeSchema,
   vehicleAvailabilityStatusSchema,
   vehicleNumberSchema,
 } from '@/validations/shared';
-
-const currentYear = new Date().getFullYear();
-
-const optionalNullableMoneySchema = z.union([
-  moneySchema,
-  z.null(),
-  z.undefined().transform(() => null),
-]);
-
-const optionalNullableModelYearSchema = z.union([
-  z
-    .number({ error: 'Enter a valid model year.' })
-    .int('Enter a valid model year.')
-    .min(1980, 'Model year must be 1980 or later.')
-    .max(currentYear + 1, `Model year must be ${currentYear + 1} or earlier.`),
-  z.null(),
-  z.undefined().transform(() => null),
-]);
 
 /**
  * Shared vehicle field shapes without create-only defaults.
@@ -49,15 +31,10 @@ const vehicleFieldsSchema = z.object({
   ),
   vehicle_number: vehicleNumberSchema,
   brand: requiredString('Brand is required.').max(80, 'Brand must be at most 80 characters.'),
-  model: requiredString('Model is required.').max(80, 'Model must be at most 80 characters.'),
-  variant: optionalNullableStringSchema,
-  model_year: optionalNullableModelYearSchema,
   color: optionalNullableStringSchema,
   fuel_type: fuelTypeSchema,
+  transmission_type: transmissionTypeSchema,
   default_daily_rate: moneySchema,
-  extra_kilometer_rate: optionalNullableMoneySchema,
-  security_deposit: optionalNullableMoneySchema,
-  current_odometer: odometerSchema,
   availability_status: vehicleAvailabilityStatusSchema,
   image_path: optionalNullableStringSchema,
   is_active: z.boolean(),

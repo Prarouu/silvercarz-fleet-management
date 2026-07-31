@@ -16,7 +16,7 @@ export function VehicleStatusBadge({
       className={cn(
         'font-medium tracking-wide',
         isActive
-          ? 'border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+          ? 'border-success/25 bg-success/10 text-success'
           : 'border-border/60 bg-muted text-muted-foreground',
         className,
       )}

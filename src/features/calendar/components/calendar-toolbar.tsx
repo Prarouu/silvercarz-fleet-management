@@ -41,7 +41,7 @@ export function CalendarToolbar({ state, rangeStart, rangeEnd, className }: Cale
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4',
+        'flex flex-col gap-3 rounded-3xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4',
         isPending && 'opacity-80',
         className,
       )}

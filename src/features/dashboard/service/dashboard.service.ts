@@ -8,8 +8,6 @@
 
 import 'server-only';
 
-import { addDays, format, parseISO } from 'date-fns';
-
 import {
   BOOKING_DISPLAY_STATUS_LABELS,
   resolveBookingDisplayStatus,
@@ -27,7 +25,6 @@ import {
 import type {
   BookingStatusChartData,
   DashboardData,
-  DashboardFleetSnapshotItem,
   DashboardKpis,
   DashboardScheduleItem,
   FleetAvailabilityChartData,
@@ -37,26 +34,17 @@ import {
   getVehicleRepository,
   type VehicleRepository,
 } from '@/features/vehicles/repository';
-import {
-  createAvailabilityService,
-  getAvailabilityService,
-  resolveAvailabilityFromBookings,
-  type AvailabilityService,
-} from '@/features/vehicles/service/availability.service';
 import { PERMISSIONS, requirePermission } from '@/lib/auth';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
-import type { ApiResponse, BookingWithVehicle, Vehicle } from '@/types';
+import type { ApiResponse, BookingWithVehicle } from '@/types';
 import { VEHICLE_AVAILABILITY_STATUS_LABELS, VEHICLE_AVAILABILITY_STATUSES } from '@/types/enums';
 
 const RECENT_BOOKINGS_LIMIT = 10;
-const FLEET_SNAPSHOT_LIMIT = 12;
-const FLEET_HORIZON_DAYS = 90;
 
 export interface DashboardServiceDeps {
   readonly bookingRepository?: BookingRepository;
   readonly vehicleRepository?: VehicleRepository;
-  readonly availabilityService?: AvailabilityService;
   readonly client?: TypedSupabaseClient;
   readonly requirePermission?: typeof requirePermission;
   readonly todayIsoDate?: () => string;
@@ -64,10 +52,6 @@ export interface DashboardServiceDeps {
 
 export interface DashboardService {
   getDashboardData(): Promise<ApiResponse<DashboardData>>;
-}
-
-function addDaysIso(iso: string, days: number): string {
-  return format(addDays(parseISO(iso), days), 'yyyy-MM-dd');
 }
 
 function buildBookingStatusChart(counts: {
@@ -169,63 +153,6 @@ function buildTodaysSchedule(
   return items;
 }
 
-function buildFleetSnapshot(params: {
-  readonly vehicles: readonly Vehicle[];
-  readonly bookings: readonly BookingWithVehicle[];
-  readonly asOfDate: string;
-}): DashboardFleetSnapshotItem[] {
-  const byVehicle = new Map<string, BookingWithVehicle[]>();
-
-  for (const booking of params.bookings) {
-    const list = byVehicle.get(booking.vehicle_id) ?? [];
-    list.push(booking);
-    byVehicle.set(booking.vehicle_id, list);
-  }
-
-  return params.vehicles.map((vehicle) => {
-    const vehicleBookings = byVehicle.get(vehicle.id) ?? [];
-    const availability = resolveAvailabilityFromBookings(vehicle, vehicleBookings, params.asOfDate);
-
-    let currentBooking: DashboardFleetSnapshotItem['currentBooking'] = null;
-    let futureBooking: DashboardFleetSnapshotItem['futureBooking'] = null;
-
-    for (const booking of vehicleBookings) {
-      const status = resolveBookingDisplayStatus(booking, params.asOfDate);
-      if (status === 'cancelled' || status === 'draft' || status === 'completed') {
-        continue;
-      }
-
-      if (status === 'active' && !currentBooking) {
-        currentBooking = {
-          bookingId: booking.id,
-          invoiceNumber: booking.invoice_number,
-          customerName: booking.customer_name,
-        };
-        continue;
-      }
-
-      if (status === 'upcoming' && !futureBooking) {
-        futureBooking = {
-          bookingId: booking.id,
-          invoiceNumber: booking.invoice_number,
-          customerName: booking.customer_name,
-          deliveryDate: booking.delivery_date,
-        };
-      }
-    }
-
-    return {
-      vehicleId: vehicle.id,
-      vehicleName: vehicle.vehicle_name,
-      registrationNumber: vehicle.vehicle_number,
-      imagePath: vehicle.image_path,
-      availability,
-      currentBooking,
-      futureBooking,
-    };
-  });
-}
-
 export function createDashboardService(deps: DashboardServiceDeps = {}): DashboardService {
   const requirePerm = deps.requirePermission ?? requirePermission;
   const today = deps.todayIsoDate ?? statusTodayIsoDate;
@@ -250,36 +177,20 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
     return getVehicleRepository();
   }
 
-  function getAvailability(): AvailabilityService {
-    if (deps.availabilityService) {
-      return deps.availabilityService;
-    }
-    if (deps.client) {
-      return createAvailabilityService({
-        client: deps.client,
-        requirePermission: requirePerm,
-        todayIsoDate: today,
-      });
-    }
-    return getAvailabilityService();
-  }
-
   return {
     getDashboardData() {
       return fromPromise(async () => {
-        await requirePerm(PERMISSIONS.bookingsRead);
-        await requirePerm(PERMISSIONS.vehiclesRead);
+        // Auth state is request-cached; both checks share one profile load.
+        await Promise.all([
+          requirePerm(PERMISSIONS.bookingsRead),
+          requirePerm(PERMISSIONS.vehiclesRead),
+        ]);
 
         const asOfDate = today();
         const bookingRepo = await getBookingsRepo();
         const vehicleRepo = await getVehiclesRepo();
-        const availability = getAvailability();
 
-        // Keep Availability Engine in the request path (self-heal before read).
-        await availability.syncAllAvailabilityFromBookings();
-
-        const horizonEnd = addDaysIso(asOfDate, FLEET_HORIZON_DAYS);
-
+        // Availability is persisted on booking write paths — no fleet-wide sync here.
         const [
           activeBookings,
           upcomingBookings,
@@ -293,8 +204,6 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
           totalVehicles,
           recentResult,
           todayOverlapping,
-          fleetResult,
-          horizonOverlapping,
         ] = await Promise.all([
           bookingRepo.count({ status: 'active' }),
           bookingRepo.count({ status: 'upcoming' }),
@@ -319,20 +228,6 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
             includeCancelled: false,
             excludeDraft: true,
             limit: 200,
-          }),
-          vehicleRepo.list({
-            page: 1,
-            pageSize: FLEET_SNAPSHOT_LIMIT,
-            includeInactive: false,
-            sortBy: 'vehicle_name',
-            sortOrder: 'asc',
-          }),
-          bookingRepo.findOverlappingInRange({
-            deliveryDate: asOfDate,
-            returnDate: horizonEnd,
-            includeCancelled: false,
-            excludeDraft: true,
-            limit: 500,
           }),
         ]);
 
@@ -372,18 +267,6 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
 
         const todaysSchedule = buildTodaysSchedule(todayOverlapping, asOfDate);
 
-        const fleetVehicles = fleetResult.data;
-        const fleetVehicleIds = new Set(fleetVehicles.map((vehicle) => vehicle.id));
-        const fleetBookings = horizonOverlapping.filter((booking) =>
-          fleetVehicleIds.has(booking.vehicle_id),
-        );
-
-        const fleetSnapshot = buildFleetSnapshot({
-          vehicles: fleetVehicles,
-          bookings: fleetBookings,
-          asOfDate,
-        });
-
         const isEmpty = totalVehicles === 0 && bookingStatusChart.total === 0;
 
         return {
@@ -393,7 +276,6 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
           fleetAvailabilityChart,
           todaysSchedule,
           recentBookings: recentResult.data,
-          fleetSnapshot,
           isEmpty,
         } satisfies DashboardData;
       });

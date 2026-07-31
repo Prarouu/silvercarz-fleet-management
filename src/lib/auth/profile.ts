@@ -8,12 +8,16 @@ import 'server-only';
  * `ensureCurrentProfile` covers Auth Dashboard users if a row is missing.
  */
 
+import { cache } from 'react';
+
 import { AUTH_ERROR_CODES, createMissingProfileError } from '@/lib/auth/errors';
 import { isAppRole } from '@/lib/auth/roles';
 import type { AuthUser, UserProfile } from '@/lib/auth/types';
 import { AppError } from '@/lib/errors';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Tables } from '@/types/database';
+
+const PROFILE_COLUMNS = 'id, email, full_name, role, is_active, created_at, updated_at' as const;
 
 type ProfileRow = Tables<'profiles'>;
 
@@ -72,12 +76,13 @@ export function toAuthUserFromProfile(profile: UserProfile): AuthUser {
 /**
  * Loads the profile for `userId`, or `null` when missing / unreadable.
  * Does not throw — callers that need a hard failure use `ensureCurrentProfile`.
+ * Cached per request so layout + permission checks share one profile read.
  */
-export async function getProfileById(userId: string): Promise<UserProfile | null> {
+export const getProfileById = cache(async (userId: string): Promise<UserProfile | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .maybeSingle();
 
@@ -86,11 +91,12 @@ export async function getProfileById(userId: string): Promise<UserProfile | null
   }
 
   return toUserProfile(data);
-}
+});
 
 /**
  * Returns the profile for the current authenticated user, or `null`.
  * Requires a valid session (RLS: own row / staff select).
+ * Prefer `getAuthState()` when both user and profile are needed.
  */
 export async function getCurrentProfile(): Promise<UserProfile | null> {
   const supabase = await createSupabaseServerClient();

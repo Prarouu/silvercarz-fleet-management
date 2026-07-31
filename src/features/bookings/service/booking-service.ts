@@ -184,16 +184,12 @@ function applyCreateDerivedFields(
 ): BookingCreateInput {
   assertValidDates(values.delivery_date, values.return_date);
 
-  // Pricing Engine is the sole authority for duration, km, and money totals.
+  // Pricing Engine is the sole authority for duration and money totals.
   const pricing = calculatePricing({
     dailyRate: values.daily_charge,
-    extraKilometerRate: values.kilometer_rate,
     deliveryDate: values.delivery_date,
     returnDate: values.return_date,
-    startOdometer: values.start_odometer,
-    endOdometer: values.end_odometer,
     amountPaid: values.booking_amount,
-    securityDeposit: values.caution_money,
   });
   const priced = pricingToPersistedFields(pricing);
 
@@ -211,9 +207,7 @@ function applyCreateDerivedFields(
     ...values,
     invoice_number: invoiceNumber,
     duration: priced.duration,
-    total_kilometers: priced.total_kilometers,
     booking_amount: priced.booking_amount,
-    caution_money: priced.caution_money,
     total_amount: priced.total_amount,
     status,
     created_by: values.created_by ?? actor.id,
@@ -228,28 +222,16 @@ function applyUpdateDerivedFields(
   const returnDate = values.return_date ?? existing.return_date;
   assertValidDates(deliveryDate, returnDate);
 
-  const startOdometer =
-    values.start_odometer !== undefined ? values.start_odometer : existing.start_odometer;
-  const endOdometer =
-    values.end_odometer !== undefined ? values.end_odometer : existing.end_odometer;
   const dailyCharge = values.daily_charge ?? existing.daily_charge;
-  const kilometerRate =
-    values.kilometer_rate !== undefined ? values.kilometer_rate : existing.kilometer_rate;
   const amountPaid =
     values.booking_amount !== undefined ? values.booking_amount : existing.booking_amount;
-  const securityDeposit =
-    values.caution_money !== undefined ? values.caution_money : existing.caution_money;
 
-  // Always rematerialize derived money / distance via Pricing Engine.
+  // Always rematerialize derived money via Pricing Engine.
   const pricing = calculatePricing({
     dailyRate: dailyCharge,
-    extraKilometerRate: kilometerRate,
     deliveryDate,
     returnDate,
-    startOdometer,
-    endOdometer,
     amountPaid,
-    securityDeposit,
   });
   const priced = pricingToPersistedFields(pricing);
 
@@ -268,9 +250,7 @@ function applyUpdateDerivedFields(
   return {
     ...safeWithoutStatus,
     duration: priced.duration,
-    total_kilometers: priced.total_kilometers,
     booking_amount: priced.booking_amount,
-    caution_money: priced.caution_money,
     total_amount: priced.total_amount,
     status,
   };

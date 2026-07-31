@@ -48,6 +48,14 @@ const adminLight: SemanticColorTokens = {
   chart3: '#059669',
   chart4: '#2563EB',
   chart5: '#111827',
+  toneGold: '#F5D5A8',
+  toneGoldForeground: '#1C1917',
+  toneMint: '#B8E0C8',
+  toneMintForeground: '#0F1F17',
+  toneLavender: '#D5CEF0',
+  toneLavenderForeground: '#1A1625',
+  toneInk: '#1C1C1E',
+  toneInkForeground: '#F9FAFB',
 };
 
 /** Optional dark mode for Admin (color-mode toggle). Still yellow-accent SaaS. */
@@ -95,6 +103,15 @@ const adminDark: SemanticColorTokens = {
   chart3: '#34D399',
   chart4: '#60A5FA',
   chart5: '#F9FAFB',
+  // Elevated tinted washes — distinct from canvas (#0F1115) and surface (#171A21)
+  toneGold: '#4A3C1C',
+  toneGoldForeground: '#FDE68A',
+  toneMint: '#1C4338',
+  toneMintForeground: '#A7F3D0',
+  toneLavender: '#3A3352',
+  toneLavenderForeground: '#DDD6FE',
+  toneInk: '#2A2F3A',
+  toneInkForeground: '#F9FAFB',
 };
 
 export const adminTheme: PortalThemeDefinition = {

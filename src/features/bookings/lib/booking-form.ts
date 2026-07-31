@@ -45,12 +45,7 @@ export type BookingFormValues = {
   daily_charge: number | null;
   duration: number | null;
   fuel_range: string;
-  start_odometer: number | null;
-  end_odometer: number | null;
-  total_kilometers: number | null;
-  kilometer_rate: number | null;
   booking_amount: number | null;
-  caution_money: number | null;
   payment_method: PaymentMethod | null;
   total_amount: number | null;
   notes: string;
@@ -66,12 +61,8 @@ export type VehicleSelectOption = {
   readonly image_path?: string | null;
   readonly availability_status?: VehicleAvailabilityStatus;
   readonly is_active?: boolean;
-  /** Default daily rate used to seed the Pricing Engine inputs. */
+  /** Default daily rate (informational — not auto-applied to the form). */
   readonly default_daily_rate?: number | null;
-  /** Default extra kilometer rate for the Pricing Engine. */
-  readonly extra_kilometer_rate?: number | null;
-  /** Default security / caution deposit. */
-  readonly security_deposit?: number | null;
   /** When true, option is shown but not selectable (booked / maintenance / inactive). */
   readonly disabled?: boolean;
 };
@@ -118,12 +109,7 @@ export function createBookingFormDefaults(suggestedInvoiceNumber?: string): Book
     daily_charge: null,
     duration: 1,
     fuel_range: '',
-    start_odometer: null,
-    end_odometer: null,
-    total_kilometers: null,
-    kilometer_rate: null,
     booking_amount: 0,
-    caution_money: 0,
     payment_method: null,
     total_amount: 0,
     notes: '',
@@ -151,12 +137,7 @@ export function bookingToFormValues(booking: Booking): BookingFormValues {
     daily_charge: booking.daily_charge,
     duration: booking.duration,
     fuel_range: booking.fuel_range ?? '',
-    start_odometer: booking.start_odometer,
-    end_odometer: booking.end_odometer,
-    total_kilometers: booking.total_kilometers,
-    kilometer_rate: booking.kilometer_rate,
     booking_amount: booking.booking_amount,
-    caution_money: booking.caution_money,
     payment_method: booking.payment_method,
     total_amount: booking.total_amount,
     notes: booking.notes ?? '',
@@ -183,12 +164,7 @@ export function toCreateBookingInput(values: BookingFormValues) {
     daily_charge: values.daily_charge ?? undefined,
     duration: values.duration,
     fuel_range: values.fuel_range,
-    start_odometer: values.start_odometer,
-    end_odometer: values.end_odometer,
-    total_kilometers: values.total_kilometers,
-    kilometer_rate: values.kilometer_rate,
     booking_amount: values.booking_amount ?? 0,
-    caution_money: values.caution_money ?? 0,
     payment_method: values.payment_method,
     total_amount: values.total_amount ?? 0,
     notes: values.notes,

@@ -24,12 +24,12 @@ type DashboardHeaderProps = {
  */
 export function DashboardHeader({ asOfDate }: DashboardHeaderProps) {
   const now = useLiveNow();
-  const greeting = now ? resolveGreeting(now) : 'Welcome';
+  const greeting = resolveGreeting(now);
 
   return (
     <header className="space-y-1.5" aria-label="Dashboard greeting">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="text-heading text-balance">
+        <h1 className="text-heading text-balance" suppressHydrationWarning>
           {greeting}, <span className="text-foreground">{appConfig.name}</span>
         </h1>
         <p className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
@@ -37,13 +37,13 @@ export function DashboardHeader({ asOfDate }: DashboardHeaderProps) {
           <span className="mx-2 text-border" aria-hidden="true">
             ·
           </span>
-          {now ? (
-            <time dateTime={now.toISOString()}>{formatClock(now)}</time>
-          ) : (
-            <span className="inline-block min-w-[7.5rem]" aria-hidden="true">
-              --:--:-- --
-            </span>
-          )}
+          <time
+            className="inline-block min-w-[7.5rem]"
+            dateTime={now.toISOString()}
+            suppressHydrationWarning
+          >
+            {formatClock(now)}
+          </time>
         </p>
       </div>
       <p className="text-body text-muted-foreground">Manage your fleet efficiently.</p>

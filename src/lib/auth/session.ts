@@ -8,9 +8,12 @@ import 'server-only';
  * Do not rely on cookie contents alone for security decisions.
  *
  * Role and display name are loaded from `profiles` (not JWT claims alone).
+ * Auth helpers are wrapped in `React.cache` so layout + services share one
+ * Auth + profile round-trip per request.
  */
 
 import type { Session, User } from '@supabase/supabase-js';
+import { cache } from 'react';
 
 import { getProfileById } from '@/lib/auth/profile';
 import { isAppRole, type AppRole } from '@/lib/auth/roles';
@@ -43,28 +46,8 @@ export function toAuthUser(
  * When a profile exists, role and full name come from `profiles`.
  */
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return null;
-  }
-
-  const profile = await getProfileById(user.id);
-
-  if (profile) {
-    return {
-      id: profile.id,
-      email: profile.email,
-      fullName: profile.fullName,
-      role: profile.role,
-    };
-  }
-
-  return toAuthUser(user);
+  const { user } = await getAuthState();
+  return user;
 }
 
 /**
@@ -88,7 +71,7 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /** Bundled auth state for Server Components and Server Actions. */
-export async function getAuthState(): Promise<AuthState> {
+export const getAuthState = cache(async (): Promise<AuthState> => {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -117,7 +100,7 @@ export async function getAuthState(): Promise<AuthState> {
     profile,
     isAuthenticated: true,
   };
-}
+});
 
 /**
  * Role for the current user from `profiles`.

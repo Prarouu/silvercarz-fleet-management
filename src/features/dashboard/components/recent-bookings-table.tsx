@@ -52,7 +52,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
           ) : (
             <>
               {/* Desktop / tablet table */}
-              <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
+              <div className="hidden overflow-x-auto rounded-3xl border border-border md:block">
                 <table className="w-full caption-bottom text-sm">
                   <TableHeader>
                     <TableRow className="bg-table-header hover:bg-table-header">
@@ -121,7 +121,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                     <button
                       type="button"
                       className={cn(
-                        'w-full rounded-xl border border-border bg-card p-4 text-left transition-colors',
+                        'w-full rounded-3xl border border-border bg-card p-4 text-left transition-colors',
                         'hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
                       )}
                       onClick={() => router.push(bookingDetailPath(booking.id))}

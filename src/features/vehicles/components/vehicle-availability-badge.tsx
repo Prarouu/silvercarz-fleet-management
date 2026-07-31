@@ -14,11 +14,11 @@ export type VehicleAvailability = VehicleAvailabilityStatus;
 export const VEHICLE_AVAILABILITY_LABELS = VEHICLE_AVAILABILITY_STATUS_LABELS;
 
 const AVAILABILITY_CLASS: Record<VehicleAvailability, string> = {
-  available: 'border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300',
-  booked: 'border-amber-500/25 bg-amber-500/15 text-amber-800 dark:text-amber-300',
-  reserved: 'border-violet-500/25 bg-violet-500/15 text-violet-800 dark:text-violet-300',
-  maintenance: 'border-sky-500/25 bg-sky-500/15 text-sky-800 dark:text-sky-300',
-  inactive: 'border-zinc-500/25 bg-zinc-500/15 text-zinc-700 dark:text-zinc-300',
+  available: 'border-success/25 bg-success/10 text-success',
+  booked: 'border-warning/25 bg-warning/10 text-warning',
+  reserved: 'border-info/25 bg-info/10 text-info',
+  maintenance: 'border-primary/30 bg-primary/10 text-foreground',
+  inactive: 'border-border bg-muted text-muted-foreground',
 };
 
 /** Resolves display availability from the current vehicle row model. */

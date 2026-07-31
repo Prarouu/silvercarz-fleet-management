@@ -53,25 +53,6 @@ export type DashboardScheduleItem = {
   readonly displayStatus: BookingDisplayStatus;
 };
 
-export type DashboardFleetSnapshotItem = {
-  readonly vehicleId: string;
-  readonly vehicleName: string;
-  readonly registrationNumber: string;
-  readonly imagePath: string | null;
-  readonly availability: VehicleAvailabilityStatus;
-  readonly currentBooking: {
-    readonly bookingId: string;
-    readonly invoiceNumber: string;
-    readonly customerName: string;
-  } | null;
-  readonly futureBooking: {
-    readonly bookingId: string;
-    readonly invoiceNumber: string;
-    readonly customerName: string;
-    readonly deliveryDate: string;
-  } | null;
-};
-
 export type DashboardData = {
   readonly asOfDate: string;
   readonly kpis: DashboardKpis;
@@ -79,7 +60,6 @@ export type DashboardData = {
   readonly fleetAvailabilityChart: FleetAvailabilityChartData;
   readonly todaysSchedule: readonly DashboardScheduleItem[];
   readonly recentBookings: readonly BookingWithVehicle[];
-  readonly fleetSnapshot: readonly DashboardFleetSnapshotItem[];
   /** True when the fleet and booking tables are both empty. */
   readonly isEmpty: boolean;
 };

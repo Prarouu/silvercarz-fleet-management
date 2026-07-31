@@ -93,7 +93,7 @@ export function CalendarFilters({ state, vehicles, className }: CalendarFiltersP
 
   return (
     <div
-      className={cn('rounded-xl border bg-card p-3 sm:p-4', isPending && 'opacity-80', className)}
+      className={cn('rounded-3xl border bg-card p-3 sm:p-4', isPending && 'opacity-80', className)}
       aria-busy={isPending}
       role="search"
       aria-label="Filter fleet calendar"

@@ -12,7 +12,6 @@ export {
   calculateDurationDays,
   calculateRentalDays,
   calculateTotalAmount,
-  calculateTotalKilometers,
   roundMoney,
 } from './pricing.service';
 

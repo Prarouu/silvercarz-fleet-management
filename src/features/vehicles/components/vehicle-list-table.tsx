@@ -208,7 +208,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
     <>
       <div
         className={cn(
-          'hidden overflow-hidden rounded-xl border bg-card lg:block',
+          'hidden overflow-hidden rounded-3xl border bg-card lg:block',
           isPending && 'pointer-events-none opacity-70',
         )}
         aria-busy={isPending}
@@ -292,7 +292,7 @@ export function VehicleListTable({ data, state }: VehicleListTableProps) {
 
           return (
             <li key={vehicle.id}>
-              <article className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/20">
+              <article className="rounded-3xl border bg-card p-4 transition-colors hover:bg-muted/20">
                 <div className="flex items-start gap-3">
                   <VehicleThumbnail
                     imagePath={vehicle.image_path}

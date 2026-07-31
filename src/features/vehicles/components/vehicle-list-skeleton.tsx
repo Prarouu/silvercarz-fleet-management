@@ -13,22 +13,22 @@ export function VehicleListSkeleton() {
         <Skeleton className="h-8 w-32" />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="space-y-3 rounded-xl border p-3 sm:p-4">
-            <div className="flex items-start justify-between gap-2 sm:gap-3">
-              <div className="min-w-0 space-y-2">
-                <Skeleton className="h-3.5 w-20 max-w-full sm:w-28" />
-                <Skeleton className="h-7 w-12 sm:w-14" />
-              </div>
-              <Skeleton className="size-8 shrink-0 rounded-lg sm:size-9" />
+          <div
+            key={index}
+            className="flex flex-col gap-5 rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6"
+          >
+            <Skeleton className="size-9 rounded-lg" />
+            <div className="mt-auto space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-8 w-14" />
             </div>
-            <Skeleton className="hidden h-3 w-36 max-w-full sm:block" />
           </div>
         ))}
       </div>
 
-      <div className="space-y-3 rounded-xl border p-3 sm:p-4">
+      <div className="space-y-3 rounded-3xl border p-3 sm:p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
             <Skeleton className="h-4 w-14" />
@@ -55,7 +55,7 @@ export function VehicleListSkeleton() {
 
       <div className="space-y-3 lg:hidden">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="space-y-3 rounded-xl border p-4">
+          <div key={index} className="space-y-3 rounded-3xl border p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="w-full space-y-2">
                 <Skeleton className="h-5 w-1/3" />

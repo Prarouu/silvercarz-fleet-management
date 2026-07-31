@@ -2,7 +2,6 @@ export type {
   BookingStatusChartData,
   BookingStatusChartSlice,
   DashboardData,
-  DashboardFleetSnapshotItem,
   DashboardKpis,
   DashboardScheduleItem,
   FleetAvailabilityChartBar,

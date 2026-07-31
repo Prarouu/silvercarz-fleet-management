@@ -10,11 +10,15 @@ import './globals.css';
 const geistSans = Geist({
   variable: '--font-sans',
   subsets: ['latin'],
+  display: 'optional',
+  adjustFontFallback: true,
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'optional',
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {

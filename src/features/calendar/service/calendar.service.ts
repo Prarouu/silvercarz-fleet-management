@@ -20,8 +20,6 @@ import {
   resolveBookingDisplayStatus,
 } from '@/features/bookings/service/status.service';
 import {
-  buildUpcomingPickups,
-  buildUpcomingReturns,
   filterEventsByDisplayStatus,
   toCalendarEvent,
 } from '@/features/calendar/lib/calendar-events';
@@ -39,12 +37,7 @@ import {
   getVehicleRepository,
   type VehicleRepository,
 } from '@/features/vehicles/repository';
-import {
-  createAvailabilityService,
-  getAvailabilityService,
-  resolveAvailabilityFromBookings,
-  type AvailabilityService,
-} from '@/features/vehicles/service/availability.service';
+import { resolveAvailabilityFromBookings } from '@/features/vehicles/service/availability.service';
 import { PERMISSIONS, requirePermission } from '@/lib/auth';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { fromPromise } from '@/services';
@@ -54,7 +47,6 @@ import { VEHICLE_AVAILABILITY_STATUSES } from '@/types/enums';
 export interface CalendarServiceDeps {
   readonly bookingRepository?: BookingRepository;
   readonly vehicleRepository?: VehicleRepository;
-  readonly availabilityService?: AvailabilityService;
   readonly client?: TypedSupabaseClient;
   readonly requirePermission?: typeof requirePermission;
   readonly todayIsoDate?: () => string;
@@ -66,12 +58,6 @@ export interface CalendarService {
 
 function vehicleOptionLabel(vehicle: Vehicle): string {
   return `${vehicle.vehicle_name} (${vehicle.vehicle_number})`;
-}
-
-function addDaysIso(iso: string, days: number): string {
-  const base = new Date(`${iso}T00:00:00.000Z`);
-  base.setUTCDate(base.getUTCDate() + days);
-  return base.toISOString().slice(0, 10);
 }
 
 function buildTimeline(params: {
@@ -224,43 +210,50 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
     return getVehicleRepository();
   }
 
-  function getAvailability(): AvailabilityService {
-    if (deps.availabilityService) {
-      return deps.availabilityService;
-    }
-    if (deps.client) {
-      return createAvailabilityService({
-        client: deps.client,
-        requirePermission: requirePerm,
-        todayIsoDate: today,
-      });
-    }
-    return getAvailabilityService();
-  }
-
   return {
     getCalendarData(query) {
       return fromPromise(async () => {
-        await requirePerm(PERMISSIONS.bookingsRead);
-        await requirePerm(PERMISSIONS.vehiclesRead);
+        // Auth state is request-cached; both checks share one profile load.
+        await Promise.all([
+          requirePerm(PERMISSIONS.bookingsRead),
+          requirePerm(PERMISSIONS.vehiclesRead),
+        ]);
 
         const asOfDate = today();
         const bookingRepo = await getBookingsRepo();
         const vehicleRepo = await getVehiclesRepo();
-        const availability = getAvailability();
+        const useGlobalFleetCounts = !query.vehicleId && !query.availability && !query.fuelType;
+        const needsUnfilteredVehicleOptions = Boolean(query.availability || query.fuelType);
 
-        // Keep Availability Engine in the request path (self-heal before read).
-        await availability.syncAllAvailabilityFromBookings();
-
-        const fleetResult = await vehicleRepo.list({
-          page: 1,
-          pageSize: 100,
-          includeInactive: false,
-          fuelType: query.fuelType,
-          availabilityStatus: query.availability,
-          sortBy: 'vehicle_name',
-          sortOrder: 'asc',
-        });
+        // Availability is persisted on booking write paths — no fleet-wide sync here.
+        const [fleetResult, unfilteredFleetResult, availableRes, bookedRes, reservedRes] =
+          await Promise.all([
+            vehicleRepo.list({
+              page: 1,
+              pageSize: 100,
+              includeInactive: false,
+              fuelType: query.fuelType,
+              availabilityStatus: query.availability,
+              sortBy: 'vehicle_name',
+              sortOrder: 'asc',
+            }),
+            needsUnfilteredVehicleOptions
+              ? vehicleRepo.list({
+                  page: 1,
+                  pageSize: 100,
+                  includeInactive: false,
+                  sortBy: 'vehicle_name',
+                  sortOrder: 'asc',
+                })
+              : Promise.resolve(null),
+            useGlobalFleetCounts ? vehicleRepo.count({ available: true }) : Promise.resolve(null),
+            useGlobalFleetCounts
+              ? vehicleRepo.count({ availabilityStatus: VEHICLE_AVAILABILITY_STATUSES.booked })
+              : Promise.resolve(null),
+            useGlobalFleetCounts
+              ? vehicleRepo.count({ availabilityStatus: VEHICLE_AVAILABILITY_STATUSES.reserved })
+              : Promise.resolve(null),
+          ]);
 
         let fleet = [...fleetResult.data];
 
@@ -295,24 +288,6 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
                 limit: 500,
               });
 
-        const futureHorizonEnd = addDaysIso(asOfDate, 60);
-        const agendaHorizonEnd =
-          query.rangeEnd > futureHorizonEnd ? query.rangeEnd : futureHorizonEnd;
-
-        const agendaSource =
-          vehicleIds.length === 0
-            ? []
-            : await bookingRepo.findOverlappingInRange({
-                deliveryDate: asOfDate,
-                returnDate: agendaHorizonEnd,
-                vehicleIds,
-                driverName: query.driver,
-                search: query.search,
-                includeCancelled: false,
-                excludeDraft: true,
-                limit: 300,
-              });
-
         let events = overlapping.map((booking) => toCalendarEvent(booking, asOfDate));
         events = filterEventsByDisplayStatus(events, query.status);
 
@@ -323,15 +298,25 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
           return resolveBookingDisplayStatus(booking, asOfDate) === query.status;
         });
 
-        const useGlobalFleetCounts = !query.vehicleId && !query.availability && !query.fuelType;
-
-        const summary = await buildSummary({
+        const baseSummary = await buildSummary({
           vehicles: fleet,
           bookings: filteredBookings,
           asOfDate,
           vehicleRepo,
-          useGlobalFleetCounts,
+          useGlobalFleetCounts: false,
         });
+
+        const summary: CalendarSummary =
+          useGlobalFleetCounts &&
+          availableRes !== null &&
+          bookedRes !== null &&
+          reservedRes !== null
+            ? {
+                ...baseSummary,
+                availableVehicles: availableRes,
+                bookedVehicles: bookedRes + reservedRes,
+              }
+            : baseSummary;
 
         const timeline = buildTimeline({
           vehicles: fleet,
@@ -341,25 +326,12 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
           asOfDate,
         });
 
-        let vehicles: CalendarVehicleOption[];
-        if (query.availability || query.fuelType) {
-          const allFleet = await vehicleRepo.list({
-            page: 1,
-            pageSize: 100,
-            includeInactive: false,
-            sortBy: 'vehicle_name',
-            sortOrder: 'asc',
-          });
-          vehicles = allFleet.data.map((vehicle) => ({
-            id: vehicle.id,
-            label: vehicleOptionLabel(vehicle),
-          }));
-        } else {
-          vehicles = fleetResult.data.map((vehicle) => ({
-            id: vehicle.id,
-            label: vehicleOptionLabel(vehicle),
-          }));
-        }
+        const vehicles: CalendarVehicleOption[] = (
+          unfilteredFleetResult?.data ?? fleetResult.data
+        ).map((vehicle) => ({
+          id: vehicle.id,
+          label: vehicleOptionLabel(vehicle),
+        }));
 
         return {
           rangeStart: query.rangeStart,
@@ -368,8 +340,6 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
           summary,
           events,
           timeline,
-          upcomingPickups: buildUpcomingPickups(agendaSource, asOfDate),
-          upcomingReturns: buildUpcomingReturns(agendaSource, asOfDate),
           vehicles,
           fleet,
         } satisfies CalendarPageData;

@@ -6,10 +6,7 @@ import { FormField, fieldAriaProps } from '@/components/shared/form-field';
 import { FormSection } from '@/components/shared/form-section';
 import { Input } from '@/components/ui/input';
 import type { VehicleFormSectionProps } from '@/features/vehicles/components/vehicle-form-section-types';
-import {
-  normalizeRegistrationInput,
-  parseOptionalNumber,
-} from '@/features/vehicles/lib/vehicle-form';
+import { normalizeRegistrationInput } from '@/features/vehicles/lib/vehicle-form';
 
 export function VehicleBasicSection({
   control,
@@ -87,59 +84,7 @@ export function VehicleBasicSection({
           />
         </FormField>
 
-        <FormField id="model" label="Model" required error={errors.model?.message}>
-          <Input
-            autoComplete="off"
-            placeholder="Innova Crysta"
-            disabled={isLoading}
-            {...fieldAriaProps({
-              id: 'model',
-              required: true,
-              error: errors.model?.message,
-            })}
-            {...register('model')}
-          />
-        </FormField>
-
-        <FormField id="variant" label="Variant" error={errors.variant?.message}>
-          <Input
-            autoComplete="off"
-            placeholder="ZX AT"
-            disabled={isLoading}
-            {...fieldAriaProps({
-              id: 'variant',
-              error: errors.variant?.message,
-            })}
-            {...register('variant')}
-          />
-        </FormField>
-
-        <FormField id="model_year" label="Model Year" error={errors.model_year?.message}>
-          <Controller
-            control={control}
-            name="model_year"
-            render={({ field }) => (
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={1980}
-                max={new Date().getFullYear() + 1}
-                step={1}
-                placeholder="2024"
-                disabled={isLoading}
-                value={field.value ?? ''}
-                onBlur={field.onBlur}
-                onChange={(event) => field.onChange(parseOptionalNumber(event.target.value))}
-                {...fieldAriaProps({
-                  id: 'model_year',
-                  error: errors.model_year?.message,
-                })}
-              />
-            )}
-          />
-        </FormField>
-
-        <FormField id="color" label="Color" error={errors.color?.message} className="sm:col-span-2">
+        <FormField id="color" label="Color" error={errors.color?.message}>
           <Input
             autoComplete="off"
             placeholder="Pearl White"

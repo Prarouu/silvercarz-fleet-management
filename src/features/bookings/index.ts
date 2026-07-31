@@ -67,7 +67,6 @@ export {
   calculatePricing,
   calculateRentalDays,
   calculateTotalAmount,
-  calculateTotalKilometers,
   CONFLICT_BLOCKING_STATUSES,
   CONFLICT_IGNORED_STATUSES,
   createBookingService,

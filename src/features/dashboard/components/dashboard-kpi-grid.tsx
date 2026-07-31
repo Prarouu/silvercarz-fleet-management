@@ -9,6 +9,7 @@ import {
   Clock3,
 } from 'lucide-react';
 
+import type { MetricCardTone } from '@/components/shared/metric-card';
 import { KpiCard } from '@/features/dashboard/components/kpi-card';
 import type { DashboardKpis } from '@/features/dashboard/types';
 import { ROUTES } from '@/constants/routes';
@@ -19,53 +20,53 @@ type DashboardKpiGridProps = {
   readonly className?: string;
 };
 
-const CARDS = [
+const CARDS: readonly {
+  readonly key: keyof DashboardKpis;
+  readonly title: string;
+  readonly icon: typeof Car;
+  readonly tone: MetricCardTone;
+  readonly href: string;
+}[] = [
   {
-    key: 'activeBookings' as const,
+    key: 'activeBookings',
     title: 'Active Bookings',
-    description: 'Hires in progress right now',
     icon: CalendarCheck2,
-    iconClassName: 'bg-success/15 text-success',
+    tone: 'ink',
     href: `${ROUTES.bookings}?status=active`,
   },
   {
-    key: 'upcomingBookings' as const,
+    key: 'upcomingBookings',
     title: 'Upcoming Bookings',
-    description: 'Confirmed future deliveries',
     icon: Clock3,
-    iconClassName: 'bg-info/15 text-info',
+    tone: 'gold',
     href: `${ROUTES.bookings}?status=upcoming`,
   },
   {
-    key: 'availableVehicles' as const,
+    key: 'availableVehicles',
     title: 'Available Vehicles',
-    description: 'Ready for new hires',
     icon: CircleCheck,
-    iconClassName: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    tone: 'mint',
     href: `${ROUTES.vehicles}?availability=available`,
   },
   {
-    key: 'todaysPickups' as const,
+    key: 'todaysPickups',
     title: "Today's Pickups",
-    description: 'Deliveries scheduled for today',
     icon: CalendarArrowUp,
-    iconClassName: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+    tone: 'lavender',
     href: ROUTES.calendar,
   },
   {
-    key: 'todaysReturns' as const,
+    key: 'todaysReturns',
     title: "Today's Returns",
-    description: 'Vehicles due back today',
     icon: CalendarArrowDown,
-    iconClassName: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
+    tone: 'ink',
     href: ROUTES.calendar,
   },
   {
-    key: 'totalVehicles' as const,
+    key: 'totalVehicles',
     title: 'Total Vehicles',
-    description: 'Entire fleet roster',
     icon: Car,
-    iconClassName: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    tone: 'gold',
     href: ROUTES.vehicles,
   },
 ] as const;
@@ -73,7 +74,7 @@ const CARDS = [
 export function DashboardKpiGrid({ kpis, className }: DashboardKpiGridProps) {
   return (
     <section
-      className={cn('grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-6', className)}
+      className={cn('grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-6', className)}
       aria-label="Fleet management KPIs"
     >
       {CARDS.map((card, index) => (
@@ -81,9 +82,8 @@ export function DashboardKpiGrid({ kpis, className }: DashboardKpiGridProps) {
           key={card.key}
           title={card.title}
           value={kpis[card.key]}
-          description={card.description}
           icon={card.icon}
-          iconClassName={card.iconClassName}
+          tone={card.tone}
           href={card.href}
           index={index}
         />

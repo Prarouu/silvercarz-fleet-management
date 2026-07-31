@@ -22,8 +22,6 @@ function toVehicleOption(vehicle: {
   availability_status: VehicleSelectOption['availability_status'];
   is_active: boolean;
   default_daily_rate?: number | null;
-  extra_kilometer_rate?: number | null;
-  security_deposit?: number | null;
 }): VehicleSelectOption {
   const option: VehicleSelectOption = {
     id: vehicle.id,
@@ -33,8 +31,6 @@ function toVehicleOption(vehicle: {
     availability_status: vehicle.availability_status,
     is_active: vehicle.is_active,
     default_daily_rate: vehicle.default_daily_rate,
-    extra_kilometer_rate: vehicle.extra_kilometer_rate,
-    security_deposit: vehicle.security_deposit,
   };
 
   return {

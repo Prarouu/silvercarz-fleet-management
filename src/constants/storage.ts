@@ -1,12 +1,16 @@
 /**
- * Browser storage keys used across the application.
+ * Browser storage / cookie keys used across the application.
  *
- * Keep every localStorage / sessionStorage key here so keys stay unique
- * and easy to rotate.
+ * Keep every localStorage / sessionStorage / cookie key here so keys stay
+ * unique and easy to rotate.
  */
 export const STORAGE_KEYS = {
   theme: 'silvercarz-theme',
-  sidebarState: 'silvercarz-sidebar',
+  /** Cookie written by SidebarProvider — read on SSR to avoid width CLS. */
+  sidebarState: 'sidebar_state',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
+
+/** Sidebar open-state cookie lifetime (matches SidebarProvider). */
+export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

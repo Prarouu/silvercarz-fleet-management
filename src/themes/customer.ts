@@ -49,6 +49,14 @@ const customerDark: SemanticColorTokens = {
   chart3: '#CFCFCF',
   chart4: '#60A5FA',
   chart5: '#FFFFFF',
+  toneGold: '#F5D5A8',
+  toneGoldForeground: '#1C1917',
+  toneMint: '#B8E0C8',
+  toneMintForeground: '#0F1F17',
+  toneLavender: '#D5CEF0',
+  toneLavenderForeground: '#1A1625',
+  toneInk: '#0A0A0A',
+  toneInkForeground: '#FFFFFF',
 };
 
 export const customerTheme: PortalThemeDefinition = {

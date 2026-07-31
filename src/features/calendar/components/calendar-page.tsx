@@ -7,12 +7,7 @@ import { PageContainer } from '@/components/shared/page-container';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants/routes';
-import {
-  UpcomingPickups,
-  UpcomingReturns,
-} from '@/features/calendar/components/calendar-agenda-sections';
 import { CalendarFilters } from '@/features/calendar/components/calendar-filters';
-import { CalendarGrid } from '@/features/calendar/components/calendar-grid';
 import { CalendarSummaryCards } from '@/features/calendar/components/calendar-summary-cards';
 import { CalendarToolbar } from '@/features/calendar/components/calendar-toolbar';
 import { FleetTimeline } from '@/features/calendar/components/fleet-timeline';
@@ -79,28 +74,7 @@ export function CalendarPage({ state, data, errorMessage }: CalendarPageProps) {
       ) : null}
 
       {data && !errorMessage ? (
-        <>
-          {!showEmpty || data.timeline.some((row) => row.blocks.length > 0) ? (
-            <CalendarGrid
-              view={state.view}
-              rangeStart={data.rangeStart}
-              rangeEnd={data.rangeEnd}
-              events={data.events}
-              asOfDate={data.asOfDate}
-            />
-          ) : null}
-
-          <FleetTimeline
-            rows={data.timeline}
-            rangeStart={data.rangeStart}
-            rangeEnd={data.rangeEnd}
-          />
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            <UpcomingPickups items={data.upcomingPickups} />
-            <UpcomingReturns items={data.upcomingReturns} />
-          </div>
-        </>
+        <FleetTimeline rows={data.timeline} rangeStart={data.rangeStart} rangeEnd={data.rangeEnd} />
       ) : null}
     </PageContainer>
   );

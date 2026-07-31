@@ -4,8 +4,26 @@ Phase 4.6 introduces a token-driven design system so Admin, Vendor, and Customer
 portals can share one component library while keeping independent visual
 identities.
 
-This is **not** a redesign of product flows. Layouts and business modules stay
-as they are; only shared UI infrastructure and theme tokens change.
+## Visual language (Admin)
+
+Silver Carz Admin keeps the original brand palette (`#F4B400` primary on light
+`#FAFAFA` / dark `#0F1115`) and applies a soft-squircle metric language:
+
+| Pattern        | Implementation                                                 |
+| -------------- | -------------------------------------------------------------- |
+| Soft squircles | Cards / panels use `rounded-3xl`; controls use `rounded-xl`    |
+| Metric tones   | `tone-gold`, `tone-mint`, `tone-lavender`, `tone-ink` surfaces |
+| Icon wells     | `IconWell` — small `rounded-lg` squares, contrasting fill      |
+| Metric labels  | `.text-metric` — uppercase, tracked                            |
+| Metric values  | `.text-metric-value` — large, bold, tabular                    |
+| Status pills   | `Badge` with `rounded-full` outline / soft fills               |
+
+Shared composites:
+
+- `MetricCard` — icon well + optional pill + label + value
+- `IconWell` — reusable squared icon container
+
+Prefer these over one-off KPI layouts in features.
 
 ## Goals
 
@@ -29,6 +47,9 @@ src/
 │   └── portal.ts          # Active portal (`theme: 'admin'`)
 ├── providers/
 │   └── theme-provider.tsx # Portal + color-mode provider
+├── components/shared/
+│   ├── metric-card.tsx    # Soft-squircle metric surfaces
+│   └── icon-well.tsx      # Squared icon container
 └── app/
     └── globals.css        # CSS variable themes + Tailwind bridge
 ```
@@ -39,26 +60,27 @@ src/
 
 Reusable UI consumes **semantic** names only:
 
-| Token                                  | Role                     |
-| -------------------------------------- | ------------------------ |
-| `background`                           | Page canvas              |
-| `surface` / `card`                     | Panels, cards            |
-| `surfaceSecondary` / `muted`           | Subtle fills             |
-| `foreground` / `mutedForeground`       | Primary / secondary text |
-| `primary` / `primaryForeground`        | Brand actions            |
-| `secondary`, `accent`                  | Supporting fills         |
-| `success`, `warning`, `danger`, `info` | Status                   |
-| `border`, `input`, `ring`              | Edges + focus            |
-| `overlay`                              | Modal scrims             |
-| `sidebar*`                             | Shell navigation         |
-| `tableHeader`, `tableBorder`           | Data tables              |
+| Token                                                | Role                     |
+| ---------------------------------------------------- | ------------------------ |
+| `background`                                         | Page canvas              |
+| `surface` / `card`                                   | Panels, cards            |
+| `surfaceSecondary` / `muted`                         | Subtle fills             |
+| `foreground` / `mutedForeground`                     | Primary / secondary text |
+| `primary` / `primaryForeground`                      | Brand actions            |
+| `secondary`, `accent`                                | Supporting fills         |
+| `success`, `warning`, `danger`, `info`               | Status                   |
+| `toneGold` / `toneMint` / `toneLavender` / `toneInk` | Metric accent surfaces   |
+| `border`, `input`, `ring`                            | Edges + focus            |
+| `overlay`                                            | Modal scrims             |
+| `sidebar*`                                           | Shell navigation         |
+| `tableHeader`, `tableBorder`                         | Data tables              |
 
 In components, prefer Tailwind utilities mapped to those tokens:
 
 ```tsx
 <div className="bg-background text-foreground border-border" />
 <button className="bg-primary text-primary-foreground" />
-<div className="bg-table-header border-table-border" />
+<div className="bg-tone-mint text-tone-mint-foreground" />
 ```
 
 Never use raw hex / `bg-black` / `text-white` inside `@/components/ui` or
@@ -69,9 +91,9 @@ Never use raw hex / `bg-black` / `text-white` inside `@/components/ui` or
 Defined once in `src/themes/tokens.ts`:
 
 - **Spacing** — `spacing`
-- **Radius** — `radius` (`sm` … `xl`, `base`)
+- **Radius** — `radius` (`sm` … `2xl`, `base` = `1rem` for squircles)
 - **Shadows** — `shadows.card|dropdown|dialog|popover` → `shadow-card`, etc.
-- **Typography roles** — `typography` + utilities `.text-display|heading|subheading|body|caption|label|helper`
+- **Typography roles** — `typography` + utilities `.text-display|heading|subheading|body|caption|label|helper|metric|metric-value`
 - **Icon sizes** — `iconSize` / `iconSizeClass` (`xs` … `xl`)
 - **Motion**, **component heights**, **border widths**, **focus ring**, **opacity**
 
@@ -155,13 +177,15 @@ Future portals should:
 1. **Tokens only** — colors, radii, shadows, overlays via semantic utilities.
 2. **No portal branches in UI** — `if (portal === 'customer')` belongs in app
    composition, not in `Button`.
-3. **Typography roles** — prefer `.text-heading`, `.text-body`, `.text-helper`
+3. **Typography roles** — prefer `.text-heading`, `.text-body`, `.text-metric`
    over ad-hoc sizes on shared surfaces.
-4. **Icons** — use `iconSizeClass.md` (`size-4`) etc. from `@/themes`.
+4. **Icons** — use `IconWell` + `iconSizeClass` from `@/themes`.
 5. **Status** — use `Badge` / `Alert` variants: `success`, `warning`, `info`,
    `destructive`.
 6. **Elevation** — `shadow-card`, `shadow-dropdown`, `shadow-dialog`,
-   `shadow-popover`.
+   `shadow-popover`. Soft and flat by default for metric cards.
+7. **Metric surfaces** — use `MetricCard` with a `tone` (`ink` / `gold` / `mint` /
+   `lavender`) instead of inventing per-feature KPI layouts.
 
 ## Accessibility
 
@@ -169,6 +193,7 @@ Future portals should:
 - Focus rings use `--ring` (portal primary / accent)
 - Selection styles use primary tokens
 - Overlays use `--overlay` so scrims stay theme-aware
+- Pastel metric cards use dark charcoal foregrounds for contrast
 
 ## Performance
 

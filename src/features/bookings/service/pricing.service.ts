@@ -1,15 +1,14 @@
 /**
  * Centralized Pricing Engine — single source of truth for booking money math.
  *
- * Every monetary value related to bookings (duration charges, kilometer charges,
- * grand total, remaining balance) must flow through this module.
+ * Every monetary value related to bookings (duration charges, grand total,
+ * remaining balance) must flow through this module.
  *
  * Pure functions (no `server-only`) so the booking form and detail UI can call
  * the engine without duplicating formulas. Persistence still happens in
  * BookingService — this layer never writes to the database.
  *
  * Extension points (intentionally stubbed at zero / passthrough today):
- * - Free / included kilometers → `includedKilometers`
  * - Discounts → `discountAmount`
  * - GST / tax → `gstRate` / `gstAmount`
  */
@@ -21,27 +20,10 @@ import { VALIDATION_MESSAGES } from '@/validations/shared';
 export type PricingInput = {
   /** Daily rental rate (maps to `bookings.daily_charge`). */
   readonly dailyRate: number;
-  /** Extra / chargeable kilometer rate (maps to `bookings.kilometer_rate`). */
-  readonly extraKilometerRate?: number | null;
   readonly deliveryDate: string;
   readonly returnDate: string;
-  readonly startOdometer?: number | null;
-  readonly endOdometer?: number | null;
-  /**
-   * Amount already paid toward the hire (maps to `bookings.booking_amount`).
-   * Does not include security deposit.
-   */
+  /** Amount already paid toward the hire (maps to `bookings.booking_amount`). */
   readonly amountPaid?: number | null;
-  /**
-   * Security / caution deposit (maps to `bookings.caution_money`).
-   * Tracked separately — never subtracted from remaining balance.
-   */
-  readonly securityDeposit?: number | null;
-  /**
-   * Future: free kilometers included in the daily rate.
-   * When set, only kilometers above this threshold are chargeable.
-   */
-  readonly includedKilometers?: number | null;
   /** Future: absolute discount applied before tax. */
   readonly discountAmount?: number | null;
   /** Future: GST rate as a fraction (e.g. `0.18` for 18%). */
@@ -50,26 +32,14 @@ export type PricingInput = {
 
 /**
  * Complete pricing summary returned by the engine.
- * Future fields (included KM, discount, GST) are present so callers stay stable.
+ * Future fields (discount, GST) are present so callers stay stable.
  */
 export type PricingSummary = {
   readonly rentalDays: number;
   readonly dailyRate: number;
   /** Daily rate × rental days. */
   readonly rentalCharge: number;
-  readonly totalKilometers: number | null;
-  /** Future free-KM allowance (null when not configured). */
-  readonly includedKilometers: number | null;
-  /**
-   * Kilometers beyond the free allowance.
-   * Today equals `totalKilometers` (no free KM yet).
-   */
-  readonly extraKilometers: number | null;
-  /** Kilometers that incur the kilometer rate (alias of extra for now). */
-  readonly chargeableKilometers: number | null;
-  readonly kilometerRate: number;
-  readonly kilometerCharge: number;
-  /** Rental + kilometer charges before discount / tax. */
+  /** Rental charge before discount / tax. */
   readonly subtotal: number;
   /** Future discount (0 today). */
   readonly discountAmount: number;
@@ -82,22 +52,16 @@ export type PricingSummary = {
   readonly grandTotal: number;
   /** Amount paid toward the hire (`booking_amount`). */
   readonly amountPaid: number;
-  /** Security deposit (`caution_money`) — separate from balance. */
-  readonly securityDeposit: number;
-  /** Grand total − amount paid. Never subtracts security deposit. */
+  /** Grand total − amount paid. */
   readonly remainingBalance: number;
 };
 
 /** Minimal booking-shaped source for detail / service rematerialization. */
 export type PricingBookingSource = {
   readonly daily_charge: number;
-  readonly kilometer_rate?: number | null;
   readonly delivery_date: string;
   readonly return_date: string;
-  readonly start_odometer?: number | null;
-  readonly end_odometer?: number | null;
   readonly booking_amount?: number | null;
-  readonly caution_money?: number | null;
 };
 
 export type PricingService = {
@@ -107,10 +71,6 @@ export type PricingService = {
   ): PricingSummary;
   fromBooking(booking: PricingBookingSource): PricingSummary;
   calculateRentalDays(deliveryDate: string, returnDate: string): number;
-  calculateTotalKilometers(
-    startOdometer: number | null | undefined,
-    endOdometer: number | null | undefined,
-  ): number | null;
   roundMoney(value: number): number;
 };
 
@@ -148,55 +108,6 @@ export function calculateRentalDays(deliveryDate: string, returnDate: string): n
 /** @deprecated Prefer `calculateRentalDays`. */
 export const calculateDurationDays = calculateRentalDays;
 
-/**
- * Total kilometers from odometer pair.
- * Returns `null` when either reading is missing. Never returns a negative.
- */
-export function calculateTotalKilometers(
-  startOdometer: number | null | undefined,
-  endOdometer: number | null | undefined,
-): number | null {
-  if (startOdometer == null || endOdometer == null) {
-    return null;
-  }
-
-  if (endOdometer < startOdometer) {
-    return null;
-  }
-
-  return roundMoney(endOdometer - startOdometer);
-}
-
-/**
- * Chargeable kilometers after applying an optional free-KM allowance.
- * Today (no free KM): chargeable === total.
- */
-export function calculateChargeableKilometers(
-  totalKilometers: number | null,
-  includedKilometers: number | null | undefined = null,
-): {
-  readonly includedKilometers: number | null;
-  readonly extraKilometers: number | null;
-  readonly chargeableKilometers: number | null;
-} {
-  if (totalKilometers == null) {
-    return {
-      includedKilometers: includedKilometers ?? null,
-      extraKilometers: null,
-      chargeableKilometers: null,
-    };
-  }
-
-  const included = includedKilometers != null && includedKilometers > 0 ? includedKilometers : 0;
-  const extra = Math.max(0, totalKilometers - included);
-
-  return {
-    includedKilometers: includedKilometers ?? null,
-    extraKilometers: extra,
-    chargeableKilometers: extra,
-  };
-}
-
 function assertNonNegative(value: number, message: string): void {
   if (!Number.isFinite(value) || value < 0) {
     throw createBookingValidationError(message);
@@ -207,36 +118,8 @@ function assertNonNegative(value: number, message: string): void {
 export function assertPricingInput(input: PricingInput): void {
   assertNonNegative(input.dailyRate, 'Daily rate must be zero or greater.');
 
-  if (input.extraKilometerRate != null) {
-    assertNonNegative(input.extraKilometerRate, 'Kilometer rate must be zero or greater.');
-  }
-
-  if (input.startOdometer != null) {
-    assertNonNegative(input.startOdometer, VALIDATION_MESSAGES.numberNonNegative);
-  }
-
-  if (input.endOdometer != null) {
-    assertNonNegative(input.endOdometer, VALIDATION_MESSAGES.numberNonNegative);
-  }
-
-  if (
-    input.startOdometer != null &&
-    input.endOdometer != null &&
-    input.endOdometer < input.startOdometer
-  ) {
-    throw createBookingValidationError(VALIDATION_MESSAGES.odometerOrder);
-  }
-
   if (input.amountPaid != null) {
     assertNonNegative(input.amountPaid, 'Booking amount must be zero or greater.');
-  }
-
-  if (input.securityDeposit != null) {
-    assertNonNegative(input.securityDeposit, 'Security deposit must be zero or greater.');
-  }
-
-  if (input.includedKilometers != null) {
-    assertNonNegative(input.includedKilometers, 'Included kilometers must be zero or greater.');
   }
 
   if (input.discountAmount != null) {
@@ -268,21 +151,9 @@ function buildPricingSummary(
   }
 
   const dailyRate = Number.isFinite(input.dailyRate) && input.dailyRate >= 0 ? input.dailyRate : 0;
-  const kilometerRate =
-    input.extraKilometerRate != null &&
-    Number.isFinite(input.extraKilometerRate) &&
-    input.extraKilometerRate >= 0
-      ? input.extraKilometerRate
-      : 0;
   const amountPaid =
     input.amountPaid != null && Number.isFinite(input.amountPaid) && input.amountPaid >= 0
       ? input.amountPaid
-      : 0;
-  const securityDeposit =
-    input.securityDeposit != null &&
-    Number.isFinite(input.securityDeposit) &&
-    input.securityDeposit >= 0
-      ? input.securityDeposit
       : 0;
   const discountAmount =
     input.discountAmount != null &&
@@ -296,12 +167,8 @@ function buildPricingSummary(
       : 0;
 
   const rentalDays = calculateRentalDays(input.deliveryDate, input.returnDate);
-  const totalKilometers = calculateTotalKilometers(input.startOdometer, input.endOdometer);
-  const kmBreakdown = calculateChargeableKilometers(totalKilometers, input.includedKilometers);
-
   const rentalCharge = roundMoney(dailyRate * Math.max(rentalDays, 0));
-  const kilometerCharge = roundMoney(kilometerRate * (kmBreakdown.chargeableKilometers ?? 0));
-  const subtotal = roundMoney(rentalCharge + kilometerCharge);
+  const subtotal = rentalCharge;
   const taxableAmount = roundMoney(Math.max(0, subtotal - discountAmount));
   const gstAmount = roundMoney(taxableAmount * gstRate);
   const grandTotal = roundMoney(taxableAmount + gstAmount);
@@ -311,12 +178,6 @@ function buildPricingSummary(
     rentalDays,
     dailyRate: roundMoney(dailyRate),
     rentalCharge,
-    totalKilometers,
-    includedKilometers: kmBreakdown.includedKilometers,
-    extraKilometers: kmBreakdown.extraKilometers,
-    chargeableKilometers: kmBreakdown.chargeableKilometers,
-    kilometerRate: roundMoney(kilometerRate),
-    kilometerCharge,
     subtotal,
     discountAmount: roundMoney(discountAmount),
     taxableAmount,
@@ -324,7 +185,6 @@ function buildPricingSummary(
     gstAmount,
     grandTotal,
     amountPaid: roundMoney(amountPaid),
-    securityDeposit: roundMoney(securityDeposit),
     remainingBalance,
   };
 }
@@ -353,14 +213,9 @@ export function previewPricing(
   return buildPricingSummary(
     {
       dailyRate: input.dailyRate ?? 0,
-      extraKilometerRate: input.extraKilometerRate,
       deliveryDate,
       returnDate,
-      startOdometer: input.startOdometer,
-      endOdometer: input.endOdometer,
       amountPaid: input.amountPaid,
-      securityDeposit: input.securityDeposit,
-      includedKilometers: input.includedKilometers,
       discountAmount: input.discountAmount,
       gstRate: input.gstRate,
     },
@@ -372,13 +227,9 @@ export function previewPricing(
 export function pricingFromBooking(booking: PricingBookingSource): PricingSummary {
   return calculatePricing({
     dailyRate: booking.daily_charge,
-    extraKilometerRate: booking.kilometer_rate,
     deliveryDate: booking.delivery_date,
     returnDate: booking.return_date,
-    startOdometer: booking.start_odometer,
-    endOdometer: booking.end_odometer,
     amountPaid: booking.booking_amount,
-    securityDeposit: booking.caution_money,
   });
 }
 
@@ -392,46 +243,34 @@ export function pricingFromBooking(booking: PricingBookingSource): PricingSummar
  * | Engine field        | DB column           | Why persist                          |
  * | ------------------- | ------------------- | ------------------------------------ |
  * | dailyRate           | daily_charge        | Rate at time of hire (input)         |
- * | kilometerRate       | kilometer_rate      | Rate at time of hire (input)         |
  * | rentalDays          | duration            | Snapshot for reporting / list views  |
- * | totalKilometers     | total_kilometers    | Snapshot when odometers recorded     |
  * | amountPaid          | booking_amount      | Advance / amount collected           |
- * | securityDeposit     | caution_money       | Deposit (separate from balance)      |
  * | grandTotal          | total_amount        | Invoice total snapshot               |
  *
- * Derived display-only (recalculated): rentalCharge, kilometerCharge,
- * subtotal, remainingBalance, GST / discount placeholders.
+ * Derived display-only (recalculated): rentalCharge, subtotal, remainingBalance,
+ * GST / discount placeholders.
  */
-/** Map engine output onto persisted booking money / distance columns. */
 export function pricingToPersistedFields(summary: PricingSummary): {
   readonly duration: number;
-  readonly total_kilometers: number | null;
   readonly booking_amount: number;
-  readonly caution_money: number;
   readonly total_amount: number;
 } {
   return {
     duration: Math.max(1, summary.rentalDays),
-    total_kilometers: summary.totalKilometers,
     booking_amount: summary.amountPaid,
-    caution_money: summary.securityDeposit,
     total_amount: summary.grandTotal,
   };
 }
 
 /**
- * Legacy helper — hire charges only (rental + km), ignoring amount paid.
+ * Legacy helper — hire charges only (rental), ignoring amount paid.
  * Prefer `calculatePricing` / `previewPricing`.
  */
 export function calculateBookingAmount(params: {
   readonly dailyCharge: number;
   readonly durationDays: number;
-  readonly kilometerRate?: number | null;
-  readonly totalKilometers?: number | null;
 }): number {
-  const base = params.dailyCharge * params.durationDays;
-  const kmCharge = (params.kilometerRate ?? 0) * (params.totalKilometers ?? 0);
-  return roundMoney(base + kmCharge);
+  return roundMoney(params.dailyCharge * params.durationDays);
 }
 
 /** @deprecated Prefer `PricingSummary.grandTotal`. */
@@ -445,7 +284,6 @@ export function createPricingService(): PricingService {
     preview: previewPricing,
     fromBooking: pricingFromBooking,
     calculateRentalDays,
-    calculateTotalKilometers,
     roundMoney,
   };
 }

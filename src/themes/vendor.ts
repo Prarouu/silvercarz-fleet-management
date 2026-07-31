@@ -49,6 +49,14 @@ const vendorLight: SemanticColorTokens = {
   chart3: '#059669',
   chart4: '#D97706',
   chart5: '#111827',
+  toneGold: '#F5D5A8',
+  toneGoldForeground: '#1C1917',
+  toneMint: '#B8E0C8',
+  toneMintForeground: '#0F1F17',
+  toneLavender: '#C7D7F5',
+  toneLavenderForeground: '#172554',
+  toneInk: '#1C1C1E',
+  toneInkForeground: '#F8FAFC',
 };
 
 const vendorDark: SemanticColorTokens = {
@@ -95,6 +103,15 @@ const vendorDark: SemanticColorTokens = {
   chart3: '#34D399',
   chart4: '#FBBF24',
   chart5: '#F8FAFC',
+  // Elevated tinted washes — readable against dark canvas
+  toneGold: '#4A3C1C',
+  toneGoldForeground: '#FDE68A',
+  toneMint: '#1C4338',
+  toneMintForeground: '#A7F3D0',
+  toneLavender: '#1E3A5F',
+  toneLavenderForeground: '#BFDBFE',
+  toneInk: '#1E2A3C',
+  toneInkForeground: '#F8FAFC',
 };
 
 export const vendorTheme: PortalThemeDefinition = {

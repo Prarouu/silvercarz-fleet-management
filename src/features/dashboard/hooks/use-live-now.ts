@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Client-only live clock. Returns `null` until after mount so SSR and the
- * first client render stay identical (avoids hydration mismatches).
+ * Live clock for dashboard chrome.
+ * Starts with a real Date on first paint so greetings/clocks reserve their
+ * final size immediately (avoids post-hydration CLS from "Welcome" → "Good Afternoon").
+ * Greeting/clock nodes that may differ across the server/client timezone boundary
+ * should use `suppressHydrationWarning`.
  */
-export function useLiveNow(intervalMs = 1000): Date | null {
-  const [now, setNow] = useState<Date | null>(null);
+export function useLiveNow(intervalMs = 1000): Date {
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     const tick = () => setNow(new Date());

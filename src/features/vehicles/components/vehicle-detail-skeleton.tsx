@@ -66,17 +66,18 @@ export function VehicleDetailSkeleton() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="space-y-3 rounded-xl p-4 ring-1 ring-foreground/10">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-7 w-20" />
-              </div>
-              <Skeleton className="size-9 rounded-lg" />
+          <div
+            key={index}
+            className="flex flex-col gap-5 rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6"
+          >
+            <Skeleton className="size-9 rounded-lg" />
+            <div className="mt-auto space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="hidden h-3 w-32 sm:block" />
             </div>
-            <Skeleton className="h-3 w-32" />
           </div>
         ))}
       </div>

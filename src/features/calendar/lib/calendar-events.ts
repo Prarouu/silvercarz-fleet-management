@@ -8,12 +8,11 @@
 
 import {
   getBookingStatusPresentation,
-  resolveBookingDisplayStatus,
   type BookingDisplayStatus,
   type BookingStatusBadgeVariant,
 } from '@/features/bookings/service/status.service';
 import { pricingFromBooking } from '@/features/bookings/service/pricing.service';
-import type { CalendarAgendaItem, CalendarEvent } from '@/features/calendar/types';
+import type { CalendarEvent } from '@/features/calendar/types';
 import type { BookingWithVehicle } from '@/types';
 
 export function toCalendarEvent(booking: BookingWithVehicle, asOfDate: string): CalendarEvent {
@@ -47,71 +46,6 @@ export function filterEventsByDisplayStatus(
     return [...events];
   }
   return events.filter((event) => event.displayStatus === status);
-}
-
-export function buildUpcomingPickups(
-  bookings: readonly BookingWithVehicle[],
-  asOfDate: string,
-  limit = 12,
-): CalendarAgendaItem[] {
-  return bookings
-    .filter((booking) => {
-      const status = resolveBookingDisplayStatus(booking, asOfDate);
-      return status !== 'cancelled' && status !== 'draft' && booking.delivery_date >= asOfDate;
-    })
-    .sort((a, b) => a.delivery_date.localeCompare(b.delivery_date))
-    .slice(0, limit)
-    .map((booking) => {
-      const presentation = getBookingStatusPresentation(booking, asOfDate);
-      return {
-        bookingId: booking.id,
-        invoiceNumber: booking.invoice_number,
-        customerName: booking.customer_name,
-        vehicleName: booking.vehicle.vehicle_name,
-        registrationNumber: booking.vehicle.vehicle_number,
-        vehicleImagePath: booking.vehicle.image_path,
-        date: booking.delivery_date,
-        deliveryDate: booking.delivery_date,
-        returnDate: booking.return_date,
-        displayStatus: presentation.status,
-        statusLabel: presentation.label,
-        badgeVariant: presentation.badgeVariant,
-        remainingBalance: null,
-      };
-    });
-}
-
-export function buildUpcomingReturns(
-  bookings: readonly BookingWithVehicle[],
-  asOfDate: string,
-  limit = 12,
-): CalendarAgendaItem[] {
-  return bookings
-    .filter((booking) => {
-      const status = resolveBookingDisplayStatus(booking, asOfDate);
-      return status !== 'cancelled' && status !== 'draft' && booking.return_date >= asOfDate;
-    })
-    .sort((a, b) => a.return_date.localeCompare(b.return_date))
-    .slice(0, limit)
-    .map((booking) => {
-      const presentation = getBookingStatusPresentation(booking, asOfDate);
-      const pricing = pricingFromBooking(booking);
-      return {
-        bookingId: booking.id,
-        invoiceNumber: booking.invoice_number,
-        customerName: booking.customer_name,
-        vehicleName: booking.vehicle.vehicle_name,
-        registrationNumber: booking.vehicle.vehicle_number,
-        vehicleImagePath: booking.vehicle.image_path,
-        date: booking.return_date,
-        deliveryDate: booking.delivery_date,
-        returnDate: booking.return_date,
-        displayStatus: presentation.status,
-        statusLabel: presentation.label,
-        badgeVariant: presentation.badgeVariant,
-        remainingBalance: pricing.remainingBalance,
-      };
-    });
 }
 
 /**

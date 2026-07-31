@@ -12,6 +12,7 @@ import {
   FUEL_TYPE_VALUES,
   PAYMENT_METHOD_VALUES,
   RENTAL_MODE_VALUES,
+  TRANSMISSION_TYPE_VALUES,
   VEHICLE_AVAILABILITY_STATUS_VALUES,
 } from '@/types/enums';
 
@@ -28,11 +29,11 @@ export const VALIDATION_MESSAGES = {
   moneyPositive: 'Amount must be greater than zero.',
   numberNonNegative: 'Value must be zero or greater.',
   numberPositive: 'Value must be greater than zero.',
-  odometerOrder: 'End odometer must be greater than or equal to start odometer.',
   returnAfterDelivery: 'Return date must be on or after the delivery date.',
   invoiceNumber: 'Enter a valid invoice number.',
   vehicleNumber: 'Enter a valid vehicle registration number.',
   fuelType: 'Select a valid fuel type.',
+  transmissionType: 'Select a valid transmission type.',
   vehicleAvailability: 'Select a valid availability status.',
   rentalMode: 'Select a valid rental mode.',
   paymentMethod: 'Select a valid payment method.',
@@ -99,8 +100,6 @@ export const positiveNumberSchema = z
   .finite()
   .positive(VALIDATION_MESSAGES.numberPositive);
 
-export const odometerSchema = nonNegativeNumberSchema;
-
 export const invoiceNumberSchema = requiredString(VALIDATION_MESSAGES.invoiceNumber)
   .max(64, 'Invoice number must be at most 64 characters.')
   .transform((value) => value.replace(/\s+/g, '').toUpperCase());
@@ -113,6 +112,10 @@ export const vehicleNumberSchema = requiredString(VALIDATION_MESSAGES.vehicleNum
 
 export const fuelTypeSchema = z.enum(FUEL_TYPE_VALUES, {
   error: VALIDATION_MESSAGES.fuelType,
+});
+
+export const transmissionTypeSchema = z.enum(TRANSMISSION_TYPE_VALUES, {
+  error: VALIDATION_MESSAGES.transmissionType,
 });
 
 export const vehicleAvailabilityStatusSchema = z.enum(VEHICLE_AVAILABILITY_STATUS_VALUES, {
@@ -160,28 +163,6 @@ export function refineDateRange(
     ctx.addIssue({
       code: 'custom',
       message: VALIDATION_MESSAGES.returnAfterDelivery,
-      path,
-    });
-  }
-}
-
-/**
- * Ensures `endOdometer >= startOdometer` when both are present.
- */
-export function refineOdometerRange(
-  startOdometer: number | null | undefined,
-  endOdometer: number | null | undefined,
-  ctx: z.RefinementCtx,
-  path: Array<string | number> = ['end_odometer'],
-): void {
-  if (startOdometer == null || endOdometer == null) {
-    return;
-  }
-
-  if (endOdometer < startOdometer) {
-    ctx.addIssue({
-      code: 'custom',
-      message: VALIDATION_MESSAGES.odometerOrder,
       path,
     });
   }

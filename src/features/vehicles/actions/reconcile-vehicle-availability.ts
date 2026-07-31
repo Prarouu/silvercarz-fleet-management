@@ -1,8 +1,10 @@
 'use server';
 
 /**
- * Reconcile vehicle availability from booking lifecycle.
- * Fixes fleet rows left stale before the Availability Engine.
+ * Manual / ops reconcile of vehicle availability from booking lifecycle.
+ *
+ * Not used on normal page reads — write paths sync a single vehicle after
+ * booking create/update/delete. Prefer this only for one-off repairs.
  */
 
 import { getAvailabilityService } from '@/features/vehicles/service';

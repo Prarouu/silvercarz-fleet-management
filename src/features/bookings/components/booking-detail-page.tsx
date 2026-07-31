@@ -35,15 +35,6 @@ function formatOptionalCurrency(amount: number | null | undefined): string {
   return formatted || '—';
 }
 
-function formatOptionalNumber(value: number | null | undefined, suffix?: string): string {
-  if (value === null || value === undefined) {
-    return '—';
-  }
-
-  const formatted = formatNumber(value);
-  return suffix ? `${formatted} ${suffix}` : formatted;
-}
-
 function formatDuration(days: number | null | undefined): string {
   if (days === null || days === undefined) {
     return '—';
@@ -234,18 +225,6 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <BookingDetailField label="Duration" value={formatDuration(pricing.rentalDays)} />
             <BookingDetailField label="Place To Visit" value={booking.place_to_visit} />
             <BookingDetailField label="Fuel Range" value={booking.fuel_range} />
-            <BookingDetailField
-              label="Start Odometer"
-              value={formatOptionalNumber(booking.start_odometer, 'km')}
-            />
-            <BookingDetailField
-              label="End Odometer"
-              value={formatOptionalNumber(booking.end_odometer, 'km')}
-            />
-            <BookingDetailField
-              label="Total Kilometers"
-              value={formatOptionalNumber(pricing.totalKilometers, 'km')}
-            />
           </dl>
         </BookingDetailSection>
 
@@ -258,39 +237,15 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
               }
             />
             <BookingDetailField
-              label="Kilometer Rate"
-              value={
-                <span className="tabular-nums">
-                  {formatOptionalCurrency(pricing.kilometerRate)}
-                </span>
-              }
-            />
-            <BookingDetailField
               label="Rental Charge"
               value={
                 <span className="tabular-nums">{formatOptionalCurrency(pricing.rentalCharge)}</span>
               }
             />
             <BookingDetailField
-              label="Km Charge"
-              value={
-                <span className="tabular-nums">
-                  {formatOptionalCurrency(pricing.kilometerCharge)}
-                </span>
-              }
-            />
-            <BookingDetailField
               label="Booking Amount (Paid)"
               value={
                 <span className="tabular-nums">{formatOptionalCurrency(pricing.amountPaid)}</span>
-              }
-            />
-            <BookingDetailField
-              label="Caution Money"
-              value={
-                <span className="tabular-nums">
-                  {formatOptionalCurrency(pricing.securityDeposit)}
-                </span>
               }
             />
             <BookingDetailField label="Payment Method" value={paymentMethodLabel} />

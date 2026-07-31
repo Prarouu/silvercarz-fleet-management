@@ -61,6 +61,11 @@ export interface BookingRepository {
    */
   findLifecycleBookingsForVehicle(vehicleId: string): Promise<Booking[]>;
   /**
+   * Lifecycle bookings for many vehicles in one query (Availability Engine batch sync).
+   * When `vehicleIds` is empty, returns an empty array without hitting the database.
+   */
+  findLifecycleBookingsForVehicles(vehicleIds: readonly string[]): Promise<Booking[]>;
+  /**
    * Returns blocking bookings for a vehicle that overlap a date range.
    * Only confirmed / ongoing rows — used by the Conflict Detection Engine.
    * Overlap: delivery_date <= returnDate AND return_date >= deliveryDate.
@@ -73,6 +78,17 @@ export interface BookingRepository {
    */
   findOverlappingInRange(params: BookingFleetOverlapQuery): Promise<BookingWithVehicle[]>;
 }
+
+/** Columns needed for list / calendar / dashboard booking cards. */
+const BOOKING_VEHICLE_EMBED =
+  '*, vehicle:vehicles(id, vehicle_name, vehicle_number, image_path, availability_status, is_active, fuel_type, default_daily_rate)';
+
+/** Columns needed to resolve display lifecycle status. */
+const LIFECYCLE_BOOKING_COLUMNS = 'id, vehicle_id, status, delivery_date, return_date';
+
+/** Columns needed by Conflict Detection Engine overlap results. */
+const CONFLICT_BOOKING_COLUMNS =
+  'id, vehicle_id, status, delivery_date, return_date, invoice_number, customer_name';
 
 function escapeIlike(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -353,7 +369,7 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         vehicleIds = await resolveVehicleIdsByNumber(client, searchTerm);
       }
 
-      let builder = client.from('bookings').select('*, vehicle:vehicles(*)', { count: 'exact' });
+      let builder = client.from('bookings').select(BOOKING_VEHICLE_EMBED, { count: 'exact' });
       builder = applyNonSearchFilters(
         builder as unknown as FilterableBuilder,
         query,
@@ -406,7 +422,7 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
     async findLifecycleBookingsForVehicle(vehicleId) {
       const { data, error } = await client
         .from('bookings')
-        .select('*')
+        .select(LIFECYCLE_BOOKING_COLUMNS)
         .eq('vehicle_id', vehicleId)
         .in('status', [
           BOOKING_STATUSES.confirmed,
@@ -419,14 +435,37 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         throw mapPersistenceError(error);
       }
 
-      return data ?? [];
+      return (data ?? []) as Booking[];
+    },
+
+    async findLifecycleBookingsForVehicles(vehicleIds) {
+      if (vehicleIds.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await client
+        .from('bookings')
+        .select(LIFECYCLE_BOOKING_COLUMNS)
+        .in('vehicle_id', [...vehicleIds])
+        .in('status', [
+          BOOKING_STATUSES.confirmed,
+          BOOKING_STATUSES.ongoing,
+          BOOKING_STATUSES.completed,
+        ])
+        .order('delivery_date', { ascending: true });
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      return (data ?? []) as Booking[];
     },
 
     async findOverlappingForVehicle(params) {
       // Closed-interval overlap + blocking statuses only (indexed partial query).
       let builder = client
         .from('bookings')
-        .select('*')
+        .select(CONFLICT_BOOKING_COLUMNS)
         .eq('vehicle_id', params.vehicleId)
         .in('status', [BOOKING_STATUSES.confirmed, BOOKING_STATUSES.ongoing])
         .lte('delivery_date', params.returnDate)
@@ -443,7 +482,7 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         throw mapPersistenceError(error);
       }
 
-      return data ?? [];
+      return (data ?? []) as Booking[];
     },
 
     async findOverlappingInRange(params) {
@@ -452,7 +491,7 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
 
       let builder = client
         .from('bookings')
-        .select('*, vehicle:vehicles(*)')
+        .select(BOOKING_VEHICLE_EMBED)
         .lte('delivery_date', params.returnDate)
         .gte('return_date', params.deliveryDate)
         .order('delivery_date', { ascending: true })

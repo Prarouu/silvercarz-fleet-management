@@ -53,6 +53,15 @@ export function themeColorsToCssVars(colors: SemanticColorTokens): Record<string
     '--surface-foreground': colors.surfaceForeground,
     '--surface-secondary': colors.surfaceSecondary,
     '--surface-secondary-foreground': colors.surfaceSecondaryForeground,
+    /* Metric / accent tone surfaces (design language) */
+    '--tone-gold': colors.toneGold,
+    '--tone-gold-foreground': colors.toneGoldForeground,
+    '--tone-mint': colors.toneMint,
+    '--tone-mint-foreground': colors.toneMintForeground,
+    '--tone-lavender': colors.toneLavender,
+    '--tone-lavender-foreground': colors.toneLavenderForeground,
+    '--tone-ink': colors.toneInk,
+    '--tone-ink-foreground': colors.toneInkForeground,
   };
 }
 

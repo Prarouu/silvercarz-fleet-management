@@ -12,9 +12,9 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1.5">
-        <h1 className="text-heading text-balance">{title}</h1>
+        <h1 className="text-heading tracking-tight text-balance">{title}</h1>
         {description ? (
           <p className="text-body max-w-2xl leading-relaxed text-pretty text-muted-foreground">
             {description}

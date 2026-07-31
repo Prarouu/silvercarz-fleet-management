@@ -5,7 +5,7 @@
  * this module only shapes UX values.
  */
 
-import type { FuelType, Vehicle, VehicleAvailabilityStatus } from '@/types';
+import type { FuelType, TransmissionType, Vehicle, VehicleAvailabilityStatus } from '@/types';
 import { VEHICLE_AVAILABILITY_STATUSES } from '@/types';
 import {
   createVehicleSchema,
@@ -20,15 +20,10 @@ export type VehicleFormValues = {
   vehicle_name: string;
   vehicle_number: string;
   brand: string;
-  model: string;
-  variant: string;
-  model_year: number | null;
   color: string;
   fuel_type: FuelType | '';
+  transmission_type: TransmissionType | '';
   default_daily_rate: number | null;
-  extra_kilometer_rate: number | null;
-  security_deposit: number | null;
-  current_odometer: number | null;
   availability_status: VehicleAvailabilityStatus;
   /** UI string — mapped to `is_active` boolean for the API/DB. */
   vehicle_status: VehicleStatusValue;
@@ -49,15 +44,10 @@ export function createVehicleFormDefaults(): VehicleFormValues {
     vehicle_name: '',
     vehicle_number: '',
     brand: '',
-    model: '',
-    variant: '',
-    model_year: null,
     color: '',
     fuel_type: '',
+    transmission_type: '',
     default_daily_rate: null,
-    extra_kilometer_rate: null,
-    security_deposit: null,
-    current_odometer: 0,
     availability_status: VEHICLE_AVAILABILITY_STATUSES.available,
     vehicle_status: 'active',
   };
@@ -69,15 +59,10 @@ export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
     vehicle_name: vehicle.vehicle_name,
     vehicle_number: vehicle.vehicle_number,
     brand: vehicle.brand,
-    model: vehicle.model,
-    variant: vehicle.variant ?? '',
-    model_year: vehicle.model_year,
     color: vehicle.color ?? '',
     fuel_type: vehicle.fuel_type,
+    transmission_type: vehicle.transmission_type,
     default_daily_rate: vehicle.default_daily_rate,
-    extra_kilometer_rate: vehicle.extra_kilometer_rate,
-    security_deposit: vehicle.security_deposit,
-    current_odometer: vehicle.current_odometer,
     availability_status: vehicle.availability_status,
     vehicle_status: vehicle.is_active ? 'active' : 'inactive',
   };
@@ -124,15 +109,10 @@ export function toCreateVehicleInput(values: VehicleFormValues): unknown {
     vehicle_name: values.vehicle_name,
     vehicle_number: values.vehicle_number,
     brand: values.brand,
-    model: values.model,
-    variant: values.variant,
-    model_year: values.model_year,
     color: values.color,
     fuel_type: values.fuel_type || undefined,
+    transmission_type: values.transmission_type || undefined,
     default_daily_rate: values.default_daily_rate,
-    extra_kilometer_rate: values.extra_kilometer_rate,
-    security_deposit: values.security_deposit,
-    current_odometer: values.current_odometer,
     availability_status: values.availability_status,
     image_path: null,
     is_active: values.vehicle_status === 'active',
