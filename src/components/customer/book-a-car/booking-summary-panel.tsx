@@ -1,7 +1,10 @@
 import { CheckCircle2, Phone } from 'lucide-react';
+import Link from 'next/link';
 
-import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { Button } from '@/components/ui/button';
+import { customerBookingContinuePath } from '@/constants/routes';
+import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
+import { buildCustomerLoginRedirectPath } from '@/lib/auth/route-guards';
 import { formatCurrency } from '@/lib/format';
 import type { PublicVehicle } from '@/types';
 import { FUEL_TYPE_LABELS, TRANSMISSION_TYPE_LABELS } from '@/types/enums';
@@ -13,9 +16,21 @@ const TRUST_ITEMS = [
   'Easy Cancellation*',
 ] as const;
 
-export function BookingSummaryPanel({ vehicle }: { vehicle: PublicVehicle | null }) {
+export function BookingSummaryPanel({
+  vehicle,
+  isAuthenticated,
+}: {
+  vehicle: PublicVehicle | null;
+  isAuthenticated: boolean;
+}) {
   const rate = vehicle
     ? formatCurrency(Number(vehicle.default_daily_rate), { maximumFractionDigits: 0 })
+    : null;
+
+  const continueHref = vehicle
+    ? isAuthenticated
+      ? customerBookingContinuePath(vehicle.id)
+      : buildCustomerLoginRedirectPath(customerBookingContinuePath(vehicle.id))
     : null;
 
   return (
@@ -32,7 +47,8 @@ export function BookingSummaryPanel({ vehicle }: { vehicle: PublicVehicle | null
             <VehicleThumbnail
               imagePath={vehicle.image_path}
               alt={vehicle.vehicle_name}
-              className="h-16 w-24 rounded-md"
+              fit="contain"
+              className="h-16 w-24 rounded-md bg-surface-secondary"
             />
             <div className="min-w-0">
               <p className="truncate font-bold text-foreground">{vehicle.vehicle_name}</p>
@@ -58,15 +74,30 @@ export function BookingSummaryPanel({ vehicle }: { vehicle: PublicVehicle | null
           </p>
         </div>
 
-        <Button
-          type="button"
-          disabled
-          className="h-11 w-full rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase opacity-80"
-        >
-          Proceed to Details →
-        </Button>
+        {continueHref ? (
+          <Button
+            asChild
+            className="h-11 w-full rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
+          >
+            <Link href={continueHref}>
+              {isAuthenticated ? 'Proceed to Details →' : 'Continue →'}
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            disabled
+            className="h-11 w-full rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase opacity-80"
+          >
+            Proceed to Details →
+          </Button>
+        )}
         <p className="text-center text-xs text-muted-foreground">
-          Sign-in and booking request arrive in a later phase.
+          {vehicle
+            ? isAuthenticated
+              ? 'Continue to booking details. No booking is created yet.'
+              : 'Sign in or create an account to continue with this car.'
+            : 'Select a vehicle to continue.'}
         </p>
 
         <ul className="space-y-2 border-t border-border pt-4">

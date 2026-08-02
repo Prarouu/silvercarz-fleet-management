@@ -17,7 +17,7 @@ import 'server-only';
  *   import type { AuthUser, UserProfile } from '@/lib/auth/types'
  */
 
-export { can, hasRole, isManager, isOwner } from './authorization';
+export { can, hasRole, isCustomer, isManager, isOwner, isStaff } from './authorization';
 
 export {
   AUTH_ERROR_CODES,
@@ -45,26 +45,41 @@ export {
 
 export {
   requireAuth,
+  requireCustomerAuth,
   requirePermission,
   requireProfile,
   requireRole,
+  requireStaffAuth,
   requireUser,
 } from './require-auth';
 
-export { APP_ROLE_LABELS, APP_ROLE_VALUES, APP_ROLES, isAppRole, type AppRole } from './roles';
+export {
+  APP_ROLE_LABELS,
+  APP_ROLE_VALUES,
+  APP_ROLES,
+  isAppRole,
+  isStaffRole,
+  STAFF_ROLES,
+  type AppRole,
+  type StaffRole,
+} from './roles';
 
 export {
   allowsRouteAccess,
   buildCustomerLoginRedirectPath,
   buildLoginRedirectPath,
   getRouteAccess,
+  isAdminAuthRoute,
   isAdminRoute,
   isAuthCallbackRoute,
   isAuthRoute,
   isCustomerAccountRoute,
+  isCustomerAuthRoute,
   isCustomerProtectedRoute,
   isProtectedRoute,
   isPublicRoute,
+  isSafeCustomerRedirectPath,
+  resolveCustomerPostLoginPath,
   resolvePostLoginPath,
   type RouteAccess,
 } from './route-guards';

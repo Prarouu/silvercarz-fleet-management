@@ -1,17 +1,45 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-import { CustomerPlaceholderPage } from '@/components/customer/shared/customer-placeholder';
+import { appConfig } from '@/config';
+import { CustomerAuthPanel } from '@/features/customer-auth/components/customer-auth-panel';
+import { CustomerSignupForm } from '@/features/customer-auth/components/customer-signup-form';
+import { getAuthState, resolveCustomerPostLoginPath } from '@/lib/auth';
 
 export const metadata: Metadata = {
-  title: 'Sign Up',
+  title: `Sign Up | ${appConfig.companyName}`,
+  description: 'Create a Silver Carz customer account to continue booking.',
 };
 
-/** Placeholder — customer signup lands in a later phase. */
-export default function CustomerSignupPage() {
+interface CustomerSignupPageProps {
+  searchParams: Promise<{
+    next?: string | string[];
+  }>;
+}
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+/** Customer signup — functional auth route (not a primary nav page). */
+export default async function CustomerSignupPage({ searchParams }: CustomerSignupPageProps) {
+  const params = await searchParams;
+  const nextPath = firstParam(params.next);
+
+  const { user, profile } = await getAuthState();
+  if (user && profile?.isActive) {
+    redirect(resolveCustomerPostLoginPath(nextPath));
+  }
+
   return (
-    <CustomerPlaceholderPage
-      title="Sign Up"
-      description="Customer registration will be added in a later phase. It will share Supabase Auth with staff accounts while using a distinct customer role and route guards."
-    />
+    <CustomerAuthPanel
+      title="Create account"
+      description="Sign up to continue booking. We’ll keep your selected car ready."
+    >
+      <CustomerSignupForm nextPath={nextPath} />
+    </CustomerAuthPanel>
   );
 }

@@ -22,12 +22,14 @@ export function BookACarView({
   vehicles,
   meta,
   selectedVehicle,
+  isAuthenticated = false,
   errorMessage,
 }: {
   state: CustomerBookACarUrlState;
   vehicles: readonly PublicVehicle[];
   meta: PaginationMeta | null;
   selectedVehicle: PublicVehicle | null;
+  isAuthenticated?: boolean;
   errorMessage?: string | null;
 }) {
   return (
@@ -125,7 +127,7 @@ export function BookACarView({
         </div>
 
         <div className="lg:sticky lg:top-24">
-          <BookingSummaryPanel vehicle={selectedVehicle} />
+          <BookingSummaryPanel vehicle={selectedVehicle} isAuthenticated={isAuthenticated} />
         </div>
       </CustomerContainer>
 

@@ -6,12 +6,15 @@ import { CustomerContainer } from '@/components/customer/shared/customer-contain
 import { Button } from '@/components/ui/button';
 import { appConfig, customerMainNavItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
+import { CustomerAccountMenu } from '@/features/customer-auth/components/customer-account-menu';
+import type { AuthUser } from '@/lib/auth/types';
 
 /**
  * Customer portal header.
- * Four primary pages + Book Now CTA (both Book a Car and Book Now → `/`).
+ * Four primary pages + Book Now CTA. Login / account controls are separate
+ * from primary navigation.
  */
-export function CustomerHeader() {
+export function CustomerHeader({ user }: { user: AuthUser | null }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-secondary text-secondary-foreground">
       <CustomerContainer className="flex h-16 items-center gap-3 sm:h-[4.25rem]">
@@ -35,13 +38,24 @@ export function CustomerHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          {user ? (
+            <CustomerAccountMenu user={user} />
+          ) : (
+            <Button
+              asChild
+              variant="ghost"
+              className="h-10 rounded-md px-3 font-semibold text-secondary-foreground hover:bg-white/10 hover:text-primary"
+            >
+              <Link href={ROUTES.customerLogin}>Login</Link>
+            </Button>
+          )}
           <Button
             asChild
             className="hidden h-10 rounded-md bg-primary px-4 font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90 sm:inline-flex"
           >
             <Link href={ROUTES.bookACar}>Book Now</Link>
           </Button>
-          <CustomerMobileNav />
+          <CustomerMobileNav user={user} />
         </div>
       </CustomerContainer>
     </header>

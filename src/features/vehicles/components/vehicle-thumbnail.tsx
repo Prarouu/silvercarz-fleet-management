@@ -20,6 +20,8 @@ type VehicleThumbnailProps = {
   readonly alt: string;
   readonly size?: VehicleThumbnailSize;
   readonly className?: string;
+  /** `cover` crops to fill (admin lists). `contain` shows the full vehicle. */
+  readonly fit?: 'cover' | 'contain';
 };
 
 /** Compact fleet thumbnail from `vehicles.image_path`, with a car fallback. */
@@ -28,6 +30,7 @@ export function VehicleThumbnail({
   alt,
   size = 'lg',
   className,
+  fit = 'cover',
 }: VehicleThumbnailProps) {
   const url = getVehicleImagePublicUrl(imagePath);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -47,7 +50,11 @@ export function VehicleThumbnail({
         <img
           src={url!}
           alt={alt}
-          className="size-full object-cover"
+          className={cn(
+            fit === 'contain'
+              ? 'max-h-full max-w-full object-contain p-1'
+              : 'size-full object-cover',
+          )}
           loading="lazy"
           onError={() => setFailedUrl(url)}
         />

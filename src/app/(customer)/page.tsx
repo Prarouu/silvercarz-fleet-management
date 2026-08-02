@@ -12,6 +12,7 @@ import {
   parseCustomerBookACarUrlState,
   toPublicVehicleListQuery,
 } from '@/features/vehicles/lib/public-vehicle-list-params';
+import { getAuthState } from '@/lib/auth';
 import type { PublicVehicle } from '@/types';
 
 export const metadata: Metadata = {
@@ -43,7 +44,11 @@ async function BookACarPageContent({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const state = parseCustomerBookACarUrlState(searchParams);
-  const result = await listPublicVehicles(toPublicVehicleListQuery(state));
+  const [{ profile }, result] = await Promise.all([
+    getAuthState(),
+    listPublicVehicles(toPublicVehicleListQuery(state)),
+  ]);
+  const isAuthenticated = Boolean(profile?.isActive);
 
   if (!result.success) {
     return (
@@ -52,6 +57,7 @@ async function BookACarPageContent({
         vehicles={[]}
         meta={null}
         selectedVehicle={null}
+        isAuthenticated={isAuthenticated}
         errorMessage={result.error.message}
       />
     );
@@ -66,6 +72,7 @@ async function BookACarPageContent({
       vehicles={vehicles}
       meta={result.data.meta}
       selectedVehicle={selectedVehicle}
+      isAuthenticated={isAuthenticated}
     />
   );
 }

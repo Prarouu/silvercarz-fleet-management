@@ -268,7 +268,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: 'owner' | 'manager';
+      app_role: 'owner' | 'manager' | 'customer';
       fuel_type: 'petrol' | 'diesel' | 'cng' | 'electric' | 'hybrid';
       transmission_type: 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct';
       vehicle_availability: 'available' | 'booked' | 'maintenance' | 'reserved' | 'inactive';

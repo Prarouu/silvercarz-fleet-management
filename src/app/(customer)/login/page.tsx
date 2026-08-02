@@ -1,17 +1,65 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-import { CustomerPlaceholderPage } from '@/components/customer/shared/customer-placeholder';
+import { appConfig } from '@/config';
+import { CustomerAuthPanel } from '@/features/customer-auth/components/customer-auth-panel';
+import { CustomerLoginForm } from '@/features/customer-auth/components/customer-login-form';
+import { getAuthState, resolveCustomerPostLoginPath } from '@/lib/auth';
+import { AUTH_ERROR_CODES, getAuthErrorMessageForCode } from '@/lib/auth/errors';
 
 export const metadata: Metadata = {
-  title: 'Login',
+  title: `Login | ${appConfig.companyName}`,
+  description: 'Sign in to continue your Silver Carz booking.',
 };
 
-/** Placeholder — customer authentication lands in a later phase. */
-export default function CustomerLoginPage() {
+interface CustomerLoginPageProps {
+  searchParams: Promise<{
+    next?: string | string[];
+    reason?: string | string[];
+  }>;
+}
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+function resolveInitialError(reason: string | undefined): string | undefined {
+  if (!reason) {
+    return undefined;
+  }
+
+  if (
+    reason === AUTH_ERROR_CODES.sessionExpired ||
+    reason === AUTH_ERROR_CODES.inactiveAccount ||
+    reason === AUTH_ERROR_CODES.missingProfile ||
+    reason === AUTH_ERROR_CODES.databaseSetupRequired
+  ) {
+    return getAuthErrorMessageForCode(reason);
+  }
+
+  return undefined;
+}
+
+/** Customer login — functional auth route (not a primary nav page). */
+export default async function CustomerLoginPage({ searchParams }: CustomerLoginPageProps) {
+  const params = await searchParams;
+  const nextPath = firstParam(params.next);
+  const reason = firstParam(params.reason);
+
+  const { user, profile } = await getAuthState();
+  if (user && profile?.isActive) {
+    redirect(resolveCustomerPostLoginPath(nextPath));
+  }
+
   return (
-    <CustomerPlaceholderPage
-      title="Customer Login"
-      description="Customer sign-in will use the existing Supabase Auth project, separate from /admin/login. Authentication UI is intentionally not implemented in C0."
-    />
+    <CustomerAuthPanel
+      title="Welcome back"
+      description="Log in to continue your booking. Your selected car stays with you."
+    >
+      <CustomerLoginForm nextPath={nextPath} initialError={resolveInitialError(reason)} />
+    </CustomerAuthPanel>
   );
 }

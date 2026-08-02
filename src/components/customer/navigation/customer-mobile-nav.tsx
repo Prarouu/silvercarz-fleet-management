@@ -9,11 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { appConfig, customerMainNavItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
+import { customerSignOutAction } from '@/features/customer-auth/actions/sign-out';
+import type { AuthUser } from '@/lib/auth/types';
 
 /**
  * Mobile navigation — same four primary pages as desktop.
+ * Login / account controls sit outside the primary nav list.
  */
-export function CustomerMobileNav() {
+export function CustomerMobileNav({ user }: { user: AuthUser | null }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -60,6 +63,49 @@ export function CustomerMobileNav() {
               Book Now
             </Link>
           </Button>
+
+          <div className="mt-2 border-t border-white/10 pt-4">
+            {user ? (
+              <div className="space-y-3">
+                <p className="truncate text-sm font-semibold">
+                  {user.fullName?.trim() || user.email || 'Account'}
+                </p>
+                <Link
+                  href={ROUTES.myBookings}
+                  className="block text-sm text-secondary-foreground/80 hover:text-primary"
+                  onClick={() => setOpen(false)}
+                >
+                  My Bookings
+                </Link>
+                <Link
+                  href={ROUTES.profile}
+                  className="block text-sm text-secondary-foreground/80 hover:text-primary"
+                  onClick={() => setOpen(false)}
+                >
+                  Profile
+                </Link>
+                <form action={customerSignOutAction}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="h-10 w-full rounded-md border-white/20 bg-transparent text-secondary-foreground hover:bg-white/10"
+                  >
+                    Log out
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 w-full rounded-md border-white/20 bg-transparent font-semibold text-secondary-foreground hover:bg-white/10"
+              >
+                <Link href={ROUTES.customerLogin} onClick={() => setOpen(false)}>
+                  Login
+                </Link>
+              </Button>
+            )}
+          </div>
         </nav>
       </SheetContent>
     </Sheet>

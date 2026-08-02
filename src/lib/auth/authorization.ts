@@ -6,7 +6,7 @@
  */
 
 import { hasPermission, type Permission } from '@/lib/auth/permissions';
-import { APP_ROLES, type AppRole } from '@/lib/auth/roles';
+import { APP_ROLES, STAFF_ROLES, type AppRole } from '@/lib/auth/roles';
 import type { AuthUser, UserProfile } from '@/lib/auth/types';
 
 type RoleBearer = AppRole | AuthUser | UserProfile | null | undefined;
@@ -35,6 +35,15 @@ export function isOwner(value: RoleBearer): boolean {
 
 export function isManager(value: RoleBearer): boolean {
   return resolveRole(value) === APP_ROLES.manager;
+}
+
+export function isCustomer(value: RoleBearer): boolean {
+  return resolveRole(value) === APP_ROLES.customer;
+}
+
+/** True for Admin Portal staff (`owner` | `manager`). */
+export function isStaff(value: RoleBearer): boolean {
+  return hasRole(value, STAFF_ROLES);
 }
 
 /** True when the bearer is granted the named permission. */

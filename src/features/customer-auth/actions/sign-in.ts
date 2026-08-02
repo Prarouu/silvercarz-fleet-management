@@ -1,11 +1,10 @@
 'use server';
 
 /**
- * Sign-in Server Action.
+ * Customer sign-in Server Action.
  *
- * Validates credentials, establishes a Supabase Auth session (cookies),
- * then redirects to the intended destination. Failures return a safe
- * `ApiResponse` — never raw Supabase errors.
+ * Uses the same Supabase Auth project as admin. On success, redirects to a
+ * safe customer-portal destination (never `/admin/*`).
  */
 
 import { redirect } from 'next/navigation';
@@ -13,13 +12,11 @@ import { redirect } from 'next/navigation';
 import {
   signInCredentialsSchema,
   type SignInCredentials,
-} from '@/features/auth/validations/credentials';
+} from '@/features/customer-auth/validations/credentials';
 import {
-  createForbiddenError,
   createInactiveAccountError,
   ensureCurrentProfile,
-  isStaff,
-  resolvePostLoginPath,
+  resolveCustomerPostLoginPath,
   signOut,
   toAuthError,
 } from '@/lib/auth';
@@ -28,7 +25,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { fail, failWith } from '@/services';
 import type { ApiResponse } from '@/types';
 
-export type SignInActionResult = ApiResponse<null>;
+export type CustomerSignInActionResult = ApiResponse<null>;
 
 function isNetworkError(error: unknown): boolean {
   if (error instanceof TypeError) {
@@ -44,13 +41,12 @@ function isNetworkError(error: unknown): boolean {
 }
 
 /**
- * Authenticates with email + password and redirects on success.
- * Returns a failure `ApiResponse` when validation or Auth fails.
+ * Authenticates a customer with email + password and redirects on success.
  */
-export async function signInAction(
+export async function customerSignInAction(
   credentials: SignInCredentials,
   nextPath?: string | null,
-): Promise<SignInActionResult> {
+): Promise<CustomerSignInActionResult> {
   const parsed = signInCredentialsSchema.safeParse(credentials);
 
   if (!parsed.success) {
@@ -75,15 +71,6 @@ export async function signInAction(
       await signOut().catch(() => undefined);
       return fail(createInactiveAccountError());
     }
-
-    if (!isStaff(profile)) {
-      await signOut().catch(() => undefined);
-      return fail(
-        createForbiddenError(
-          'This account cannot access the admin portal. Please use customer login.',
-        ),
-      );
-    }
   } catch (error) {
     if (error instanceof AppError) {
       await signOut().catch(() => undefined);
@@ -91,11 +78,11 @@ export async function signInAction(
     }
 
     if (isNetworkError(error)) {
-      return failWith(ERROR_CODES.network, 'Network error. Check your connection and try again.');
+      return failWith(ERROR_CODES.network, 'Unable to sign in. Please try again.');
     }
 
     return fail(toAuthError(error));
   }
 
-  redirect(resolvePostLoginPath(nextPath));
+  redirect(resolveCustomerPostLoginPath(nextPath));
 }

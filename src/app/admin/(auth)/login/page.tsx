@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { ROUTES } from '@/constants/routes';
 import { LoginPanel } from '@/features/auth/components/login-panel';
-import { getAuthState, resolvePostLoginPath } from '@/lib/auth';
+import { getAuthState, isStaff, resolvePostLoginPath } from '@/lib/auth';
 import { AUTH_ERROR_CODES, getAuthErrorMessageForCode } from '@/lib/auth/errors';
 
 export const metadata: Metadata = {
@@ -47,7 +48,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   const { user, profile } = await getAuthState();
   if (user && profile?.isActive) {
-    redirect(resolvePostLoginPath(nextPath));
+    if (isStaff(profile)) {
+      redirect(resolvePostLoginPath(nextPath));
+    }
+    // Customers must use the customer portal — never enter admin.
+    redirect(ROUTES.home);
   }
 
   return <LoginPanel nextPath={nextPath} initialError={resolveInitialError(reason)} />;
