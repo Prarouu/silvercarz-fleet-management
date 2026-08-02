@@ -15,6 +15,16 @@ const nextConfig: NextConfig = {
       { source: '/customers', destination: '/admin/customers', permanent: true },
       { source: '/drivers', destination: '/admin/drivers', permanent: true },
       { source: '/settings', destination: '/admin/settings', permanent: true },
+
+      // Customer portal structure correction — one Book a Car at `/`.
+      { source: '/book-a-car', destination: '/', permanent: true },
+      { source: '/book-a-car/:path*', destination: '/', permanent: true },
+      { source: '/detailing', destination: '/car-detailing', permanent: true },
+      { source: '/about', destination: '/about-us', permanent: true },
+      { source: '/our-fleet', destination: '/', permanent: true },
+      { source: '/pricing', destination: '/', permanent: true },
+      { source: '/how-it-works', destination: '/', permanent: true },
+      { source: '/contact', destination: '/about-us', permanent: true },
     ];
   },
 };

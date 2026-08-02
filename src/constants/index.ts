@@ -2,7 +2,6 @@ export {
   ROUTES,
   bookingDetailPath,
   bookingEditPath,
-  customerBookVehiclePath,
   customerBookingConfirmationPath,
   customerBookingDocumentsPath,
   customerBookingPath,

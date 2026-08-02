@@ -88,6 +88,7 @@ export type {
 } from './booking';
 
 export type {
+  PublicVehicle,
   Vehicle,
   VehicleAvailabilityQuery,
   VehicleCreateInput,

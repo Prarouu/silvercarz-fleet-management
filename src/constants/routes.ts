@@ -5,21 +5,23 @@
  * path strings. Add new routes as modules are introduced.
  *
  * Admin portal lives under `/admin`. The public customer site uses `/`.
+ *
+ * Primary customer pages (nav):
+ *   /                 Book a Car
+ *   /car-pooling      Car Pooling
+ *   /car-detailing    Car Detailing
+ *   /about-us         About Us
  */
 
 export const ROUTES = {
-  // --- Customer portal (public) ---
+  // --- Customer portal (primary pages) ---
   home: '/',
-  bookACar: '/book-a-car',
+  bookACar: '/',
   carPooling: '/car-pooling',
-  detailing: '/detailing',
-  about: '/about',
-  ourFleet: '/our-fleet',
-  pricing: '/pricing',
-  howItWorks: '/how-it-works',
-  contact: '/contact',
+  carDetailing: '/car-detailing',
+  aboutUs: '/about-us',
 
-  // --- Customer account (placeholders in C0; auth in a later phase) ---
+  // --- Customer account / workflow (not primary nav) ---
   customerLogin: '/login',
   customerSignup: '/signup',
   myBookings: '/my-bookings',
@@ -62,11 +64,6 @@ export function vehicleDetailPath(id: string): string {
 /** Dynamic edit path for a vehicle id (admin). */
 export function vehicleEditPath(id: string): string {
   return `${ROUTES.vehicles}/${id}/edit`;
-}
-
-/** Customer book-a-car vehicle selection path (future booking flow). */
-export function customerBookVehiclePath(vehicleId: string): string {
-  return `${ROUTES.bookACar}/${vehicleId}`;
 }
 
 /** Customer booking request detail path (future booking flow). */

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /** Placeholder — About content lands in a later phase. */
-export default function AboutPage() {
+export default function AboutUsPage() {
   return (
     <CustomerPlaceholderPage
       title="About Us"

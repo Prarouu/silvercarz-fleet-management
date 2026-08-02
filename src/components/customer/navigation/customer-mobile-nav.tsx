@@ -11,8 +11,7 @@ import { appConfig, customerMainNavItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
 
 /**
- * Minimal mobile navigation foundation (hamburger + sheet).
- * Intentionally lightweight for C0 — expand in a later UI phase.
+ * Mobile navigation — same four primary pages as desktop.
  */
 export function CustomerMobileNav() {
   const [open, setOpen] = useState(false);
@@ -47,7 +46,7 @@ export function CustomerMobileNav() {
         <nav className="flex flex-col gap-4 px-4 pb-6" aria-label="Mobile">
           {customerMainNavItems.map((item) => (
             <CustomerNavLink
-              key={item.href}
+              key={`${item.title}-${item.href}`}
               item={item}
               onNavigate={() => setOpen(false)}
               className="py-1"
@@ -59,15 +58,6 @@ export function CustomerMobileNav() {
           >
             <Link href={ROUTES.bookACar} onClick={() => setOpen(false)}>
               Book Now
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 rounded-md border-white/20 bg-transparent font-semibold text-secondary-foreground hover:bg-white/10 hover:text-secondary-foreground"
-          >
-            <Link href={ROUTES.customerLogin} onClick={() => setOpen(false)}>
-              Login
             </Link>
           </Button>
         </nav>

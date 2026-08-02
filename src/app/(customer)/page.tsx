@@ -1,57 +1,88 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Suspense } from 'react';
 
-import { CustomerContainer } from '@/components/customer/shared/customer-container';
-import { Button } from '@/components/ui/button';
+import { BookACarSkeleton } from '@/components/customer/book-a-car/book-a-car-skeleton';
+import { BookACarView } from '@/components/customer/book-a-car/book-a-car-view';
 import { appConfig } from '@/config';
-import { ROUTES } from '@/constants/routes';
+import {
+  getPublicVehicle,
+  listPublicVehicles,
+} from '@/features/vehicles/actions/list-public-vehicles';
+import {
+  parseCustomerBookACarUrlState,
+  toPublicVehicleListQuery,
+} from '@/features/vehicles/lib/public-vehicle-list-params';
+import type { PublicVehicle } from '@/types';
 
 export const metadata: Metadata = {
-  title: `${appConfig.companyName} | Self Drive Car Rental`,
-  description: 'Book Silver Carz fleet vehicles online.',
+  title: `Book a Car | ${appConfig.companyName}`,
+  description: 'Browse the Silver Carz fleet and select a car to book.',
 };
 
 /**
- * Customer landing foundation (C0).
- * Validates theme + chrome. Full marketing home lands in a later phase.
+ * Root customer page — Book a Car (single source of truth).
+ * C1: browse, filter, select, summary. No booking submission yet.
  */
-export default function CustomerHomePage() {
+export default async function BookACarPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+
   return (
-    <section className="relative overflow-hidden bg-tone-ink text-tone-ink-foreground">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(244_180_0_/_0.18),transparent_45%),linear-gradient(to_bottom,#111111,#0a0a0a)]"
-      />
-      <CustomerContainer className="relative flex min-h-[min(70svh,40rem)] flex-col justify-center py-16 sm:py-24">
-        <p className="text-xs font-semibold tracking-[0.22em] text-primary uppercase">
-          {appConfig.companyName}
-        </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight uppercase sm:text-5xl lg:text-6xl">
-          Drive your journey your <span className="text-primary">way</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-base text-white/75 sm:text-lg">
-          Premium self-drive rentals. Browse the fleet, request a booking, and manage your trips —
-          customer portal foundation is live.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button
-            asChild
-            className="h-11 rounded-md bg-primary px-5 font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
-          >
-            <Link href={ROUTES.bookACar}>Explore Cars</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 rounded-md border-white/25 bg-transparent px-5 font-semibold text-white hover:bg-white/10 hover:text-white"
-          >
-            <Link href={ROUTES.about}>About Us</Link>
-          </Button>
-        </div>
-        <p className="mt-10 text-xs text-white/45">
-          Phase C0 — architecture & visual foundation. Booking flows arrive in later phases.
-        </p>
-      </CustomerContainer>
-    </section>
+    <Suspense fallback={<BookACarSkeleton />}>
+      <BookACarPageContent searchParams={params} />
+    </Suspense>
   );
+}
+
+async function BookACarPageContent({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const state = parseCustomerBookACarUrlState(searchParams);
+  const result = await listPublicVehicles(toPublicVehicleListQuery(state));
+
+  if (!result.success) {
+    return (
+      <BookACarView
+        state={state}
+        vehicles={[]}
+        meta={null}
+        selectedVehicle={null}
+        errorMessage={result.error.message}
+      />
+    );
+  }
+
+  const vehicles = result.data.data;
+  const selectedVehicle = await resolveSelectedVehicle(vehicles, state.vehicleId);
+
+  return (
+    <BookACarView
+      state={state}
+      vehicles={vehicles}
+      meta={result.data.meta}
+      selectedVehicle={selectedVehicle}
+    />
+  );
+}
+
+async function resolveSelectedVehicle(
+  vehicles: readonly PublicVehicle[],
+  vehicleId: string | null,
+): Promise<PublicVehicle | null> {
+  if (!vehicleId) {
+    return null;
+  }
+
+  const onPage = vehicles.find((vehicle) => vehicle.id === vehicleId);
+  if (onPage) {
+    return onPage;
+  }
+
+  const selected = await getPublicVehicle(vehicleId);
+  return selected.success ? selected.data : null;
 }

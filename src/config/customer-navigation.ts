@@ -6,30 +6,21 @@ export interface CustomerNavItem {
 }
 
 /**
- * Primary customer header / footer navigation.
- * Labels match the customer portal design language (marketing chrome).
+ * Primary customer header / mobile navigation.
+ * Exactly four primary website pages — nothing else.
  */
 export const customerMainNavItems: readonly CustomerNavItem[] = [
-  { title: 'Home', href: ROUTES.home },
-  { title: 'About Us', href: ROUTES.about },
-  { title: 'Our Fleet', href: ROUTES.ourFleet },
-  { title: 'Pricing', href: ROUTES.pricing },
-  { title: 'How It Works', href: ROUTES.howItWorks },
-  { title: 'Contact Us', href: ROUTES.contact },
-] as const;
-
-/** Secondary customer links used in the footer quick-links column. */
-export const customerQuickLinkItems: readonly CustomerNavItem[] = [
   { title: 'Book a Car', href: ROUTES.bookACar },
   { title: 'Car Pooling', href: ROUTES.carPooling },
-  { title: 'Detailing', href: ROUTES.detailing },
-  { title: 'Our Fleet', href: ROUTES.ourFleet },
-  { title: 'Pricing', href: ROUTES.pricing },
-  { title: 'Contact Us', href: ROUTES.contact },
+  { title: 'Car Detailing', href: ROUTES.carDetailing },
+  { title: 'About Us', href: ROUTES.aboutUs },
 ] as const;
 
-/** Legal links for the customer footer bar. */
+/** Footer quick links — same four primary pages. */
+export const customerQuickLinkItems: readonly CustomerNavItem[] = customerMainNavItems;
+
+/** Legal links for the customer footer bar (no dedicated pages yet). */
 export const customerLegalNavItems: readonly CustomerNavItem[] = [
-  { title: 'Terms & Conditions', href: ROUTES.contact },
-  { title: 'Privacy Policy', href: ROUTES.contact },
+  { title: 'Terms & Conditions', href: ROUTES.aboutUs },
+  { title: 'Privacy Policy', href: ROUTES.aboutUs },
 ] as const;

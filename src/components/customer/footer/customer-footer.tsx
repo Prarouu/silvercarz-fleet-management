@@ -1,24 +1,18 @@
 import Link from 'next/link';
 
 import { CustomerContainer } from '@/components/customer/shared/customer-container';
-import {
-  appConfig,
-  customerLegalNavItems,
-  customerMainNavItems,
-  customerQuickLinkItems,
-} from '@/config';
+import { appConfig, customerLegalNavItems, customerQuickLinkItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
 
 /**
- * Customer portal footer foundation.
- * Uses only company identity already present in config — no invented contact data.
+ * Customer portal footer — company identity + the four primary pages.
  */
 export function CustomerFooter() {
   const year = new Date().getFullYear();
 
   return (
     <footer className="mt-auto bg-secondary text-secondary-foreground">
-      <CustomerContainer className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 lg:py-14">
+      <CustomerContainer className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 lg:py-14">
         <div className="sm:col-span-2 lg:col-span-1">
           <Link href={ROUTES.home} className="inline-block">
             <span className="block text-lg font-bold tracking-wide uppercase">
@@ -52,32 +46,8 @@ export function CustomerFooter() {
         </div>
 
         <div>
-          <h2 className="text-sm font-bold tracking-wide text-primary uppercase">Explore</h2>
-          <ul className="mt-4 space-y-2.5">
-            {customerMainNavItems.map((item) => (
-              <li key={`explore-${item.href}`}>
-                <Link
-                  href={item.href}
-                  className="text-sm text-secondary-foreground/80 transition-colors hover:text-primary"
-                >
-                  {item.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-bold tracking-wide text-primary uppercase">Contact Us</h2>
-          <p className="mt-4 text-sm leading-relaxed text-secondary-foreground/70">
-            Reach the team through the{' '}
-            <Link href={ROUTES.contact} className="font-medium text-primary hover:underline">
-              Contact
-            </Link>{' '}
-            page. Business contact details will be published here when available.
-          </p>
-          <h2 className="mt-8 text-sm font-bold tracking-wide text-primary uppercase">Follow Us</h2>
-          <p className="mt-3 text-sm text-secondary-foreground/70">Social links coming soon.</p>
+          <h2 className="text-sm font-bold tracking-wide text-primary uppercase">Follow Us</h2>
+          <p className="mt-4 text-sm text-secondary-foreground/70">Social links coming soon.</p>
         </div>
       </CustomerContainer>
 

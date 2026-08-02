@@ -13,3 +13,9 @@ export {
   type AvailabilityService,
   type AvailabilityServiceDeps,
 } from './availability.service';
+
+export {
+  createPublicVehicleService,
+  getPublicVehicleService,
+  type PublicVehicleService,
+} from './public-vehicle-service';

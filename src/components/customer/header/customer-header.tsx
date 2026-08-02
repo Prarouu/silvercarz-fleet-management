@@ -8,8 +8,8 @@ import { appConfig, customerMainNavItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
 
 /**
- * Customer portal header foundation.
- * Black chrome, centered nav, yellow Book Now CTA. Responsive via mobile sheet.
+ * Customer portal header.
+ * Four primary pages + Book Now CTA (both Book a Car and Book Now → `/`).
  */
 export function CustomerHeader() {
   return (
@@ -30,18 +30,11 @@ export function CustomerHeader() {
           aria-label="Primary"
         >
           {customerMainNavItems.map((item) => (
-            <CustomerNavLink key={item.href} item={item} />
+            <CustomerNavLink key={`${item.title}-${item.href}`} item={item} />
           ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <Button
-            asChild
-            variant="ghost"
-            className="hidden h-9 rounded-md px-3 text-sm font-semibold text-secondary-foreground/90 hover:bg-white/10 hover:text-primary sm:inline-flex"
-          >
-            <Link href={ROUTES.customerLogin}>Login</Link>
-          </Button>
           <Button
             asChild
             className="hidden h-10 rounded-md bg-primary px-4 font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90 sm:inline-flex"
