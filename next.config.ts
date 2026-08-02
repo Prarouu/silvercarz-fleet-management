@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   async redirects() {
     return [
-      { source: '/login', destination: '/admin/login', permanent: true },
+      // Staff auth lives under /admin/*. Customer login owns public `/login`.
       { source: '/forgot-password', destination: '/admin/forgot-password', permanent: true },
       { source: '/reset-password', destination: '/admin/reset-password', permanent: true },
       { source: '/dashboard', destination: '/admin/dashboard', permanent: true },
