@@ -41,7 +41,7 @@ src/
 │   ├── css-vars.ts        # Semantic tokens → CSS custom properties
 │   ├── admin.ts           # Admin portal preset
 │   ├── vendor.ts          # Vendor portal preset (future)
-│   ├── customer.ts        # Customer portal preset (future)
+│   ├── customer.ts        # Customer portal preset (yellow / black / white)
 │   └── index.ts           # Registry + helpers
 ├── config/
 │   └── portal.ts          # Active portal (`theme: 'admin'`)

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants';
 import { getAuthState, toAuthUserFromProfile } from '@/lib/auth';
 
-function NotFoundContent() {
+function NotFoundContent({ homeHref }: { homeHref: string }) {
   return (
     <PageContainer>
       <EmptyState
@@ -17,7 +17,7 @@ function NotFoundContent() {
         description="The page you are looking for does not exist or has been moved."
         action={
           <Button asChild variant="outline" size="sm">
-            <Link href={ROUTES.home}>Back to home</Link>
+            <Link href={homeHref}>Back to home</Link>
           </Button>
         }
       />
@@ -32,14 +32,14 @@ export default async function NotFound() {
   if (!profile?.isActive) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center px-4">
-        <NotFoundContent />
+        <NotFoundContent homeHref={ROUTES.home} />
       </div>
     );
   }
 
   return (
     <AppShell user={toAuthUserFromProfile(profile)}>
-      <NotFoundContent />
+      <NotFoundContent homeHref={ROUTES.dashboard} />
     </AppShell>
   );
 }

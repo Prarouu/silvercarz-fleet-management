@@ -55,10 +55,14 @@ export { APP_ROLE_LABELS, APP_ROLE_VALUES, APP_ROLES, isAppRole, type AppRole } 
 
 export {
   allowsRouteAccess,
+  buildCustomerLoginRedirectPath,
   buildLoginRedirectPath,
   getRouteAccess,
+  isAdminRoute,
   isAuthCallbackRoute,
   isAuthRoute,
+  isCustomerAccountRoute,
+  isCustomerProtectedRoute,
   isProtectedRoute,
   isPublicRoute,
   resolvePostLoginPath,

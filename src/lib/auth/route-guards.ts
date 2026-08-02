@@ -3,6 +3,18 @@
  *
  * Path strings come from `ROUTES` — never hardcode auth paths at call sites.
  * Proxy and layouts use these helpers to decide public vs protected access.
+ *
+ * ---------------------------------------------------------------------------
+ * Customer / Admin coexistence (architecture — C0)
+ * ---------------------------------------------------------------------------
+ * - One Supabase Auth project serves both portals.
+ * - Admin staff (`owner` | `manager`) use `/admin/login` and `/admin/*`.
+ * - Future customers will use `/login` + `/signup` and customer account routes.
+ * - `isProtectedRoute` remains **admin-only**. Customer account protection
+ *   will be added in a later phase via `isCustomerProtectedRoute` — do not
+ *   redirect customers to the admin login.
+ * - A future `customer` app_role (DB migration) is required before customer
+ *   auth can land. C0 intentionally makes **zero schema changes**.
  */
 
 import { ROUTES, type AppRoute } from '@/constants/routes';
@@ -13,10 +25,21 @@ const PUBLIC_AUTH_ROUTES: readonly AppRoute[] = [
   ROUTES.login,
   ROUTES.forgotPassword,
   ROUTES.resetPassword,
+  ROUTES.customerLogin,
+  ROUTES.customerSignup,
 ] as const;
 
 /** Prefix for Auth callback / confirmation handlers (e.g. `/auth/callback`). */
 const AUTH_CALLBACK_PREFIX = '/auth';
+
+/** Admin portal URL prefix. */
+const ADMIN_PREFIX = ROUTES.admin;
+
+/**
+ * Customer account routes that will require a customer session later.
+ * Kept public in C0 (placeholders only — no auth gate yet).
+ */
+const CUSTOMER_ACCOUNT_ROUTES: readonly AppRoute[] = [ROUTES.myBookings, ROUTES.profile] as const;
 
 /** How a route may be accessed. Extend with `permission` when needed. */
 export type RouteAccess =
@@ -31,7 +54,13 @@ function normalizePathname(pathname: string): string {
   return pathname;
 }
 
-/** True for login, password-reset, and related auth screens. */
+/** True for paths under the admin portal (`/admin`, `/admin/...`). */
+export function isAdminRoute(pathname: string): boolean {
+  const path = normalizePathname(pathname);
+  return path === ADMIN_PREFIX || path.startsWith(`${ADMIN_PREFIX}/`);
+}
+
+/** True for login, password-reset, and related auth screens (admin or customer). */
 export function isAuthRoute(pathname: string): boolean {
   const path = normalizePathname(pathname);
   return PUBLIC_AUTH_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
@@ -44,16 +73,33 @@ export function isAuthCallbackRoute(pathname: string): boolean {
 }
 
 /**
- * Routes that do not require an authenticated session.
- * Everything else is treated as protected once enforcement is enabled.
+ * True for customer account surfaces that will require a customer session.
+ * Not enforced in C0 — classification only.
  */
-export function isPublicRoute(pathname: string): boolean {
-  return isAuthRoute(pathname) || isAuthCallbackRoute(pathname);
+export function isCustomerAccountRoute(pathname: string): boolean {
+  const path = normalizePathname(pathname);
+  return CUSTOMER_ACCOUNT_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
 }
 
-/** Inverse of `isPublicRoute` — prepared for proxy / layout guards. */
+/**
+ * Future customer session gate. Always `false` in C0 so placeholders stay public.
+ * A later phase will return true for account + in-progress booking request steps.
+ */
+export function isCustomerProtectedRoute(_pathname: string): boolean {
+  return false;
+}
+
+/**
+ * Admin routes that require a session.
+ * Public site paths and admin auth screens are not protected.
+ */
 export function isProtectedRoute(pathname: string): boolean {
-  return !isPublicRoute(pathname);
+  return isAdminRoute(pathname) && !isAuthRoute(pathname) && !isAuthCallbackRoute(pathname);
+}
+
+/** Inverse of `isProtectedRoute`. */
+export function isPublicRoute(pathname: string): boolean {
+  return !isProtectedRoute(pathname);
 }
 
 /**
@@ -88,7 +134,7 @@ export function allowsRouteAccess(access: RouteAccess, role: AppRole | null): bo
 }
 
 /**
- * Builds a login URL that preserves the intended destination.
+ * Builds an admin login URL that preserves the intended destination.
  * Used when redirecting unauthenticated users (login UI phase).
  */
 export function buildLoginRedirectPath(nextPath?: string): string {
@@ -101,15 +147,28 @@ export function buildLoginRedirectPath(nextPath?: string): string {
 }
 
 /**
+ * Future customer login redirect. Ready for the customer auth phase —
+ * not wired into Proxy in C0.
+ */
+export function buildCustomerLoginRedirectPath(nextPath?: string): string {
+  if (!nextPath || !nextPath.startsWith('/') || nextPath.startsWith('//')) {
+    return ROUTES.customerLogin;
+  }
+
+  const params = new URLSearchParams({ next: nextPath });
+  return `${ROUTES.customerLogin}?${params.toString()}`;
+}
+
+/**
  * Safe post-login destination. Rejects open redirects by requiring a
- * same-origin relative path.
+ * same-origin relative path under a protected admin route.
  */
 export function resolvePostLoginPath(nextPath: string | null | undefined): AppRoute | string {
   if (!nextPath || !nextPath.startsWith('/') || nextPath.startsWith('//')) {
     return ROUTES.dashboard;
   }
 
-  if (isAuthRoute(nextPath) || isAuthCallbackRoute(nextPath)) {
+  if (!isProtectedRoute(nextPath)) {
     return ROUTES.dashboard;
   }
 

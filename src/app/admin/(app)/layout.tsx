@@ -1,4 +1,5 @@
 import { AppShell } from '@/components/layout/app-shell';
+import { PortalThemeScope } from '@/components/shared/portal-theme-scope';
 import { requireAuth } from '@/lib/auth';
 
 /**
@@ -14,5 +15,10 @@ export const dynamic = 'force-dynamic';
 export default async function AppAreaLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAuth();
 
-  return <AppShell user={user}>{children}</AppShell>;
+  return (
+    <>
+      <PortalThemeScope portal="admin" />
+      <AppShell user={user}>{children}</AppShell>
+    </>
+  );
 }

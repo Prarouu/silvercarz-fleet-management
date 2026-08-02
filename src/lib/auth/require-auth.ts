@@ -73,7 +73,7 @@ export async function requireUser(): Promise<AuthUser> {
  * Use in Server Components / layouts that gate rendered UI.
  *
  * Signs out before redirecting when the profile is missing or inactive so
- * the proxy does not bounce the user between `/login` and the app shell.
+ * the proxy does not bounce the user between `/admin/login` and the app shell.
  */
 export async function requireAuth(nextPath?: string): Promise<AuthUser> {
   const { user, profile } = await getAuthState();

@@ -11,8 +11,8 @@ import { ThemeProvider } from '@/providers/theme-provider';
 /**
  * Root client provider composition.
  *
- * Portal theme comes from `portalConfig` so future Vendor / Customer apps
- * switch identity by configuration instead of rewriting UI.
+ * Default portal comes from `portalConfig` (admin SSR fallback).
+ * Route groups override via `PortalThemeScope` (customer vs admin).
  */
 export function AppProviders({ children }: { children: ReactNode }) {
   return (

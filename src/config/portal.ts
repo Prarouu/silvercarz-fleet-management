@@ -1,15 +1,16 @@
 import type { PortalId } from '@/themes';
 
 /**
- * Active portal theme for this Next.js app instance.
+ * Default portal theme for the root HTML attribute / ThemeProvider SSR fallback.
  *
- * Switch portals by configuration — never hardcode theme selection
- * inside reusable UI components.
+ * Route groups override the active portal via `PortalThemeScope`:
+ * - Customer routes (`(customer)`) → `'customer'`
+ * - Admin routes (`/admin`) → `'admin'`
  *
- * Future Vendor / Customer apps set this to `'vendor'` / `'customer'`.
+ * Never hardcode portal selection inside reusable UI components.
  */
 export const portalConfig = {
-  /** Which portal visual identity this deployment uses. */
+  /** SSR / provider default. Overridden per route group at runtime. */
   theme: 'admin' as PortalId,
 } as const;
 

@@ -39,7 +39,8 @@ src/
 ├── components/
 │   ├── ui/              # shadcn primitives (CLI-managed, token-driven)
 │   ├── shared/          # Business-agnostic composites (EmptyState, PageHeader, …)
-│   └── layout/          # App shell (sidebar, header)
+│   ├── layout/          # Admin app shell (sidebar, header)
+│   └── customer/        # Customer portal chrome (header, footer, nav)
 ├── features/            # Domain modules (auth login UI; others as built)
 ├── config/              # App identity, portal theme, formatting, navigation
 ├── constants/           # Routes, storage keys, color-mode, pagination, table defaults
