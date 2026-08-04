@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useId, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ROUTES } from '@/constants/routes';
 import { customerSignUpAction } from '@/features/customer-auth/actions/sign-up';
+import { PasswordStrength } from '@/features/customer-auth/components/password-strength';
 import {
   customerSignUpSchema,
   type CustomerSignUpInput,
@@ -28,6 +29,8 @@ export function CustomerSignupForm({ nextPath, className }: CustomerSignupFormPr
   const emailId = useId();
   const passwordId = useId();
   const confirmPasswordId = useId();
+  const passwordCriteriaId = useId();
+  const passwordMeterId = useId();
   const errorId = useId();
   const successId = useId();
 
@@ -40,6 +43,7 @@ export function CustomerSignupForm({ nextPath, className }: CustomerSignupFormPr
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CustomerSignUpInput>({
     resolver: zodResolver(customerSignUpSchema),
@@ -52,6 +56,7 @@ export function CustomerSignupForm({ nextPath, className }: CustomerSignupFormPr
     mode: 'onSubmit',
   });
 
+  const passwordValue = useWatch({ control, name: 'password', defaultValue: '' }) ?? '';
   const isLoading = isSubmitting || isPending;
 
   const loginHref = nextPath
@@ -149,10 +154,14 @@ export function CustomerSignupForm({ nextPath, className }: CustomerSignupFormPr
             id={passwordId}
             type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder="Create a strong password"
             className="h-11 rounded-md pr-10"
             aria-invalid={errors.password ? true : undefined}
-            aria-describedby={errors.password ? `${passwordId}-error` : undefined}
+            aria-describedby={
+              errors.password
+                ? `${passwordId}-error ${passwordCriteriaId} ${passwordMeterId}`
+                : `${passwordCriteriaId} ${passwordMeterId}`
+            }
             disabled={isLoading || Boolean(successMessage)}
             {...register('password')}
           />
@@ -168,6 +177,11 @@ export function CustomerSignupForm({ nextPath, className }: CustomerSignupFormPr
             {showPassword ? <EyeOff /> : <Eye />}
           </Button>
         </div>
+        <PasswordStrength
+          password={passwordValue}
+          criteriaId={passwordCriteriaId}
+          meterId={passwordMeterId}
+        />
         {errors.password ? (
           <p id={`${passwordId}-error`} className="text-sm text-destructive" role="alert">
             {errors.password.message}

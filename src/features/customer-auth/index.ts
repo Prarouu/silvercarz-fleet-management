@@ -9,7 +9,10 @@ export { CustomerAccountMenu } from './components/customer-account-menu';
 export { CustomerAuthPanel } from './components/customer-auth-panel';
 export { CustomerLoginForm } from './components/customer-login-form';
 export { CustomerSignupForm } from './components/customer-signup-form';
+export { PasswordStrength } from './components/password-strength';
+export { evaluatePasswordStrength, PASSWORD_CRITERIA } from './lib/password-strength';
 export {
+  customerPasswordSchema,
   customerSignUpSchema,
   signInCredentialsSchema,
   type CustomerSignUpInput,
