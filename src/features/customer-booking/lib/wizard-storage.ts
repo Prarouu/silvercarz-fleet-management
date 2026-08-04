@@ -1,9 +1,16 @@
 /**
- * Session-scoped draft for the customer booking wizard.
+ * Session-scoped draft for the customer booking wizard (browser only).
  * Preserves dates/details across soft navigations within the same tab.
+ *
+ * Do not put Server Component helpers here — this file is imported by a
+ * `'use client'` wizard and would poison server imports of co-located exports.
  */
 
 import type { RentalMode } from '@/types';
+
+import type { BookingWizardStep } from '@/features/customer-booking/lib/wizard-step';
+
+export type { BookingWizardStep };
 
 export type BookingWizardDraft = {
   readonly deliveryDate: string;
@@ -17,8 +24,6 @@ export type BookingWizardDraft = {
   readonly zipCode: string;
   readonly placeToVisit: string;
 };
-
-export type BookingWizardStep = 'dates' | 'details' | 'review';
 
 const STORAGE_PREFIX = 'sc-booking-request:';
 
@@ -68,14 +73,4 @@ export function clearBookingWizardDraft(vehicleId: string): void {
   } catch {
     // no-op
   }
-}
-
-export function isBookingWizardStep(value: string | null | undefined): value is BookingWizardStep {
-  return value === 'dates' || value === 'details' || value === 'review';
-}
-
-/** Safe for Server Components — not a client module. */
-export function parseBookingWizardStep(value: string | string[] | undefined): BookingWizardStep {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return isBookingWizardStep(raw) ? raw : 'dates';
 }

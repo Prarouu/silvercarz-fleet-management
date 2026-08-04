@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { appConfig } from '@/config';
 import { customerBookingContinuePath, ROUTES } from '@/constants/routes';
 import { BookingRequestWizard } from '@/features/customer-booking/components/booking-request-wizard';
-import { parseBookingWizardStep } from '@/features/customer-booking/lib/wizard-storage';
+import { parseBookingWizardStep } from '@/features/customer-booking/lib/wizard-step';
 import { getPublicVehicle } from '@/features/vehicles/actions/list-public-vehicles';
 import { APP_ROLES, requireCustomerAuth } from '@/lib/auth';
 
