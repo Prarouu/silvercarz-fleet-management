@@ -1,6 +1,9 @@
 -- =============================================================================
--- Customer booking request RLS + conflict helper (C3)
+-- 20260805040000 — Customer booking request RLS + conflict helper (C3)
 -- =============================================================================
+-- Apply order: after 20260802160000_add_customer_role.sql
+-- Next:         20260805120000_staff_allowlist_default_customer.sql
+--
 -- Customers submit booking REQUESTS into the existing `bookings` table with
 -- status = 'draft' (Pending Approval). Admin continues to approve via the
 -- existing draft filter at /admin/bookings?status=draft.
