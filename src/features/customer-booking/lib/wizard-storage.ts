@@ -73,3 +73,9 @@ export function clearBookingWizardDraft(vehicleId: string): void {
 export function isBookingWizardStep(value: string | null | undefined): value is BookingWizardStep {
   return value === 'dates' || value === 'details' || value === 'review';
 }
+
+/** Safe for Server Components — not a client module. */
+export function parseBookingWizardStep(value: string | string[] | undefined): BookingWizardStep {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return isBookingWizardStep(raw) ? raw : 'dates';
+}

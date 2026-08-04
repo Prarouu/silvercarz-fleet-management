@@ -6,7 +6,8 @@ import { CustomerContainer } from '@/components/customer/shared/customer-contain
 import { Button } from '@/components/ui/button';
 import { appConfig } from '@/config';
 import { customerBookingContinuePath, ROUTES } from '@/constants/routes';
-import { BookingRequestWizard, parseBookingWizardStep } from '@/features/customer-booking';
+import { BookingRequestWizard } from '@/features/customer-booking/components/booking-request-wizard';
+import { parseBookingWizardStep } from '@/features/customer-booking/lib/wizard-storage';
 import { getPublicVehicle } from '@/features/vehicles/actions/list-public-vehicles';
 import { APP_ROLES, requireCustomerAuth } from '@/lib/auth';
 

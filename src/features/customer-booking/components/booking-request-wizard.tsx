@@ -27,7 +27,6 @@ import { SelectedVehicleSummary } from '@/features/customer-booking/components/s
 import { estimateBookingTotal } from '@/features/customer-booking/lib/estimate';
 import {
   clearBookingWizardDraft,
-  isBookingWizardStep,
   readBookingWizardDraft,
   writeBookingWizardDraft,
   type BookingWizardDraft,
@@ -654,9 +653,4 @@ function ReviewField({
       </dd>
     </div>
   );
-}
-
-export function parseBookingWizardStep(value: string | string[] | undefined): BookingWizardStep {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return isBookingWizardStep(raw) ? raw : 'dates';
 }
