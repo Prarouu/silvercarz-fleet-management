@@ -1,18 +1,17 @@
 -- =============================================================================
--- Staff allowlist — default public signups to customer
+-- 20260805120000 — Staff allowlist + default public signups to customer
 -- =============================================================================
--- Problem:
---   Legacy handle_new_user / ensure_own_profile defaulted missing roles to
---   `manager`, so public portal signups became Admin Portal staff.
+-- Apply order: after 20260805040000_customer_booking_request_rls.sql
+-- Prerequisite (must already be committed in a prior run):
+--   20260802160000_add_customer_role.sql
 --
--- Solution:
---   1. staff_allowlist is the only source of owner/manager assignment at signup.
---   2. Everyone else is always created as `customer`.
---   3. app_metadata.role is ignored for elevation (not trustable for public auth).
---   4. Bootstrap keeps up to 2 earliest existing staff emails on the allowlist,
---      then demotes every other accidental manager/owner to customer.
+-- What this does:
+--   1. Defaults new profiles to `customer`
+--   2. Creates staff_allowlist (only source of owner/manager at signup)
+--   3. Replaces handle_new_user / ensure_own_profile to use the allowlist
+--   4. Keeps up to 2 earliest existing staff emails, demotes the rest
 --
--- Adding a new admin later (SQL editor / service_role):
+-- Add an admin later (SQL editor / service_role):
 --   INSERT INTO public.staff_allowlist (email, role)
 --   VALUES ('admin@example.com', 'owner')
 --   ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
@@ -22,10 +21,6 @@
 --   WHERE lower(email) = lower('admin@example.com');
 --
 --   SELECT public.apply_staff_allowlist();
---
--- Prerequisite (must already be committed — do not combine in one script):
---   20260802160000_add_customer_role.sql
---   Postgres forbids adding and using a new enum value in the same transaction.
 -- =============================================================================
 
 ALTER TABLE public.profiles
@@ -85,7 +80,6 @@ CREATE POLICY staff_allowlist_select_staff
   TO authenticated
   USING (public.is_active_staff());
 
--- Mutations only via service_role / SQL editor (no authenticated write policy).
 GRANT SELECT ON public.staff_allowlist TO authenticated;
 GRANT ALL ON public.staff_allowlist TO service_role;
 
