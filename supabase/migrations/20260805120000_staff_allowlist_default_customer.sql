@@ -22,10 +22,11 @@
 --   WHERE lower(email) = lower('admin@example.com');
 --
 --   SELECT public.apply_staff_allowlist();
+--
+-- Prerequisite (must already be committed — do not combine in one script):
+--   20260802160000_add_customer_role.sql
+--   Postgres forbids adding and using a new enum value in the same transaction.
 -- =============================================================================
-
--- Ensure customer enum value exists (idempotent with prior migration).
-ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'customer';
 
 ALTER TABLE public.profiles
   ALTER COLUMN role SET DEFAULT 'customer'::public.app_role;
