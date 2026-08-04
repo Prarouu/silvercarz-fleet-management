@@ -86,10 +86,6 @@ const BOOKING_VEHICLE_EMBED =
 /** Columns needed to resolve display lifecycle status. */
 const LIFECYCLE_BOOKING_COLUMNS = 'id, vehicle_id, status, delivery_date, return_date';
 
-/** Columns needed by Conflict Detection Engine overlap results. */
-const CONFLICT_BOOKING_COLUMNS =
-  'id, vehicle_id, status, delivery_date, return_date, invoice_number, customer_name';
-
 function escapeIlike(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
@@ -462,21 +458,14 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
     },
 
     async findOverlappingForVehicle(params) {
-      // Closed-interval overlap + blocking statuses only (indexed partial query).
-      let builder = client
-        .from('bookings')
-        .select(CONFLICT_BOOKING_COLUMNS)
-        .eq('vehicle_id', params.vehicleId)
-        .in('status', [BOOKING_STATUSES.confirmed, BOOKING_STATUSES.ongoing])
-        .lte('delivery_date', params.returnDate)
-        .gte('return_date', params.deliveryDate)
-        .order('delivery_date', { ascending: true });
-
-      if (params.excludeBookingId) {
-        builder = builder.neq('id', params.excludeBookingId);
-      }
-
-      const { data, error } = await builder;
+      // SECURITY DEFINER RPC — works for staff and customer JWTs (C3).
+      // Closed-interval overlap + confirmed/ongoing only.
+      const { data, error } = await client.rpc('list_vehicle_booking_conflicts', {
+        p_vehicle_id: params.vehicleId,
+        p_delivery_date: params.deliveryDate,
+        p_return_date: params.returnDate,
+        p_exclude_booking_id: params.excludeBookingId ?? null,
+      });
 
       if (error) {
         throw mapPersistenceError(error);

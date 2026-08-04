@@ -79,9 +79,7 @@ export function BookingSummaryPanel({
             asChild
             className="h-11 w-full rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
           >
-            <Link href={continueHref}>
-              {isAuthenticated ? 'Proceed to Details →' : 'Continue →'}
-            </Link>
+            <Link href={continueHref}>{isAuthenticated ? 'Select dates →' : 'Continue →'}</Link>
           </Button>
         ) : (
           <Button
@@ -89,13 +87,13 @@ export function BookingSummaryPanel({
             disabled
             className="h-11 w-full rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase opacity-80"
           >
-            Proceed to Details →
+            Select dates →
           </Button>
         )}
         <p className="text-center text-xs text-muted-foreground">
           {vehicle
             ? isAuthenticated
-              ? 'Continue to booking details. No booking is created yet.'
+              ? 'Next: choose pickup and return dates, then submit a request for approval.'
               : 'Sign in or create an account to continue with this car.'
             : 'Select a vehicle to continue.'}
         </p>

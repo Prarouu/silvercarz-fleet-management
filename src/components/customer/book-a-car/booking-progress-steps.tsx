@@ -4,11 +4,11 @@ const STEPS = [
   { number: 1, title: 'Select Car', caption: 'Choose your car' },
   { number: 2, title: 'Select Dates', caption: 'Pick-up & return' },
   { number: 3, title: 'Your Details', caption: 'Contact info' },
-  { number: 4, title: 'Confirm Booking', caption: 'Review & request' },
+  { number: 4, title: 'Request Submitted', caption: 'Awaiting approval' },
 ] as const;
 
 /**
- * Visual booking progress — step 1 active in C1 (browse/select only).
+ * Visual booking progress across the customer request flow (C3).
  */
 export function BookingProgressSteps({ activeStep = 1 }: { activeStep?: number }) {
   return (

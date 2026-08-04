@@ -252,6 +252,23 @@ export type Database = {
         };
         Returns: number;
       };
+      list_vehicle_booking_conflicts: {
+        Args: {
+          p_vehicle_id: string;
+          p_delivery_date: string;
+          p_return_date: string;
+          p_exclude_booking_id?: string | null;
+        };
+        Returns: {
+          id: string;
+          vehicle_id: string;
+          status: Database['public']['Enums']['booking_status'];
+          delivery_date: string;
+          return_date: string;
+          invoice_number: string;
+          customer_name: string;
+        }[];
+      };
       next_invoice_sequence: {
         Args: {
           p_prefix: string;

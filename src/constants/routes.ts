@@ -26,7 +26,7 @@ export const ROUTES = {
   customerSignup: '/signup',
   myBookings: '/my-bookings',
   profile: '/profile',
-  /** Authenticated booking-flow step after vehicle selection (C2 placeholder). */
+  /** Authenticated booking request wizard after vehicle selection. */
   bookingContinue: '/booking/continue',
 
   // --- Admin portal ---
@@ -69,15 +69,20 @@ export function vehicleEditPath(id: string): string {
 }
 
 /**
- * Post-auth booking continue path that preserves the selected vehicle.
- * Does not create a booking record (C3).
+ * Authenticated booking wizard path that preserves the selected vehicle.
  */
-export function customerBookingContinuePath(vehicleId: string): string {
+export function customerBookingContinuePath(
+  vehicleId: string,
+  step?: 'dates' | 'details' | 'review',
+): string {
   const params = new URLSearchParams({ vehicle: vehicleId });
+  if (step && step !== 'dates') {
+    params.set('step', step);
+  }
   return `${ROUTES.bookingContinue}?${params.toString()}`;
 }
 
-/** Customer booking request detail path (future booking flow). */
+/** Customer booking request detail / pending-approval path. */
 export function customerBookingPath(bookingId: string): string {
   return `/booking/${bookingId}`;
 }

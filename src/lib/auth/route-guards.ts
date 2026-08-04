@@ -121,11 +121,20 @@ export function isCustomerAccountRoute(pathname: string): boolean {
 
 /**
  * Customer routes that require a signed-in session.
- * Booking continue is gated in C2; account placeholders stay public until C3+.
+ * Booking wizard + request detail are gated; account placeholders stay public until later.
  */
 export function isCustomerProtectedRoute(pathname: string): boolean {
   const path = normalizePathname(pathname);
-  return path === ROUTES.bookingContinue || path.startsWith(`${ROUTES.bookingContinue}/`);
+  if (path === ROUTES.bookingContinue || path.startsWith(`${ROUTES.bookingContinue}/`)) {
+    return true;
+  }
+
+  // /booking/{id} and nested workflow steps (documents / payment / confirmation)
+  if (path === '/booking' || path.startsWith('/booking/')) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

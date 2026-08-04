@@ -1,0 +1,383 @@
+/**
+ * Customer booking REQUEST service.
+ *
+ * Creates draft bookings in the existing `bookings` table for admin approval.
+ * Reuses Conflict / Pricing / Invoice / Availability engines — no parallel logic.
+ *
+ * Authoritative server values (never trusted from the client):
+ * - created_by (auth user)
+ * - status = draft
+ * - daily_charge (vehicle rate)
+ * - invoice_number (sequence RPC)
+ * - duration / total_amount (Pricing Engine)
+ * - booking_amount = 0, payment_method = null, document_submitted = false
+ */
+
+import 'server-only';
+
+import {
+  createBookingConflictError,
+  createBookingNotFoundError,
+  createBookingValidationError,
+  createInvalidBookingDatesError,
+  createUnauthorizedBookingAccessError,
+  createVehicleUnavailableError,
+} from '@/features/bookings/errors';
+import {
+  createBookingRepository,
+  getBookingRepository,
+  type BookingRepository,
+} from '@/features/bookings/repository';
+import {
+  createConflictService,
+  getConflictService,
+  type ConflictService,
+} from '@/features/bookings/service/conflict.service';
+import {
+  createInvoiceNumberService,
+  getInvoiceNumberService,
+  type InvoiceNumberService,
+} from '@/features/bookings/service/invoice-number.service';
+import {
+  calculatePricing,
+  pricingToPersistedFields,
+} from '@/features/bookings/service/pricing.service';
+import {
+  customerBookingDatesSchema,
+  customerBookingRequestSchema,
+  type CustomerBookingRequestInput,
+} from '@/features/customer-booking/validations/request';
+import {
+  createAvailabilityService,
+  type AvailabilityService,
+} from '@/features/vehicles/service/availability.service';
+import { getPublicVehicleService } from '@/features/vehicles/service/public-vehicle-service';
+import { APP_ROLES, requireUser, type AuthUser } from '@/lib/auth';
+import { AppError } from '@/lib/errors';
+import type { TypedSupabaseClient } from '@/lib/supabase';
+import { fromPromise } from '@/services';
+import type { ApiResponse, Booking, BookingCreateInput, BookingWithVehicle } from '@/types';
+import { BOOKING_STATUSES } from '@/types/enums';
+
+export interface CustomerBookingServiceDeps {
+  readonly repository?: BookingRepository;
+  readonly client?: TypedSupabaseClient;
+  readonly invoiceNumberService?: InvoiceNumberService;
+  readonly availabilityService?: AvailabilityService;
+  readonly conflictService?: ConflictService;
+  readonly requireUser?: typeof requireUser;
+}
+
+export interface CustomerBookingService {
+  createBookingRequest(input: unknown): Promise<ApiResponse<Booking>>;
+  checkRequestAvailability(input: unknown): Promise<ApiResponse<{ available: true }>>;
+  getOwnBooking(bookingId: string): Promise<ApiResponse<Booking>>;
+  getOwnBookingWithVehicle(bookingId: string): Promise<ApiResponse<BookingWithVehicle>>;
+}
+
+function todayIsoUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function assertCustomerActor(actor: AuthUser): void {
+  if (actor.role !== APP_ROLES.customer) {
+    throw createUnauthorizedBookingAccessError();
+  }
+}
+
+function assertNotInPast(deliveryDate: string): void {
+  if (deliveryDate < todayIsoUtc()) {
+    throw createInvalidBookingDatesError('Pickup date cannot be in the past.');
+  }
+}
+
+async function ensureScheduleClearForRequest(
+  availability: AvailabilityService,
+  conflict: ConflictService,
+  params: {
+    vehicleId: string;
+    deliveryDate: string;
+    returnDate: string;
+  },
+): Promise<void> {
+  try {
+    await availability.assertVehicleBookable(params.vehicleId);
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw createVehicleUnavailableError(error.message);
+    }
+    throw error;
+  }
+
+  // Customer requests are stored as draft, but must still respect confirmed/ongoing
+  // windows. Call detectConflicts directly — assertNoConflict no-ops for draft.
+  const result = await conflict.detectConflicts({
+    vehicleId: params.vehicleId,
+    deliveryDate: params.deliveryDate,
+    returnDate: params.returnDate,
+  });
+
+  if (!result.success) {
+    throw result.error;
+  }
+
+  if (result.data.hasConflict && result.data.conflicts.length > 0) {
+    const primary = result.data.conflicts[0]!;
+    throw createBookingConflictError(primary, result.data.message);
+  }
+}
+
+async function findRecentDuplicateDraft(
+  repository: BookingRepository,
+  actorId: string,
+  values: CustomerBookingRequestInput,
+): Promise<Booking | null> {
+  // Idempotency: same customer + vehicle + dates within a short window.
+  const existing = await repository.list({
+    vehicleId: values.vehicleId,
+    status: BOOKING_STATUSES.draft,
+    deliveryDateFrom: values.deliveryDate,
+    deliveryDateTo: values.deliveryDate,
+    returnDateFrom: values.returnDate,
+    returnDateTo: values.returnDate,
+    page: 1,
+    pageSize: 10,
+  });
+
+  const match = existing.data.find(
+    (row) =>
+      row.created_by === actorId &&
+      row.vehicle_id === values.vehicleId &&
+      row.delivery_date === values.deliveryDate &&
+      row.return_date === values.returnDate &&
+      row.status === BOOKING_STATUSES.draft,
+  );
+
+  return match ?? null;
+}
+
+export function createCustomerBookingService(
+  deps: CustomerBookingServiceDeps = {},
+): CustomerBookingService {
+  const requireActor = deps.requireUser ?? requireUser;
+
+  async function getRepository(): Promise<BookingRepository> {
+    if (deps.repository) {
+      return deps.repository;
+    }
+
+    if (deps.client) {
+      return createBookingRepository(deps.client);
+    }
+
+    return getBookingRepository();
+  }
+
+  function getInvoiceService(): InvoiceNumberService {
+    if (deps.invoiceNumberService) {
+      return deps.invoiceNumberService;
+    }
+
+    if (deps.client) {
+      return createInvoiceNumberService({ client: deps.client });
+    }
+
+    return getInvoiceNumberService();
+  }
+
+  function getAvailability(): AvailabilityService {
+    if (deps.availabilityService) {
+      return deps.availabilityService;
+    }
+
+    if (deps.client) {
+      return createAvailabilityService({
+        client: deps.client,
+        // Customer path must not require staff vehicle permissions.
+        requirePermission: async () => requireActor(),
+      });
+    }
+
+    return createAvailabilityService({
+      requirePermission: async () => requireActor(),
+    });
+  }
+
+  function getConflict(): ConflictService {
+    if (deps.conflictService) {
+      return deps.conflictService;
+    }
+
+    if (deps.client) {
+      return createConflictService({ client: deps.client });
+    }
+
+    return getConflictService();
+  }
+
+  const service: CustomerBookingService = {
+    checkRequestAvailability(input) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        const parsed = customerBookingDatesSchema.safeParse(input);
+        if (!parsed.success) {
+          const first = parsed.error.issues[0];
+          throw createBookingValidationError(first?.message ?? 'Invalid booking dates.');
+        }
+
+        assertNotInPast(parsed.data.deliveryDate);
+        if (parsed.data.returnDate < parsed.data.deliveryDate) {
+          throw createInvalidBookingDatesError();
+        }
+
+        const vehicleResult = await getPublicVehicleService().getPublicVehicle(
+          parsed.data.vehicleId,
+        );
+        if (!vehicleResult.success) {
+          throw vehicleResult.error;
+        }
+
+        await ensureScheduleClearForRequest(getAvailability(), getConflict(), {
+          vehicleId: parsed.data.vehicleId,
+          deliveryDate: parsed.data.deliveryDate,
+          returnDate: parsed.data.returnDate,
+        });
+
+        return { available: true as const };
+      });
+    },
+
+    createBookingRequest(input) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        const parsed = customerBookingRequestSchema.safeParse(input);
+        if (!parsed.success) {
+          const first = parsed.error.issues[0];
+          throw createBookingValidationError(first?.message ?? 'Invalid booking request.');
+        }
+
+        const values = parsed.data;
+        assertNotInPast(values.deliveryDate);
+
+        const repository = await getRepository();
+        const duplicate = await findRecentDuplicateDraft(repository, actor.id, values);
+        if (duplicate) {
+          return duplicate;
+        }
+
+        const vehicleResult = await getPublicVehicleService().getPublicVehicle(values.vehicleId);
+        if (!vehicleResult.success) {
+          throw vehicleResult.error;
+        }
+
+        const vehicle = vehicleResult.data;
+        const dailyCharge = Number(vehicle.default_daily_rate);
+
+        if (!Number.isFinite(dailyCharge) || dailyCharge < 0) {
+          throw createBookingValidationError('This vehicle does not have a valid daily rate.');
+        }
+
+        await ensureScheduleClearForRequest(getAvailability(), getConflict(), {
+          vehicleId: values.vehicleId,
+          deliveryDate: values.deliveryDate,
+          returnDate: values.returnDate,
+        });
+
+        const invoiceNumber = await getInvoiceService().generateNextInvoiceNumber();
+        const pricing = calculatePricing({
+          dailyRate: dailyCharge,
+          deliveryDate: values.deliveryDate,
+          returnDate: values.returnDate,
+          amountPaid: 0,
+        });
+        const priced = pricingToPersistedFields(pricing);
+
+        const payload: BookingCreateInput = {
+          invoice_number: invoiceNumber,
+          vehicle_id: values.vehicleId,
+          mode: values.mode,
+          customer_name: values.customerName,
+          address: values.address,
+          city: values.city,
+          state: values.state,
+          zip_code: values.zipCode,
+          place_to_visit: values.placeToVisit.trim() ? values.placeToVisit.trim() : null,
+          contact_number: values.contactNumber,
+          delivery_date: values.deliveryDate,
+          return_date: values.returnDate,
+          daily_charge: dailyCharge,
+          duration: priced.duration,
+          booking_amount: 0,
+          total_amount: priced.total_amount,
+          status: BOOKING_STATUSES.draft,
+          document_submitted: false,
+          payment_method: null,
+          driver_name: null,
+          fuel_range: null,
+          notes: null,
+          created_by: actor.id,
+        };
+
+        // Draft requests do not change vehicle availability — skip sync so a
+        // customer JWT cannot attempt a staff-only vehicle update.
+        return repository.create(payload);
+      });
+    },
+
+    getOwnBooking(bookingId) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        if (!bookingId.trim()) {
+          throw createBookingValidationError('Booking id is required.');
+        }
+
+        const repository = await getRepository();
+        const booking = await repository.findById(bookingId);
+
+        if (!booking || booking.created_by !== actor.id) {
+          throw createBookingNotFoundError();
+        }
+
+        return booking;
+      });
+    },
+
+    getOwnBookingWithVehicle(bookingId) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        if (!bookingId.trim()) {
+          throw createBookingValidationError('Booking id is required.');
+        }
+
+        const repository = await getRepository();
+        const booking = await repository.findByIdWithVehicle(bookingId);
+
+        if (!booking || booking.created_by !== actor.id) {
+          // Hide existence of other customers' bookings.
+          throw createBookingNotFoundError();
+        }
+
+        return booking;
+      });
+    },
+  };
+
+  return service;
+}
+
+let singleton: CustomerBookingService | null = null;
+
+export function getCustomerBookingService(): CustomerBookingService {
+  if (!singleton) {
+    singleton = createCustomerBookingService();
+  }
+  return singleton;
+}
