@@ -1,14 +1,15 @@
 'use client';
 
-import { Fuel, Gauge } from 'lucide-react';
+import { CarFront, Fuel, Gauge } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
   resolveVehicleAvailability,
   VehicleAvailabilityBadge,
 } from '@/features/vehicles/components/vehicle-availability-badge';
-import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
+import { getVehicleImagePublicUrl } from '@/features/vehicles/lib/vehicle-image-url';
 import {
   buildCustomerBookACarSearchParams,
   type CustomerBookACarUrlState,
@@ -17,6 +18,35 @@ import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PublicVehicle } from '@/types';
 import { FUEL_TYPE_LABELS, TRANSMISSION_TYPE_LABELS } from '@/types/enums';
+
+function VehicleBrowseMedia({
+  imagePath,
+  alt,
+}: {
+  imagePath: string | null | undefined;
+  alt: string;
+}) {
+  const url = getVehicleImagePublicUrl(imagePath);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = Boolean(url) && failedUrl !== url;
+
+  return (
+    <div className="relative flex aspect-[16/10] w-full shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-secondary sm:aspect-auto sm:h-[7.5rem] sm:w-44">
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase Storage URL
+        <img
+          src={url!}
+          alt={alt}
+          className="max-h-full max-w-full object-contain p-2 sm:p-2.5"
+          loading="lazy"
+          onError={() => setFailedUrl(url)}
+        />
+      ) : (
+        <CarFront className="size-10 text-muted-foreground" aria-hidden="true" />
+      )}
+    </div>
+  );
+}
 
 export function VehicleBrowseCard({
   vehicle,
@@ -50,11 +80,7 @@ export function VehicleBrowseCard({
         </span>
       ) : null}
 
-      <VehicleThumbnail
-        imagePath={vehicle.image_path}
-        alt={vehicle.vehicle_name}
-        className="h-28 w-full rounded-md sm:h-24 sm:w-36"
-      />
+      <VehicleBrowseMedia imagePath={vehicle.image_path} alt={vehicle.vehicle_name} />
 
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -82,7 +108,7 @@ export function VehicleBrowseCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end">
+      <div className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-border/70 pt-3 sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
         <p className="text-sm text-muted-foreground">
           From <span className="text-base font-bold text-foreground">{rate || '—'}</span>
           <span className="text-muted-foreground"> /day</span>
