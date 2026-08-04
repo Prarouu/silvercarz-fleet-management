@@ -16,27 +16,26 @@ import type { Session, User } from '@supabase/supabase-js';
 import { cache } from 'react';
 
 import { getProfileById } from '@/lib/auth/profile';
-import { isAppRole, type AppRole } from '@/lib/auth/roles';
+import type { AppRole } from '@/lib/auth/roles';
 import type { AuthState, AuthUser } from '@/lib/auth/types';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
  * Maps a Supabase `User` into a minimal `AuthUser` (no profile yet).
  * Prefer `getCurrentUser`, which enriches from `profiles`.
+ *
+ * Role comes only from `profiles` (or an explicit caller override).
+ * Never trust `app_metadata.role` — public signup must not inherit staff.
  */
 export function toAuthUser(
   user: User,
   extras?: { fullName?: string | null; role?: AppRole | null },
 ): AuthUser {
-  const metadataRole = user.app_metadata?.role;
-  const fallbackRole =
-    typeof metadataRole === 'string' && isAppRole(metadataRole) ? metadataRole : null;
-
   return {
     id: user.id,
     email: user.email,
     fullName: extras?.fullName ?? null,
-    role: extras?.role ?? fallbackRole,
+    role: extras?.role ?? null,
   };
 }
 

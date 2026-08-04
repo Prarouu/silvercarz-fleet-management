@@ -3,8 +3,10 @@
 /**
  * Customer sign-up Server Action.
  *
- * Creates a Supabase Auth user. Profile + `customer` role are assigned by the
- * existing `handle_new_user` trigger (never from client-supplied role fields).
+ * Creates a Supabase Auth user with user_metadata only (full_name).
+ * Profile role is assigned by `handle_new_user` / `staff_allowlist`:
+ * public signups are always `customer` unless the email is staff-allowlisted.
+ * Never accept a role from the client.
  */
 
 import { redirect } from 'next/navigation';
@@ -69,6 +71,7 @@ export async function customerSignUpAction(
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
+        // user_metadata only — never app_metadata / role.
         data: {
           full_name: parsed.data.fullName,
         },
