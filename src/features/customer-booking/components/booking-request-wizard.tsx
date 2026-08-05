@@ -23,6 +23,7 @@ import {
 import { customerBookingPath, ROUTES } from '@/constants/routes';
 import { checkCustomerBookingAvailability } from '@/features/customer-booking/actions/check-request-availability';
 import { createCustomerBookingRequest } from '@/features/customer-booking/actions/create-booking-request';
+import { BookingDateCalendar } from '@/features/customer-booking/components/booking-date-calendar';
 import { SelectedVehicleSummary } from '@/features/customer-booking/components/selected-vehicle-summary';
 import { estimateBookingTotal } from '@/features/customer-booking/lib/estimate';
 import {
@@ -42,13 +43,6 @@ import type { PublicVehicle } from '@/types';
 import { RENTAL_MODE_LABELS, RENTAL_MODE_VALUES, type RentalMode } from '@/types/enums';
 
 type WizardFormValues = CustomerBookingRequestInput;
-
-function todayIsoLocal(): string {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const local = new Date(now.getTime() - offset * 60_000);
-  return local.toISOString().slice(0, 10);
-}
 
 function stepToProgress(step: BookingWizardStep): number {
   if (step === 'dates') return 2;
@@ -140,7 +134,6 @@ export function BookingRequestWizard({
   });
 
   const isLoading = isSubmitting || isPending;
-  const minDate = todayIsoLocal();
 
   const persistDraft = () => {
     const values = getValues();
@@ -174,12 +167,18 @@ export function BookingRequestWizard({
   const onContinueFromDates = () => {
     setFormError(null);
     startDateCheck(async () => {
+      const values = getValues();
+
+      if (!values.deliveryDate || !values.returnDate) {
+        setFormError('Select both a pickup date and a return date on the calendar.');
+        return;
+      }
+
       const datesOk = await trigger(['deliveryDate', 'returnDate', 'mode']);
       if (!datesOk) {
         return;
       }
 
-      const values = getValues();
       const result = await checkCustomerBookingAvailability({
         vehicleId: vehicle.id,
         deliveryDate: values.deliveryDate,
@@ -249,7 +248,7 @@ export function BookingRequestWizard({
             <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               {step === 'dates'
-                ? 'Choose pickup and return dates for your selected car.'
+                ? 'Pick your dates on the calendar. Unavailable days are marked in red.'
                 : step === 'details'
                   ? 'Confirm how we can reach you for this rental request.'
                   : 'Check everything carefully, then send your request for Silver Carz approval.'}
@@ -272,35 +271,31 @@ export function BookingRequestWizard({
 
               {step === 'dates' ? (
                 <div className="space-y-5 rounded-lg border border-border bg-card p-5 sm:p-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label htmlFor="deliveryDate">Pickup date</Label>
-                      <Input
-                        id="deliveryDate"
-                        type="date"
-                        min={minDate}
-                        disabled={isCheckingDates || isLoading}
-                        aria-invalid={Boolean(errors.deliveryDate)}
-                        {...register('deliveryDate')}
-                      />
-                      {errors.deliveryDate ? (
-                        <p className="text-sm text-destructive">{errors.deliveryDate.message}</p>
-                      ) : null}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="returnDate">Return date</Label>
-                      <Input
-                        id="returnDate"
-                        type="date"
-                        min={deliveryDate || minDate}
-                        disabled={isCheckingDates || isLoading}
-                        aria-invalid={Boolean(errors.returnDate)}
-                        {...register('returnDate')}
-                      />
-                      {errors.returnDate ? (
-                        <p className="text-sm text-destructive">{errors.returnDate.message}</p>
-                      ) : null}
-                    </div>
+                  <input type="hidden" {...register('deliveryDate')} />
+                  <input type="hidden" {...register('returnDate')} />
+
+                  <div className="space-y-2">
+                    <Label>Select rental dates</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Tap your pickup date, then your return date. Red boxes are already booked.
+                    </p>
+                    <BookingDateCalendar
+                      vehicleId={vehicle.id}
+                      deliveryDate={deliveryDate}
+                      returnDate={returnDate}
+                      disabled={isCheckingDates || isLoading}
+                      onChange={({ deliveryDate: nextDelivery, returnDate: nextReturn }) => {
+                        setValue('deliveryDate', nextDelivery, { shouldValidate: true });
+                        setValue('returnDate', nextReturn, { shouldValidate: true });
+                      }}
+                      onSelectionIssue={(message) => setFormError(message)}
+                    />
+                    {errors.deliveryDate ? (
+                      <p className="text-sm text-destructive">{errors.deliveryDate.message}</p>
+                    ) : null}
+                    {errors.returnDate ? (
+                      <p className="text-sm text-destructive">{errors.returnDate.message}</p>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-2">

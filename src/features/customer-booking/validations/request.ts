@@ -55,3 +55,16 @@ export const customerBookingDatesSchema = z
   });
 
 export type CustomerBookingDatesInput = z.infer<typeof customerBookingDatesSchema>;
+
+/** Month-window booked-date lookup for the availability calendar. */
+export const customerVehicleBookedDatesSchema = z
+  .object({
+    vehicleId: entityIdSchema,
+    fromDate: isoDateSchema,
+    toDate: isoDateSchema,
+  })
+  .superRefine((data, ctx) => {
+    refineDateRange(data.fromDate, data.toDate, ctx, ['toDate']);
+  });
+
+export type CustomerVehicleBookedDatesInput = z.infer<typeof customerVehicleBookedDatesSchema>;

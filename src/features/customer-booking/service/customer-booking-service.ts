@@ -42,9 +42,12 @@ import {
   calculatePricing,
   pricingToPersistedFields,
 } from '@/features/bookings/service/pricing.service';
+import { expandInclusiveDateRange } from '@/features/customer-booking/lib/calendar-dates';
+import { customerSafeConflictMessage } from '@/features/customer-booking/lib/conflict-message';
 import {
   customerBookingDatesSchema,
   customerBookingRequestSchema,
+  customerVehicleBookedDatesSchema,
   type CustomerBookingRequestInput,
 } from '@/features/customer-booking/validations/request';
 import {
@@ -71,6 +74,7 @@ export interface CustomerBookingServiceDeps {
 export interface CustomerBookingService {
   createBookingRequest(input: unknown): Promise<ApiResponse<Booking>>;
   checkRequestAvailability(input: unknown): Promise<ApiResponse<{ available: true }>>;
+  listBookedDates(input: unknown): Promise<ApiResponse<{ readonly bookedDates: string[] }>>;
   getOwnBooking(bookingId: string): Promise<ApiResponse<Booking>>;
   getOwnBookingWithVehicle(bookingId: string): Promise<ApiResponse<BookingWithVehicle>>;
 }
@@ -123,7 +127,10 @@ async function ensureScheduleClearForRequest(
 
   if (result.data.hasConflict && result.data.conflicts.length > 0) {
     const primary = result.data.conflicts[0]!;
-    throw createBookingConflictError(primary, result.data.message);
+    throw createBookingConflictError(
+      primary,
+      customerSafeConflictMessage(primary.deliveryDate, primary.returnDate),
+    );
   }
 }
 
@@ -246,6 +253,44 @@ export function createCustomerBookingService(
         });
 
         return { available: true as const };
+      });
+    },
+
+    listBookedDates(input) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        const parsed = customerVehicleBookedDatesSchema.safeParse(input);
+        if (!parsed.success) {
+          const first = parsed.error.issues[0];
+          throw createBookingValidationError(first?.message ?? 'Invalid calendar range.');
+        }
+
+        const vehicleResult = await getPublicVehicleService().getPublicVehicle(
+          parsed.data.vehicleId,
+        );
+        if (!vehicleResult.success) {
+          throw vehicleResult.error;
+        }
+
+        const repository = await getRepository();
+        const overlaps = await repository.findOverlappingForVehicle({
+          vehicleId: parsed.data.vehicleId,
+          deliveryDate: parsed.data.fromDate,
+          returnDate: parsed.data.toDate,
+        });
+
+        const booked = new Set<string>();
+        for (const row of overlaps) {
+          for (const day of expandInclusiveDateRange(row.delivery_date, row.return_date)) {
+            if (day >= parsed.data.fromDate && day <= parsed.data.toDate) {
+              booked.add(day);
+            }
+          }
+        }
+
+        return { bookedDates: [...booked].sort() };
       });
     },
 
