@@ -19,22 +19,22 @@ export function BookingRequestPending({ booking }: { readonly booking: BookingWi
 
   return (
     <>
-      <BookingProgressSteps activeStep={4} />
+      <BookingProgressSteps activeStep={5} />
 
       <CustomerContainer className="max-w-3xl py-10 sm:py-14">
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-1 size-8 shrink-0 text-success" aria-hidden="true" />
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
-              Request submitted
+              Documents submitted
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground uppercase sm:text-4xl">
               Booking request submitted
             </h1>
             <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
             <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-              Your request has been sent to Silver Carz for approval. We’ll confirm availability and
-              next steps — this is not a confirmed booking yet.
+              Your booking request and documents have been sent to Silver Carz for review. We’ll
+              confirm availability and next steps — this is not a confirmed booking yet.
             </p>
           </div>
         </div>

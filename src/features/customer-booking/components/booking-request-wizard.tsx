@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { customerBookingPath, ROUTES } from '@/constants/routes';
+import { customerBookingDocumentsPath, ROUTES } from '@/constants/routes';
 import { checkCustomerBookingAvailability } from '@/features/customer-booking/actions/check-request-availability';
 import { createCustomerBookingRequest } from '@/features/customer-booking/actions/create-booking-request';
 import { BookingDateCalendar } from '@/features/customer-booking/components/booking-date-calendar';
@@ -223,7 +223,7 @@ export function BookingRequestWizard({
       }
 
       clearBookingWizardDraft(vehicle.id);
-      router.push(customerBookingPath(result.data.id));
+      router.push(customerBookingDocumentsPath(result.data.id));
     });
   });
 

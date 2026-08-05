@@ -178,8 +178,8 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <BookingDetailField label="State" value={booking.state} />
             <BookingDetailField label="ZIP Code" value={booking.zip_code} />
             <BookingDetailField
-              label="Document Submitted"
-              value={booking.document_submitted ? 'Yes' : 'No'}
+              label="Documents"
+              value={booking.document_submitted ? 'Submitted' : 'Pending'}
             />
           </dl>
         </BookingDetailSection>

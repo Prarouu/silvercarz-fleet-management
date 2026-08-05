@@ -87,7 +87,7 @@ export function customerBookingPath(bookingId: string): string {
   return `/booking/${bookingId}`;
 }
 
-/** Customer booking documents step (future booking flow). */
+/** Customer booking documents step. */
 export function customerBookingDocumentsPath(bookingId: string): string {
   return `/booking/${bookingId}/documents`;
 }

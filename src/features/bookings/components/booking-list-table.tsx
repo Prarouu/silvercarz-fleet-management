@@ -154,6 +154,17 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         cell: ({ row }) => <BookingStatusBadge booking={row.original} />,
       },
       {
+        id: 'documents',
+        accessorKey: 'document_submitted',
+        header: 'Documents',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.document_submitted ? 'Submitted' : 'Pending'}
+          </span>
+        ),
+      },
+      {
         id: 'total_amount',
         accessorKey: 'total_amount',
         header: 'Total',
@@ -355,6 +366,10 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
                 <div className="min-w-0">
                   <dt className="text-xs text-muted-foreground">Return</dt>
                   <dd className="tabular-nums">{formatDate(booking.return_date)}</dd>
+                </div>
+                <div className="col-span-2 min-w-0">
+                  <dt className="text-xs text-muted-foreground">Documents</dt>
+                  <dd>{booking.document_submitted ? 'Submitted' : 'Pending'}</dd>
                 </div>
               </dl>
             </article>

@@ -248,6 +248,60 @@ export type Database = {
           },
         ];
       };
+      booking_documents: {
+        Row: {
+          id: string;
+          booking_id: string;
+          customer_id: string;
+          document_type: string;
+          file_name: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          customer_id: string;
+          document_type: string;
+          file_name: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          customer_id?: string;
+          document_type?: string;
+          file_name?: string;
+          storage_path?: string;
+          mime_type?: string;
+          file_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'booking_documents_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_documents_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -305,6 +359,12 @@ export type Database = {
           invoice_number: string;
           customer_name: string;
         }[];
+      };
+      mark_booking_documents_submitted: {
+        Args: {
+          p_booking_id: string;
+        };
+        Returns: Database['public']['Tables']['bookings']['Row'];
       };
       next_invoice_sequence: {
         Args: {

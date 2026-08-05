@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { BookingProgressSteps } from '@/components/customer/book-a-car/booking-progress-steps';
 import { CustomerContainer } from '@/components/customer/shared/customer-container';
 import { Button } from '@/components/ui/button';
 import { appConfig } from '@/config';
-import { customerBookingPath, ROUTES } from '@/constants/routes';
+import { customerBookingDocumentsPath, customerBookingPath, ROUTES } from '@/constants/routes';
 import {
   BookingRequestPending,
   getOwnCustomerBookingWithVehicle,
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 /**
- * Customer booking request detail — Pending Approval after C3 submit.
+ * Customer booking request detail — Pending Approval after documents (C4).
  */
 export default async function CustomerBookingPage({
   params,
@@ -36,7 +36,7 @@ export default async function CustomerBookingPage({
   if (user.role !== APP_ROLES.customer) {
     return (
       <>
-        <BookingProgressSteps activeStep={4} />
+        <BookingProgressSteps activeStep={5} />
         <CustomerContainer className="max-w-2xl py-10 sm:py-14">
           <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">
             Customer account required
@@ -62,14 +62,17 @@ export default async function CustomerBookingPage({
 
   const booking = result.data;
 
+  if (booking.status === BOOKING_STATUSES.draft && !booking.document_submitted) {
+    redirect(customerBookingDocumentsPath(bookingId));
+  }
+
   if (booking.status === BOOKING_STATUSES.draft) {
     return <BookingRequestPending booking={booking} />;
   }
 
-  // Later phases handle confirmed / payment / documents — keep a clear status view.
   return (
     <>
-      <BookingProgressSteps activeStep={4} />
+      <BookingProgressSteps activeStep={5} />
       <CustomerContainer className="max-w-2xl py-10 sm:py-14">
         <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
           Booking request
@@ -80,9 +83,6 @@ export default async function CustomerBookingPage({
         <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
         <p className="mt-5 text-base text-muted-foreground">
           Status: <span className="font-semibold text-foreground">{booking.status}</span>
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Documents and payment steps arrive in later phases.
         </p>
         <div className="mt-8">
           <Button asChild variant="outline" className="h-11 rounded-md">
