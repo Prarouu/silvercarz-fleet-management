@@ -48,7 +48,7 @@ import {
   getBookingRepository,
   type BookingRepository,
 } from '@/features/bookings/repository';
-import { APP_ROLES, requireUser, type AuthUser } from '@/lib/auth';
+import { APP_ROLES, isStaff, requireUser, type AuthUser } from '@/lib/auth';
 import type { TypedSupabaseClient } from '@/lib/supabase';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { fromPromise } from '@/services';
@@ -79,11 +79,24 @@ export interface BookingDocumentService {
     readonly bookingId: string;
     readonly documentType: string;
   }): Promise<ApiResponse<{ readonly url: string }>>;
+  listDocumentsForStaff(bookingId: string): Promise<ApiResponse<BookingDocumentSummary[]>>;
+  getStaffDocumentSignedUrl(input: {
+    readonly bookingId: string;
+    readonly documentId: string;
+  }): Promise<
+    ApiResponse<{ readonly url: string; readonly mimeType: string; readonly fileName: string }>
+  >;
 }
 
 function assertCustomerActor(actor: AuthUser): void {
   if (actor.role !== APP_ROLES.customer) {
     throw createUnauthorizedBookingAccessError();
+  }
+}
+
+function assertStaffActor(actor: AuthUser): void {
+  if (!isStaff(actor)) {
+    throw createBookingDocumentUnauthorizedError();
   }
 }
 
@@ -351,6 +364,57 @@ export function createBookingDocumentService(
         });
 
         return { url };
+      });
+    },
+
+    listDocumentsForStaff(bookingId) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertStaffActor(actor);
+
+        if (!bookingId.trim()) {
+          throw createBookingValidationError('Booking id is required.');
+        }
+
+        const bookings = await getBookings();
+        const booking = await bookings.findById(bookingId);
+        if (!booking) {
+          throw createBookingNotFoundError();
+        }
+
+        const documents = await getDocuments();
+        const rows = await documents.listForBooking(bookingId);
+        return rows.map((row) => toBookingDocumentSummary(row));
+      });
+    },
+
+    getStaffDocumentSignedUrl(input) {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertStaffActor(actor);
+
+        if (!input.bookingId.trim() || !input.documentId.trim()) {
+          throw createBookingDocumentValidationError('Document id is required.');
+        }
+
+        const documents = await getDocuments();
+        const existing = await documents.findById(input.documentId);
+
+        if (!existing || existing.booking_id !== input.bookingId) {
+          throw createBookingDocumentNotFoundError();
+        }
+
+        const client = await getClient();
+        const url = await createBookingDocumentSignedUrl({
+          path: existing.storage_path,
+          client,
+        });
+
+        return {
+          url,
+          mimeType: existing.mime_type,
+          fileName: existing.file_name,
+        };
       });
     },
   };

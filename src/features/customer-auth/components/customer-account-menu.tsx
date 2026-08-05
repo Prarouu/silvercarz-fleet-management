@@ -1,5 +1,6 @@
 'use client';
 
+import { LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ROUTES } from '@/constants/routes';
 import { customerSignOutAction } from '@/features/customer-auth/actions/sign-out';
+import { isStaff } from '@/lib/auth/authorization';
 import type { AuthUser } from '@/lib/auth/types';
 
 function getInitials(fullName: string | null, email: string | undefined): string {
@@ -44,6 +46,7 @@ export function CustomerAccountMenu({ user }: CustomerAccountMenuProps) {
   const email = user.email ?? 'Signed in';
   const displayName = user.fullName?.trim() || email;
   const initials = getInitials(user.fullName, user.email);
+  const staffUser = isStaff(user);
 
   return (
     <DropdownMenu>
@@ -72,6 +75,17 @@ export function CustomerAccountMenu({ user }: CustomerAccountMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {staffUser ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href={ROUTES.dashboard} className="gap-2">
+                <LayoutDashboard className="size-4" aria-hidden="true" />
+                Admin dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link href={ROUTES.myBookings}>My Bookings</Link>
         </DropdownMenuItem>

@@ -17,6 +17,7 @@ import 'server-only';
 
 import {
   createBookingConflictError,
+  createBookingDatabaseFailureError,
   createBookingNotFoundError,
   createBookingValidationError,
   createInvalidBookingDatesError,
@@ -58,6 +59,7 @@ import { getPublicVehicleService } from '@/features/vehicles/service/public-vehi
 import { APP_ROLES, requireUser, type AuthUser } from '@/lib/auth';
 import { AppError } from '@/lib/errors';
 import type { TypedSupabaseClient } from '@/lib/supabase';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { fromPromise } from '@/services';
 import type { ApiResponse, Booking, BookingCreateInput, BookingWithVehicle } from '@/types';
 import { BOOKING_STATUSES } from '@/types/enums';
@@ -77,6 +79,7 @@ export interface CustomerBookingService {
   listBookedDates(input: unknown): Promise<ApiResponse<{ readonly bookedDates: string[] }>>;
   getOwnBooking(bookingId: string): Promise<ApiResponse<Booking>>;
   getOwnBookingWithVehicle(bookingId: string): Promise<ApiResponse<BookingWithVehicle>>;
+  listOwnBookings(): Promise<ApiResponse<readonly BookingWithVehicle[]>>;
 }
 
 function todayIsoUtc(): string {
@@ -411,6 +414,28 @@ export function createCustomerBookingService(
         }
 
         return booking;
+      });
+    },
+
+    listOwnBookings() {
+      return fromPromise(async () => {
+        const actor = await requireActor();
+        assertCustomerActor(actor);
+
+        const client = deps.client ?? (await createSupabaseServerClient());
+        const { data, error } = await client
+          .from('bookings')
+          .select(
+            '*, vehicle:vehicles(id, vehicle_name, vehicle_number, image_path, availability_status, is_active, fuel_type, default_daily_rate, brand, color, transmission_type)',
+          )
+          .eq('created_by', actor.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw createBookingDatabaseFailureError(error);
+        }
+
+        return (data ?? []).filter((row): row is BookingWithVehicle => row.vehicle != null);
       });
     },
   };

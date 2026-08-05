@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { appConfig, customerMainNavItems } from '@/config';
 import { ROUTES } from '@/constants/routes';
 import { customerSignOutAction } from '@/features/customer-auth/actions/sign-out';
+import { isStaff } from '@/lib/auth/authorization';
 import type { AuthUser } from '@/lib/auth/types';
 
 /**
@@ -18,6 +19,7 @@ import type { AuthUser } from '@/lib/auth/types';
  */
 export function CustomerMobileNav({ user }: { user: AuthUser | null }) {
   const [open, setOpen] = useState(false);
+  const staffUser = isStaff(user);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -70,6 +72,15 @@ export function CustomerMobileNav({ user }: { user: AuthUser | null }) {
                 <p className="truncate text-sm font-semibold">
                   {user.fullName?.trim() || user.email || 'Account'}
                 </p>
+                {staffUser ? (
+                  <Link
+                    href={ROUTES.dashboard}
+                    className="block text-sm font-semibold text-primary hover:text-primary/90"
+                    onClick={() => setOpen(false)}
+                  >
+                    Admin dashboard
+                  </Link>
+                ) : null}
                 <Link
                   href={ROUTES.myBookings}
                   className="block text-sm text-secondary-foreground/80 hover:text-primary"

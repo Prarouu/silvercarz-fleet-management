@@ -9,8 +9,10 @@ import { cn } from '@/lib/utils';
 
 type BookingListRefreshButtonProps = {
   readonly label?: string;
-  /** When true, navigates to the bare bookings path (clears query params). */
+  /** When true, navigates to clearHref or the bare bookings path. */
   readonly clearFilters?: boolean;
+  /** Optional destination when clearing filters (preserves the active queue). */
+  readonly clearHref?: string;
   readonly variant?: 'outline' | 'ghost' | 'default';
   readonly size?: 'default' | 'sm';
 };
@@ -18,6 +20,7 @@ type BookingListRefreshButtonProps = {
 export function BookingListRefreshButton({
   label = 'Refresh',
   clearFilters = false,
+  clearHref,
   variant = 'outline',
   size = 'sm',
 }: BookingListRefreshButtonProps) {
@@ -34,7 +37,7 @@ export function BookingListRefreshButton({
       onClick={() => {
         startTransition(() => {
           if (clearFilters) {
-            router.push(pathname);
+            router.push(clearHref ?? pathname);
             return;
           }
           router.refresh();

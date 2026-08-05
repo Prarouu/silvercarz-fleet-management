@@ -11,7 +11,7 @@ import {
   requiredBookingDocumentTypes,
   type BookingDocumentType,
 } from '@/constants/booking-documents';
-import { customerBookingPath } from '@/constants/routes';
+import { customerBookingPath, ROUTES } from '@/constants/routes';
 import { submitOwnBookingDocuments } from '@/features/booking-documents/actions';
 import { DocumentUploadCard } from '@/features/booking-documents/components/document-upload-card';
 import { SelectedVehicleSummary } from '@/features/customer-booking/components/selected-vehicle-summary';
@@ -76,7 +76,11 @@ export function BookingDocumentsPanel({
         return;
       }
 
-      router.push(customerBookingPath(booking.id));
+      const params = new URLSearchParams({
+        submitted: '1',
+        ref: result.data.invoice_number,
+      });
+      router.push(`${ROUTES.myBookings}?${params.toString()}`);
       router.refresh();
     });
   }

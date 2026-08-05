@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ROUTES } from '@/constants/routes';
+import { BookingDocumentsReview } from '@/features/booking-documents';
 import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadcrumb';
 import { BookingDetailActions } from '@/features/bookings/components/booking-detail-actions';
 import { BookingDetailField } from '@/features/bookings/components/booking-detail-field';
@@ -21,12 +22,14 @@ import {
   FUEL_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
   RENTAL_MODE_LABELS,
+  type BookingDocumentSummary,
   type BookingWithVehicle,
 } from '@/types';
 
 type BookingDetailPageProps = {
   readonly booking?: BookingWithVehicle;
   readonly createdByLabel?: string | null;
+  readonly documents?: readonly BookingDocumentSummary[];
   readonly loadError?: string;
 };
 
@@ -43,7 +46,12 @@ function formatDuration(days: number | null | undefined): string {
   return days === 1 ? '1 day' : `${formatNumber(days)} days`;
 }
 
-export function BookingDetailPage({ booking, createdByLabel, loadError }: BookingDetailPageProps) {
+export function BookingDetailPage({
+  booking,
+  createdByLabel,
+  documents = [],
+  loadError,
+}: BookingDetailPageProps) {
   if (loadError || !booking) {
     return (
       <PageContainer className="max-w-5xl">
@@ -268,6 +276,17 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
           </dl>
         </BookingDetailSection>
       </div>
+
+      <BookingDetailSection
+        title="Identity documents"
+        description="Open uploaded files to cross-check customer identity documents."
+      >
+        <BookingDocumentsReview
+          bookingId={booking.id}
+          documents={documents}
+          documentSubmitted={booking.document_submitted}
+        />
+      </BookingDetailSection>
 
       <BookingPricingSummary pricing={pricing} />
 

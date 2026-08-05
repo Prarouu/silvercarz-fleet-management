@@ -13,6 +13,11 @@ export function BookingListSkeleton() {
         <Skeleton className="h-8 w-32" />
       </div>
 
+      <div className="flex flex-col gap-2 rounded-3xl border p-1.5 sm:flex-row">
+        <Skeleton className="h-14 flex-1 rounded-2xl" />
+        <Skeleton className="h-14 flex-1 rounded-2xl" />
+      </div>
+
       <div className="space-y-3 rounded-3xl border p-3 sm:p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">

@@ -134,6 +134,10 @@ export function isCustomerProtectedRoute(pathname: string): boolean {
     return true;
   }
 
+  if (isCustomerAccountRoute(path)) {
+    return true;
+  }
+
   return false;
 }
 

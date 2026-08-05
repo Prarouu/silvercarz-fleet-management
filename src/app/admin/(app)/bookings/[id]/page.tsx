@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { listBookingDocumentsForStaff } from '@/features/booking-documents';
 import { getBookingWithVehicle } from '@/features/bookings/actions/get-booking';
 import { BookingDetailPage } from '@/features/bookings/components/booking-detail-page';
 import { BOOKING_ERROR_CODES } from '@/features/bookings/errors';
@@ -11,7 +12,10 @@ type BookingDetailRouteProps = {
 
 export default async function BookingDetailRoute({ params }: BookingDetailRouteProps) {
   const { id } = await params;
-  const response = await getBookingWithVehicle(id);
+  const [response, documentsResponse] = await Promise.all([
+    getBookingWithVehicle(id),
+    listBookingDocumentsForStaff(id),
+  ]);
 
   if (!response.success) {
     if (response.error.code === BOOKING_ERROR_CODES.notFound) {
@@ -31,5 +35,9 @@ export default async function BookingDetailRoute({ params }: BookingDetailRouteP
     createdByLabel = profile?.fullName?.trim() || profile?.email || 'Staff member';
   }
 
-  return <BookingDetailPage booking={booking} createdByLabel={createdByLabel} />;
+  const documents = documentsResponse.success ? documentsResponse.data : [];
+
+  return (
+    <BookingDetailPage booking={booking} createdByLabel={createdByLabel} documents={documents} />
+  );
 }

@@ -54,3 +54,18 @@ export async function getOwnBookingDocumentSignedUrl(input: {
 }): Promise<ApiResponse<{ readonly url: string }>> {
   return getBookingDocumentService().getOwnDocumentSignedUrl(input);
 }
+
+export async function listBookingDocumentsForStaff(
+  bookingId: string,
+): Promise<ApiResponse<BookingDocumentSummary[]>> {
+  return getBookingDocumentService().listDocumentsForStaff(bookingId);
+}
+
+export async function getStaffBookingDocumentSignedUrl(input: {
+  readonly bookingId: string;
+  readonly documentId: string;
+}): Promise<
+  ApiResponse<{ readonly url: string; readonly mimeType: string; readonly fileName: string }>
+> {
+  return getBookingDocumentService().getStaffDocumentSignedUrl(input);
+}

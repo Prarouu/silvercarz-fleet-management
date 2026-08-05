@@ -227,8 +227,13 @@ function applyNonSearchFilters(
 
   if (filters?.status) {
     next = applyStatusFilter(next, filters.status);
-  } else if (!filters?.includeCancelled) {
-    next = next.neq('status', BOOKING_STATUSES.cancelled);
+  } else {
+    if (!filters?.includeCancelled) {
+      next = next.neq('status', BOOKING_STATUSES.cancelled);
+    }
+    if (filters?.excludeDraft) {
+      next = next.neq('status', BOOKING_STATUSES.draft);
+    }
   }
 
   if (filters?.vehicleId) {

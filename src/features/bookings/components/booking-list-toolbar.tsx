@@ -15,15 +15,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  BOOKING_LIST_VIEWS,
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
-import { BOOKING_DISPLAY_STATUS_OPTIONS } from '@/features/bookings/service/status.service';
+import {
+  BOOKING_DISPLAY_STATUS_LABELS,
+  BOOKING_DISPLAY_STATUSES,
+} from '@/features/bookings/service/status.service';
 import { useDebounce } from '@/hooks';
 import { RENTAL_MODE_OPTIONS } from '@/types';
 import { cn } from '@/lib/utils';
 
 const ALL_VALUE = '__all__';
+
+const CONFIRMED_STATUS_OPTIONS = [
+  BOOKING_DISPLAY_STATUSES.upcoming,
+  BOOKING_DISPLAY_STATUSES.active,
+  BOOKING_DISPLAY_STATUSES.completed,
+  BOOKING_DISPLAY_STATUSES.cancelled,
+] as const;
 
 type BookingListToolbarProps = {
   readonly state: BookingListUrlState;
@@ -37,6 +48,7 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
   const [searchInput, setSearchInput] = useState(state.search);
   const [prevUrlSearch, setPrevUrlSearch] = useState(state.search);
   const debouncedSearch = useDebounce(searchInput, 350);
+  const isPendingView = state.view === BOOKING_LIST_VIEWS.pending;
 
   if (state.search !== prevUrlSearch) {
     setPrevUrlSearch(state.search);
@@ -61,7 +73,9 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
     pushDebouncedSearch(debouncedSearch);
   }, [debouncedSearch]);
 
-  const hasFilters = Boolean(state.search || state.status || state.mode);
+  const hasFilters = Boolean(
+    state.search || state.mode || (state.view === BOOKING_LIST_VIEWS.confirmed && state.status),
+  );
 
   return (
     <div
@@ -71,7 +85,12 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
       aria-label="Filter bookings"
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-        <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          className={cn(
+            'grid flex-1 gap-3 sm:grid-cols-2',
+            isPendingView ? 'xl:grid-cols-3' : 'xl:grid-cols-4',
+          )}
+        >
           <div className="space-y-1.5 sm:col-span-2 xl:col-span-1">
             <Label htmlFor="booking-search">Search</Label>
             <div className="relative">
@@ -107,30 +126,32 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="booking-status-filter">Status</Label>
-            <Select
-              value={state.status || ALL_VALUE}
-              onValueChange={(value) =>
-                navigate({
-                  status: value === ALL_VALUE ? '' : (value ?? ''),
-                  page: 1,
-                })
-              }
-            >
-              <SelectTrigger id="booking-status-filter" className="w-full" size="default">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_VALUE}>All statuses</SelectItem>
-                {BOOKING_DISPLAY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isPendingView ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="booking-status-filter">Status</Label>
+              <Select
+                value={state.status || ALL_VALUE}
+                onValueChange={(value) =>
+                  navigate({
+                    status: value === ALL_VALUE ? '' : (value ?? ''),
+                    page: 1,
+                  })
+                }
+              >
+                <SelectTrigger id="booking-status-filter" className="w-full" size="default">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_VALUE}>All statuses</SelectItem>
+                  {CONFIRMED_STATUS_OPTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {BOOKING_DISPLAY_STATUS_LABELS[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="booking-mode-filter">Rental mode</Label>
@@ -199,8 +220,14 @@ export function BookingListToolbar({ state, className }: BookingListToolbarProps
             onClick={() => {
               setSearchInput('');
               setPrevUrlSearch('');
+              const query = buildBookingListSearchParams(state, {
+                search: '',
+                status: state.view === BOOKING_LIST_VIEWS.pending ? 'draft' : '',
+                mode: '',
+                page: 1,
+              });
               startTransition(() => {
-                router.push(pathname);
+                router.push(query ? `${pathname}?${query}` : pathname);
               });
             }}
           >
