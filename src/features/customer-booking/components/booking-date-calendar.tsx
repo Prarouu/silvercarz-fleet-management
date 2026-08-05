@@ -154,31 +154,29 @@ export function BookingDateCalendar({
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           Checking availability…
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        <div className="mx-auto w-fit max-w-full space-y-1.5">
+          <div className="grid grid-cols-7 gap-1">
             {WEEKDAYS.map((day) => (
               <div
                 key={day}
-                className="py-1 text-center text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+                className="flex size-8 items-center justify-center text-[10px] font-semibold tracking-wide text-muted-foreground uppercase sm:size-9"
               >
                 {day}
               </div>
             ))}
           </div>
 
-          <div
-            className="grid grid-cols-7 gap-1.5 sm:gap-2"
-            role="grid"
-            aria-label="Availability calendar"
-          >
+          <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Availability calendar">
             {cells.map((cell, index) => {
               if (!cell.isoDate || cell.dayNumber == null) {
-                return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />;
+                return (
+                  <div key={`empty-${index}`} className="size-8 sm:size-9" aria-hidden="true" />
+                );
               }
 
               const iso = cell.isoDate;
@@ -199,7 +197,7 @@ export function BookingDateCalendar({
                   aria-label={`${iso}${booked ? ', unavailable' : selected ? ', selected' : ', available'}`}
                   aria-pressed={selected}
                   className={cn(
-                    'aspect-square rounded-md border text-sm font-semibold transition-colors',
+                    'flex size-8 items-center justify-center rounded-md border text-xs font-semibold transition-colors sm:size-9',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                     past &&
                       !booked &&
