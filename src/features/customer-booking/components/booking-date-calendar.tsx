@@ -205,7 +205,7 @@ export function BookingDateCalendar({
                       !booked &&
                       'cursor-not-allowed border-transparent bg-muted/40 text-muted-foreground/50',
                     booked &&
-                      'border-danger/40 bg-danger text-danger-foreground cursor-not-allowed shadow-sm',
+                      'cursor-not-allowed border-destructive bg-destructive text-destructive-foreground shadow-sm',
                     !past &&
                       !booked &&
                       !selected &&
@@ -227,7 +227,7 @@ export function BookingDateCalendar({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
         <LegendSwatch className="border-border bg-background" label="Available" />
-        <LegendSwatch className="border-danger/40 bg-danger" label="Booked / unavailable" />
+        <LegendSwatch className="border-destructive bg-destructive" label="Booked / unavailable" />
         <LegendSwatch className="border-success bg-success" label="Your selection" />
         <LegendSwatch className="border-transparent bg-muted/40" label="Past dates" />
       </ul>
