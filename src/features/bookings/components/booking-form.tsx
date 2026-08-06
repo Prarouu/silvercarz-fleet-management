@@ -152,7 +152,9 @@ export function BookingForm(props: BookingFormProps) {
         })
       : null;
   const isCancelled =
-    mode === 'edit' && editStatusPresentation?.status === BOOKING_DISPLAY_STATUSES.cancelled;
+    mode === 'edit' &&
+    (editStatusPresentation?.status === BOOKING_DISPLAY_STATUSES.cancelled ||
+      editStatusPresentation?.status === BOOKING_DISPLAY_STATUSES.denied);
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {

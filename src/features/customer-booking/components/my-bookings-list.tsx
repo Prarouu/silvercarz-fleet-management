@@ -13,6 +13,9 @@ function bookingStatusLabel(booking: BookingWithVehicle): string {
   if (booking.status === BOOKING_STATUSES.draft) {
     return booking.document_submitted ? 'Pending approval' : 'Documents needed';
   }
+  if (booking.status === BOOKING_STATUSES.denied) {
+    return 'Denied';
+  }
   return booking.status;
 }
 

@@ -41,6 +41,7 @@ const CONFIRMED_LIST_FILTER_STATUSES = new Set<string>([
   BOOKING_DISPLAY_STATUSES.active,
   BOOKING_DISPLAY_STATUSES.completed,
   BOOKING_DISPLAY_STATUSES.cancelled,
+  BOOKING_DISPLAY_STATUSES.denied,
 ]);
 
 /** Draft-only statuses accepted when the pending queue is active. */
@@ -180,7 +181,11 @@ export function toBookingListQuery(state: BookingListUrlState): BookingListQuery
     pageSize: state.pageSize,
     sortBy: state.sortBy,
     sortOrder: state.sortOrder,
-    includeCancelled: state.status === BOOKING_DISPLAY_STATUSES.cancelled ? true : undefined,
+    includeCancelled:
+      state.status === BOOKING_DISPLAY_STATUSES.cancelled ||
+      state.status === BOOKING_DISPLAY_STATUSES.denied
+        ? true
+        : undefined,
     excludeDraft: status ? undefined : true,
   };
 }

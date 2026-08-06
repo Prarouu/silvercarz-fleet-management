@@ -34,6 +34,7 @@ const CONFIRMED_STATUS_OPTIONS = [
   BOOKING_DISPLAY_STATUSES.active,
   BOOKING_DISPLAY_STATUSES.completed,
   BOOKING_DISPLAY_STATUSES.cancelled,
+  BOOKING_DISPLAY_STATUSES.denied,
 ] as const;
 
 type BookingListToolbarProps = {

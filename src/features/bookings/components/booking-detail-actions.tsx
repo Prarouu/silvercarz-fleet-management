@@ -1,13 +1,15 @@
 'use client';
 
-import { Ban, Pencil, Printer } from 'lucide-react';
+import { Ban, Check, Pencil, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { bookingEditPath, ROUTES } from '@/constants/routes';
+import { approveBooking } from '@/features/bookings/actions/approve-booking';
 import { deleteBooking } from '@/features/bookings/actions/delete-booking';
+import { rejectBooking } from '@/features/bookings/actions/reject-booking';
 import {
   BOOKING_DISPLAY_STATUSES,
   resolveBookingDisplayStatus,
@@ -21,15 +23,73 @@ type BookingDetailActionsProps = {
 
 /**
  * Detail workspace action bar.
- * Lifecycle status is automatic; Cancel Booking is the terminal action.
+ * Draft requests expose Approve / Cancel Request; confirmed bookings use Cancel Booking.
  */
 export function BookingDetailActions({ bookingId, booking }: BookingDetailActionsProps) {
   const [isPending, startTransition] = useTransition();
   const display = resolveBookingDisplayStatus(booking);
-  const isCancelled = display === BOOKING_DISPLAY_STATUSES.cancelled;
+  const isDraft = display === BOOKING_DISPLAY_STATUSES.draft;
+  const isTerminal =
+    display === BOOKING_DISPLAY_STATUSES.cancelled || display === BOOKING_DISPLAY_STATUSES.denied;
+
+  const handleApproveRequest = () => {
+    if (!isDraft) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        'Approve this booking request? It will become a confirmed booking on the fleet calendar.',
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await approveBooking(bookingId);
+
+      if (!result.success) {
+        toast.error('Unable to approve request', { description: result.error.message });
+        return;
+      }
+
+      toast.success('Request approved', {
+        description: `Invoice ${result.data.invoice_number} is now a confirmed booking.`,
+      });
+      window.location.assign(ROUTES.bookingsConfirmed);
+    });
+  };
+
+  const handleCancelRequest = () => {
+    if (!isDraft) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        'Deny this booking request? It will be labeled Denied and kept only as historic proof.',
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await rejectBooking(bookingId);
+
+      if (!result.success) {
+        toast.error('Unable to deny request', { description: result.error.message });
+        return;
+      }
+
+      toast.success('Request denied', {
+        description: `Invoice ${result.data.invoice_number} was marked as Denied.`,
+      });
+      window.location.assign(ROUTES.bookings);
+    });
+  };
 
   const handleCancelBooking = () => {
-    if (isCancelled) {
+    if (isTerminal || isDraft) {
       return;
     }
 
@@ -63,8 +123,38 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
       role="toolbar"
       aria-label="Booking actions"
     >
-      {!isCancelled ? (
-        <Button asChild size="sm">
+      {isDraft ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            disabled={isPending}
+            aria-busy={isPending}
+            onClick={handleApproveRequest}
+            aria-label="Approve booking request"
+          >
+            <Check className="size-4" aria-hidden="true" />
+            Approve Request
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-destructive"
+            disabled={isPending}
+            aria-busy={isPending}
+            onClick={handleCancelRequest}
+            aria-label="Cancel booking request"
+          >
+            <Ban className="size-4" aria-hidden="true" />
+            Cancel Request
+          </Button>
+        </>
+      ) : null}
+
+      {!isTerminal ? (
+        <Button asChild size="sm" variant={isDraft ? 'outline' : 'default'}>
           <Link href={bookingEditPath(bookingId)}>
             <Pencil className="size-4" aria-hidden="true" />
             Edit Booking
@@ -97,26 +187,32 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
         <span className="hidden sm:inline">Print Invoice</span>
       </Button>
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="text-destructive"
-        disabled={isPending || isCancelled}
-        aria-busy={isPending}
-        onClick={handleCancelBooking}
-        aria-label="Cancel booking"
-      >
-        <Ban className="size-4" aria-hidden="true" />
-        {isCancelled ? (
-          'Cancelled'
-        ) : (
-          <>
-            <span className="sm:hidden">Cancel</span>
-            <span className="hidden sm:inline">Cancel Booking</span>
-          </>
-        )}
-      </Button>
+      {!isDraft ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-destructive"
+          disabled={isPending || isTerminal}
+          aria-busy={isPending}
+          onClick={handleCancelBooking}
+          aria-label="Cancel booking"
+        >
+          <Ban className="size-4" aria-hidden="true" />
+          {isTerminal ? (
+            display === BOOKING_DISPLAY_STATUSES.denied ? (
+              'Denied'
+            ) : (
+              'Cancelled'
+            )
+          ) : (
+            <>
+              <span className="sm:hidden">Cancel</span>
+              <span className="hidden sm:inline">Cancel Booking</span>
+            </>
+          )}
+        </Button>
+      ) : null}
     </div>
   );
 }

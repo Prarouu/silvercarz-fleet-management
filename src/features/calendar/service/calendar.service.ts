@@ -81,7 +81,7 @@ function buildTimeline(params: {
 
     for (const booking of vehicleBookings) {
       const display = resolveBookingDisplayStatus(booking, params.asOfDate);
-      if (display === 'cancelled' || display === 'draft') {
+      if (display === 'cancelled' || display === 'denied' || display === 'draft') {
         continue;
       }
 
@@ -167,13 +167,21 @@ async function buildSummary(params: {
   const todaysPickups = params.bookings.filter((booking) => {
     const status = resolveBookingDisplayStatus(booking, params.asOfDate);
     return (
-      status !== 'cancelled' && status !== 'draft' && booking.delivery_date === params.asOfDate
+      status !== 'cancelled' &&
+      status !== 'denied' &&
+      status !== 'draft' &&
+      booking.delivery_date === params.asOfDate
     );
   }).length;
 
   const todaysReturns = params.bookings.filter((booking) => {
     const status = resolveBookingDisplayStatus(booking, params.asOfDate);
-    return status !== 'cancelled' && status !== 'draft' && booking.return_date === params.asOfDate;
+    return (
+      status !== 'cancelled' &&
+      status !== 'denied' &&
+      status !== 'draft' &&
+      booking.return_date === params.asOfDate
+    );
   }).length;
 
   return {
@@ -283,7 +291,7 @@ export function createCalendarService(deps: CalendarServiceDeps = {}): CalendarS
                 vehicleIds,
                 driverName: query.driver,
                 search: query.search,
-                includeCancelled: query.status === 'cancelled',
+                includeCancelled: query.status === 'cancelled' || query.status === 'denied',
                 excludeDraft: query.status !== 'draft',
                 limit: 500,
               });

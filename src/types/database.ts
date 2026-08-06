@@ -388,7 +388,7 @@ export type Database = {
       vehicle_availability: 'available' | 'booked' | 'maintenance' | 'reserved' | 'inactive';
       rental_mode: 'with_driver' | 'without_driver';
       payment_method: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'other';
-      booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
+      booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled' | 'denied';
     };
     CompositeTypes: Record<string, never>;
   };

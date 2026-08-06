@@ -53,6 +53,7 @@ export const CONFLICT_BLOCKING_STATUSES = [
 /** Statuses that never participate in conflict detection. */
 export const CONFLICT_IGNORED_STATUSES = [
   BOOKING_STATUSES.cancelled,
+  BOOKING_STATUSES.denied,
   BOOKING_STATUSES.draft,
   BOOKING_STATUSES.completed,
 ] as const satisfies readonly BookingStatus[];
@@ -234,6 +235,7 @@ export function createConflictService(deps: ConflictServiceDeps = {}): ConflictS
     async assertNoConflict(params) {
       if (
         params.status === BOOKING_STATUSES.cancelled ||
+        params.status === BOOKING_STATUSES.denied ||
         params.status === BOOKING_STATUSES.draft
       ) {
         return;

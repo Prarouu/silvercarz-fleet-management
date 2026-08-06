@@ -151,6 +151,7 @@ export const BOOKING_STATUSES = {
   ongoing: 'ongoing',
   completed: 'completed',
   cancelled: 'cancelled',
+  denied: 'denied',
 } as const satisfies Record<string, BookingStatus>;
 
 export const BOOKING_STATUS_VALUES = [
@@ -159,6 +160,7 @@ export const BOOKING_STATUS_VALUES = [
   BOOKING_STATUSES.ongoing,
   BOOKING_STATUSES.completed,
   BOOKING_STATUSES.cancelled,
+  BOOKING_STATUSES.denied,
 ] as const;
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
@@ -167,6 +169,7 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   ongoing: 'Ongoing',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  denied: 'Denied',
 };
 
 /**

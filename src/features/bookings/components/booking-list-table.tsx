@@ -14,9 +14,11 @@ import { useMemo, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BookingRequestActions } from '@/features/bookings/components/booking-request-actions';
 import { BookingRowActions } from '@/features/bookings/components/booking-row-actions';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import {
+  BOOKING_LIST_VIEWS,
   buildBookingListSearchParams,
   type BookingListUrlState,
 } from '@/features/bookings/lib/booking-list-params';
@@ -190,7 +192,13 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         header: () => <span className="sr-only">Actions</span>,
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-2">
+            {state.view === BOOKING_LIST_VIEWS.pending ? (
+              <BookingRequestActions
+                bookingId={row.original.id}
+                invoiceNumber={row.original.invoice_number}
+              />
+            ) : null}
             <BookingRowActions
               bookingId={row.original.id}
               invoiceNumber={row.original.invoice_number}
@@ -199,7 +207,7 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         ),
       },
     ],
-    [],
+    [state.view],
   );
 
   // TanStack Table returns unstable function identities — React Compiler skips this component.
@@ -259,7 +267,10 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
                         scope="col"
                         className={cn(
                           'h-11 bg-transparent px-3',
-                          isActions && 'w-12 text-right',
+                          isActions &&
+                            (state.view === BOOKING_LIST_VIEWS.pending
+                              ? 'min-w-[18rem] text-right'
+                              : 'w-12 text-right'),
                           header.column.id === 'total_amount' && 'text-right',
                           header.column.id === 'status' && 'w-[7.5rem]',
                         )}
@@ -348,6 +359,14 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
                   />
                 </div>
               </div>
+              {state.view === BOOKING_LIST_VIEWS.pending ? (
+                <div className="mt-3">
+                  <BookingRequestActions
+                    bookingId={booking.id}
+                    invoiceNumber={booking.invoice_number}
+                  />
+                </div>
+              ) : null}
               <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
                 <div className="min-w-0">
                   <dt className="text-xs text-muted-foreground">Mode</dt>

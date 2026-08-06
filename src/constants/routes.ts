@@ -37,6 +37,8 @@ export const ROUTES = {
   authCallback: '/auth/callback',
   dashboard: '/admin/dashboard',
   bookings: '/admin/bookings',
+  /** Confirmed fleet bookings queue (excludes pending draft requests). */
+  bookingsConfirmed: '/admin/bookings?view=confirmed',
   bookingsNew: '/admin/bookings/new',
   vehicles: '/admin/vehicles',
   vehiclesNew: '/admin/vehicles/new',

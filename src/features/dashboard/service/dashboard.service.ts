@@ -121,7 +121,7 @@ function buildTodaysSchedule(
   const items = bookings
     .filter((booking) => {
       const status = resolveBookingDisplayStatus(booking, asOfDate);
-      if (status === 'cancelled' || status === 'draft') {
+      if (status === 'cancelled' || status === 'denied' || status === 'draft') {
         return false;
       }
       return (
@@ -233,12 +233,22 @@ export function createDashboardService(deps: DashboardServiceDeps = {}): Dashboa
 
         const todaysPickups = todayOverlapping.filter((booking) => {
           const status = resolveBookingDisplayStatus(booking, asOfDate);
-          return status !== 'cancelled' && status !== 'draft' && booking.delivery_date === asOfDate;
+          return (
+            status !== 'cancelled' &&
+            status !== 'denied' &&
+            status !== 'draft' &&
+            booking.delivery_date === asOfDate
+          );
         }).length;
 
         const todaysReturns = todayOverlapping.filter((booking) => {
           const status = resolveBookingDisplayStatus(booking, asOfDate);
-          return status !== 'cancelled' && status !== 'draft' && booking.return_date === asOfDate;
+          return (
+            status !== 'cancelled' &&
+            status !== 'denied' &&
+            status !== 'draft' &&
+            booking.return_date === asOfDate
+          );
         }).length;
 
         const kpis: DashboardKpis = {

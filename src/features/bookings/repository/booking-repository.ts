@@ -191,22 +191,27 @@ function applyStatusFilter(builder: FilterableBuilder, status: string): Filterab
   switch (status) {
     case 'cancelled':
       return builder.eq('status', BOOKING_STATUSES.cancelled);
+    case 'denied':
+      return builder.eq('status', BOOKING_STATUSES.denied);
     case 'draft':
       return builder.eq('status', BOOKING_STATUSES.draft);
     case 'upcoming':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .gt('delivery_date', today);
     case 'active':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .lte('delivery_date', today)
         .gte('return_date', today);
     case 'completed':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .lt('return_date', today);
     // Legacy persisted-enum filters (still accepted for older URLs / callers)
@@ -229,7 +234,7 @@ function applyNonSearchFilters(
     next = applyStatusFilter(next, filters.status);
   } else {
     if (!filters?.includeCancelled) {
-      next = next.neq('status', BOOKING_STATUSES.cancelled);
+      next = next.neq('status', BOOKING_STATUSES.cancelled).neq('status', BOOKING_STATUSES.denied);
     }
     if (filters?.excludeDraft) {
       next = next.neq('status', BOOKING_STATUSES.draft);
@@ -492,7 +497,9 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         .limit(limit);
 
       if (!params.includeCancelled) {
-        builder = builder.neq('status', BOOKING_STATUSES.cancelled);
+        builder = builder
+          .neq('status', BOOKING_STATUSES.cancelled)
+          .neq('status', BOOKING_STATUSES.denied);
       }
 
       if (excludeDraft) {

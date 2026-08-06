@@ -84,6 +84,10 @@ export interface BookingService {
   updateBooking(id: string, input: unknown): Promise<ApiResponse<Booking>>;
   /** Soft-delete (status → cancelled). Preferred application delete. */
   deleteBooking(id: string): Promise<ApiResponse<Booking>>;
+  /** Graduate a draft customer request into a confirmed fleet booking. */
+  approveBooking(id: string): Promise<ApiResponse<Booking>>;
+  /** Deny a draft customer request (status → denied, historic only). */
+  rejectBooking(id: string): Promise<ApiResponse<Booking>>;
   /** Permanent delete — reserved for trusted admin flows. */
   permanentlyDeleteBooking(id: string): Promise<ApiResponse<null>>;
   getBooking(id: string): Promise<ApiResponse<Booking>>;
@@ -155,7 +159,11 @@ async function ensureVehicleScheduleClear(
     status?: string | null;
   },
 ): Promise<void> {
-  if (params.status === BOOKING_STATUSES.cancelled || params.status === BOOKING_STATUSES.draft) {
+  if (
+    params.status === BOOKING_STATUSES.cancelled ||
+    params.status === BOOKING_STATUSES.denied ||
+    params.status === BOOKING_STATUSES.draft
+  ) {
     return;
   }
 
@@ -235,17 +243,19 @@ function applyUpdateDerivedFields(
   });
   const priced = pricingToPersistedFields(pricing);
 
-  // Manual status edits are ignored. Cancelled stays cancelled; otherwise
+  // Manual status edits are ignored. Terminal statuses stay terminal; otherwise
   // Status Service recomputes lifecycle from dates (drafts graduate on save).
   const { status: _ignoredClientStatus, ...safeWithoutStatus } = values;
   const status =
     existing.status === BOOKING_STATUSES.cancelled
       ? BOOKING_STATUSES.cancelled
-      : resolvePersistedBookingStatus({
-          status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
-          delivery_date: deliveryDate,
-          return_date: returnDate,
-        });
+      : existing.status === BOOKING_STATUSES.denied
+        ? BOOKING_STATUSES.denied
+        : resolvePersistedBookingStatus({
+            status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
+            delivery_date: deliveryDate,
+            return_date: returnDate,
+          });
 
   return {
     ...safeWithoutStatus,
@@ -422,6 +432,63 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const cancelled = await repository.softDelete(id);
         await syncVehicleAvailability(existing.vehicle_id);
         return cancelled;
+      });
+    },
+
+    approveBooking(id) {
+      return fromPromise(async () => {
+        await requirePerm(PERMISSIONS.bookingsWrite);
+        const repository = await getRepository();
+        const availability = getAvailability();
+        const conflict = getConflict();
+        const statusEngine = getStatus();
+        const existing = await repository.findById(id);
+
+        if (!existing) {
+          throw createBookingNotFoundError();
+        }
+
+        if (existing.status !== BOOKING_STATUSES.draft) {
+          throw createBookingValidationError('Only pending draft requests can be approved.');
+        }
+
+        const status = statusEngine.resolvePersistedStatus({
+          status: undefined,
+          delivery_date: existing.delivery_date,
+          return_date: existing.return_date,
+        });
+
+        await ensureVehicleScheduleClear(availability, conflict, {
+          vehicleId: existing.vehicle_id,
+          deliveryDate: existing.delivery_date,
+          returnDate: existing.return_date,
+          excludeBookingId: id,
+          status,
+        });
+
+        const approved = await repository.update(id, { status });
+        await syncVehicleAvailability(existing.vehicle_id);
+        return approved;
+      });
+    },
+
+    rejectBooking(id) {
+      return fromPromise(async () => {
+        await requirePerm(PERMISSIONS.bookingsWrite);
+        const repository = await getRepository();
+        const existing = await repository.findById(id);
+
+        if (!existing) {
+          throw createBookingNotFoundError();
+        }
+
+        if (existing.status !== BOOKING_STATUSES.draft) {
+          throw createBookingValidationError('Only pending draft requests can be denied.');
+        }
+
+        const denied = await repository.update(id, { status: BOOKING_STATUSES.denied });
+        await syncVehicleAvailability(existing.vehicle_id);
+        return denied;
       });
     },
 
