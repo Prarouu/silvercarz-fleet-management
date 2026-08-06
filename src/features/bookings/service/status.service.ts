@@ -66,7 +66,7 @@ export const BOOKING_DISPLAY_STATUS_LABELS: Record<BookingDisplayStatus, string>
   completed: 'Completed',
   cancelled: 'Cancelled',
   denied: 'Denied',
-  draft: 'Draft',
+  draft: 'Pending approval',
   no_show: 'No show',
   closed: 'Closed',
 };
@@ -77,7 +77,7 @@ export const BOOKING_DISPLAY_STATUS_DESCRIPTIONS: Record<BookingDisplayStatus, s
   completed: 'The return date has passed. This hire is finished.',
   cancelled: 'This booking was cancelled and no longer occupies the vehicle calendar.',
   denied: 'This customer request was denied and is kept only as historic proof.',
-  draft: 'Draft booking — not yet confirmed on the vehicle calendar.',
+  draft: 'Customer booking request awaiting staff review and document verification.',
   no_show: 'Customer did not take delivery (terminal). Reserved for a future release.',
   closed: 'Administratively closed (terminal). Reserved for a future release.',
 };
@@ -111,7 +111,7 @@ export const BOOKING_DISPLAY_STATUS_BADGE_VARIANTS: Record<
   completed: 'secondary',
   cancelled: 'destructive',
   denied: 'destructive',
-  draft: 'outline',
+  draft: 'warning',
   no_show: 'warning',
   closed: 'secondary',
 };

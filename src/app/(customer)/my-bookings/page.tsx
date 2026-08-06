@@ -11,7 +11,7 @@ import { APP_ROLES, isStaff, requireCustomerAuth } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: `My Bookings | ${appConfig.companyName}`,
-  description: 'Your Silver Carz booking requests.',
+  description: 'Your Silver Carz booking request history and review status.',
 };
 
 export const dynamic = 'force-dynamic';

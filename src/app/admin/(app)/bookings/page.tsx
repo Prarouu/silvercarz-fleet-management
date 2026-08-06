@@ -3,8 +3,10 @@ import { BookingList } from '@/features/bookings/components';
 import {
   parseBookingListUrlState,
   toBookingListQuery,
+  BOOKING_LIST_VIEWS,
 } from '@/features/bookings/lib/booking-list-params';
 import { BOOKING_DISPLAY_STATUSES } from '@/features/bookings/service/status.service';
+import { getBookingDocumentRepository } from '@/features/booking-documents/repository/booking-document-repository';
 
 type BookingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,6 +26,19 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
   const pendingCount = pendingCountResponse.success ? pendingCountResponse.data : null;
   const confirmedCount = confirmedCountResponse.success ? confirmedCountResponse.data : null;
 
+  let documentCounts: Record<string, number> = {};
+
+  if (
+    listResponse.success &&
+    state.view === BOOKING_LIST_VIEWS.pending &&
+    listResponse.data.data.length > 0
+  ) {
+    const counts = await getBookingDocumentRepository().countByBookingIds(
+      listResponse.data.data.map((booking) => booking.id),
+    );
+    documentCounts = Object.fromEntries(counts.entries());
+  }
+
   if (!listResponse.success) {
     return (
       <BookingList
@@ -42,6 +57,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
       result={listResponse.data}
       pendingCount={pendingCount}
       confirmedCount={confirmedCount}
+      documentCounts={documentCounts}
     />
   );
 }

@@ -48,8 +48,21 @@ export function createInvoiceGenerationError(cause?: unknown): AppError {
 
 export function createVehicleUnavailableError(message?: string): AppError {
   return new AppError(
-    message ?? 'This vehicle is not available for the selected dates.',
+    message ?? 'This vehicle is no longer available for the requested dates.',
     BOOKING_ERROR_CODES.vehicleUnavailable,
+  );
+}
+
+export function createBookingAlreadyProcessedError(): AppError {
+  return new AppError('This booking has already been processed.', BOOKING_ERROR_CODES.validation);
+}
+
+export function createBookingDocumentsIncompleteError(missingLabels?: readonly string[]): AppError {
+  const suffix =
+    missingLabels && missingLabels.length > 0 ? ` Missing: ${missingLabels.join(', ')}.` : '';
+  return new AppError(
+    `Required documents are incomplete.${suffix}`,
+    BOOKING_ERROR_CODES.validation,
   );
 }
 

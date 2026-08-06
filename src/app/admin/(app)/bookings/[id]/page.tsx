@@ -29,15 +29,22 @@ export default async function BookingDetailRoute({ params }: BookingDetailRouteP
 
   const booking = response.data;
   let createdByLabel: string | null = null;
+  let customerEmail: string | null = null;
 
   if (booking.created_by) {
     const profile = await getProfileById(booking.created_by);
     createdByLabel = profile?.fullName?.trim() || profile?.email || 'Staff member';
+    customerEmail = profile?.email ?? null;
   }
 
   const documents = documentsResponse.success ? documentsResponse.data : [];
 
   return (
-    <BookingDetailPage booking={booking} createdByLabel={createdByLabel} documents={documents} />
+    <BookingDetailPage
+      booking={booking}
+      createdByLabel={createdByLabel}
+      customerEmail={customerEmail}
+      documents={documents}
+    />
   );
 }

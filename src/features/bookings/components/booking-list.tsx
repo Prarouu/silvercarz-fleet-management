@@ -25,6 +25,7 @@ type BookingListProps = {
   readonly result: PaginatedResult<BookingWithVehicle> | null;
   readonly pendingCount: number | null;
   readonly confirmedCount: number | null;
+  readonly documentCounts?: Readonly<Record<string, number>>;
   readonly errorMessage?: string;
 };
 
@@ -44,6 +45,7 @@ export function BookingList({
   result,
   pendingCount,
   confirmedCount,
+  documentCounts = {},
   errorMessage,
 }: BookingListProps) {
   const filtersActive = hasActiveBookingListFilters(state);
@@ -115,7 +117,7 @@ export function BookingList({
 
         {!errorMessage && result && result.data.length > 0 ? (
           <div className="space-y-4">
-            <BookingListTable data={result.data} state={state} />
+            <BookingListTable data={result.data} state={state} documentCounts={documentCounts} />
             <BookingListPagination state={state} meta={result.meta} />
           </div>
         ) : null}

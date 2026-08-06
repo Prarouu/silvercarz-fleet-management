@@ -2,6 +2,7 @@
 
 /**
  * Approve a draft customer booking request (draft → confirmed/ongoing/completed).
+ * Approved bookings are payment-eligible (C6); invoice number is unchanged.
  */
 
 import { getBookingService } from '@/features/bookings/service';

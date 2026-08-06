@@ -14,6 +14,8 @@ import { useMemo, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { requiredBookingDocumentTypes } from '@/constants/booking-documents';
+import { formatBookingDocumentCompletenessLabel } from '@/features/booking-documents/lib/completeness';
 import { BookingRequestActions } from '@/features/bookings/components/booking-request-actions';
 import { BookingRowActions } from '@/features/bookings/components/booking-row-actions';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
@@ -41,6 +43,8 @@ const SORTABLE_COLUMNS: Record<string, BookingSortField> = {
 type BookingListTableProps = {
   readonly data: readonly BookingWithVehicle[];
   readonly state: BookingListUrlState;
+  /** Uploaded document counts keyed by booking id (pending queue). */
+  readonly documentCounts?: Readonly<Record<string, number>>;
 };
 
 function SortIcon({
@@ -68,10 +72,11 @@ function SortIcon({
   );
 }
 
-export function BookingListTable({ data, state }: BookingListTableProps) {
+export function BookingListTable({ data, state, documentCounts = {} }: BookingListTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const requiredDocumentCount = requiredBookingDocumentTypes().length;
 
   const sorting = useMemo<SortingState>(
     () => [{ id: state.sortBy, desc: state.sortOrder === 'desc' }],
@@ -160,11 +165,36 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         accessorKey: 'document_submitted',
         header: 'Documents',
         enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {row.original.document_submitted ? 'Submitted' : 'Pending'}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const submittedCount = Math.min(
+            documentCounts[row.original.id] ??
+              (row.original.document_submitted ? requiredDocumentCount : 0),
+            requiredDocumentCount,
+          );
+          const isComplete =
+            row.original.document_submitted || submittedCount >= requiredDocumentCount;
+          const label = formatBookingDocumentCompletenessLabel({
+            submittedCount,
+            requiredCount: requiredDocumentCount,
+            isComplete,
+          });
+
+          return (
+            <span
+              className={cn(
+                'text-sm tabular-nums',
+                isComplete ? 'text-success' : 'text-muted-foreground',
+              )}
+            >
+              {isComplete ? 'Complete' : label}
+              {!isComplete ? (
+                <span className="sr-only">
+                  {` ${submittedCount} of ${requiredDocumentCount} required documents`}
+                </span>
+              ) : null}
+            </span>
+          );
+        },
       },
       {
         id: 'total_amount',
@@ -191,23 +221,38 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         id: 'actions',
         header: () => <span className="sr-only">Actions</span>,
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-2">
-            {state.view === BOOKING_LIST_VIEWS.pending ? (
-              <BookingRequestActions
+        cell: ({ row }) => {
+          const submittedCount = Math.min(
+            documentCounts[row.original.id] ??
+              (row.original.document_submitted ? requiredDocumentCount : 0),
+            requiredDocumentCount,
+          );
+          const documentsComplete =
+            row.original.document_submitted || submittedCount >= requiredDocumentCount;
+
+          return (
+            <div className="flex items-center justify-end gap-2">
+              {state.view === BOOKING_LIST_VIEWS.pending ? (
+                <BookingRequestActions
+                  bookingId={row.original.id}
+                  invoiceNumber={row.original.invoice_number}
+                  customerName={row.original.customer_name}
+                  vehicleName={row.original.vehicle.vehicle_name}
+                  deliveryDate={row.original.delivery_date}
+                  returnDate={row.original.return_date}
+                  documentsComplete={documentsComplete}
+                />
+              ) : null}
+              <BookingRowActions
                 bookingId={row.original.id}
                 invoiceNumber={row.original.invoice_number}
               />
-            ) : null}
-            <BookingRowActions
-              bookingId={row.original.id}
-              invoiceNumber={row.original.invoice_number}
-            />
-          </div>
-        ),
+            </div>
+          );
+        },
       },
     ],
-    [state.view],
+    [documentCounts, requiredDocumentCount, state.view],
   );
 
   // TanStack Table returns unstable function identities — React Compiler skips this component.
@@ -328,72 +373,93 @@ export function BookingListTable({ data, state }: BookingListTableProps) {
         aria-busy={isPending}
         aria-label="Bookings"
       >
-        {data.map((booking) => (
-          <li key={booking.id}>
-            <article className="rounded-3xl border bg-card p-4 transition-colors hover:bg-muted/20">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <VehicleThumbnail
-                    imagePath={booking.vehicle.image_path}
-                    alt={`${booking.vehicle.vehicle_name} photo`}
-                    size="md"
-                  />
-                  <div className="min-w-0 space-y-1">
-                    <Link
-                      href={bookingDetailPath(booking.id)}
-                      className="block truncate font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                    >
-                      {booking.invoice_number}
-                    </Link>
-                    <p className="truncate text-sm font-medium">{booking.customer_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
-                    </p>
+        {data.map((booking) => {
+          const submittedCount = Math.min(
+            documentCounts[booking.id] ?? (booking.document_submitted ? requiredDocumentCount : 0),
+            requiredDocumentCount,
+          );
+          const documentsComplete =
+            booking.document_submitted || submittedCount >= requiredDocumentCount;
+          const documentsLabel = formatBookingDocumentCompletenessLabel({
+            submittedCount,
+            requiredCount: requiredDocumentCount,
+            isComplete: documentsComplete,
+          });
+
+          return (
+            <li key={booking.id}>
+              <article className="rounded-3xl border bg-card p-4 transition-colors hover:bg-muted/20">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <VehicleThumbnail
+                      imagePath={booking.vehicle.image_path}
+                      alt={`${booking.vehicle.vehicle_name} photo`}
+                      size="md"
+                    />
+                    <div className="min-w-0 space-y-1">
+                      <Link
+                        href={bookingDetailPath(booking.id)}
+                        className="block truncate font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                      >
+                        {booking.invoice_number}
+                      </Link>
+                      <p className="truncate text-sm font-medium">{booking.customer_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {booking.vehicle.vehicle_name} · {booking.vehicle.vehicle_number}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <BookingStatusBadge booking={booking} />
+                    <BookingRowActions
+                      bookingId={booking.id}
+                      invoiceNumber={booking.invoice_number}
+                    />
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <BookingStatusBadge booking={booking} />
-                  <BookingRowActions
-                    bookingId={booking.id}
-                    invoiceNumber={booking.invoice_number}
-                  />
-                </div>
-              </div>
-              {state.view === BOOKING_LIST_VIEWS.pending ? (
-                <div className="mt-3">
-                  <BookingRequestActions
-                    bookingId={booking.id}
-                    invoiceNumber={booking.invoice_number}
-                  />
-                </div>
-              ) : null}
-              <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
-                <div className="min-w-0">
-                  <dt className="text-xs text-muted-foreground">Mode</dt>
-                  <dd className="truncate">{RENTAL_MODE_LABELS[booking.mode]}</dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-xs text-muted-foreground">Total</dt>
-                  <dd className="font-medium tabular-nums">
-                    {formatCurrency(booking.total_amount)}
-                  </dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-xs text-muted-foreground">Delivery</dt>
-                  <dd className="tabular-nums">{formatDate(booking.delivery_date)}</dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-xs text-muted-foreground">Return</dt>
-                  <dd className="tabular-nums">{formatDate(booking.return_date)}</dd>
-                </div>
-                <div className="col-span-2 min-w-0">
-                  <dt className="text-xs text-muted-foreground">Documents</dt>
-                  <dd>{booking.document_submitted ? 'Submitted' : 'Pending'}</dd>
-                </div>
-              </dl>
-            </article>
-          </li>
-        ))}
+                {state.view === BOOKING_LIST_VIEWS.pending ? (
+                  <div className="mt-3">
+                    <BookingRequestActions
+                      bookingId={booking.id}
+                      invoiceNumber={booking.invoice_number}
+                      customerName={booking.customer_name}
+                      vehicleName={booking.vehicle.vehicle_name}
+                      deliveryDate={booking.delivery_date}
+                      returnDate={booking.return_date}
+                      documentsComplete={documentsComplete}
+                    />
+                  </div>
+                ) : null}
+                <dl className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2.5 border-t pt-3 text-sm">
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Mode</dt>
+                    <dd className="truncate">{RENTAL_MODE_LABELS[booking.mode]}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Total</dt>
+                    <dd className="font-medium tabular-nums">
+                      {formatCurrency(booking.total_amount)}
+                    </dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Delivery</dt>
+                    <dd className="tabular-nums">{formatDate(booking.delivery_date)}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Return</dt>
+                    <dd className="tabular-nums">{formatDate(booking.return_date)}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-xs text-muted-foreground">Documents</dt>
+                    <dd className={documentsComplete ? 'text-success' : undefined}>
+                      {documentsComplete ? 'Complete' : documentsLabel}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

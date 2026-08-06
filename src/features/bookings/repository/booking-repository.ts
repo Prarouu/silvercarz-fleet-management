@@ -45,6 +45,16 @@ const DEFAULT_SORT: BookingSortField = 'created_at';
 export interface BookingRepository {
   create(input: BookingCreateInput): Promise<Booking>;
   update(id: string, input: BookingUpdateInput): Promise<Booking>;
+  /**
+   * Conditional update for draft → approved/denied transitions.
+   * Returns null when the row is missing or no longer in `expectedStatus`
+   * (concurrent admin action / already processed).
+   */
+  updateIfStatus(
+    id: string,
+    expectedStatus: Booking['status'],
+    input: BookingUpdateInput,
+  ): Promise<Booking | null>;
   /** Permanent delete. Prefer `softDelete` for application flows. */
   delete(id: string): Promise<void>;
   softDelete(id: string): Promise<Booking>;
@@ -298,6 +308,22 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
 
       if (!data) {
         throw createBookingNotFoundError();
+      }
+
+      return data;
+    },
+
+    async updateIfStatus(id, expectedStatus, input) {
+      const { data, error } = await client
+        .from('bookings')
+        .update(input)
+        .eq('id', id)
+        .eq('status', expectedStatus)
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        throw mapPersistenceError(error, input.invoice_number);
       }
 
       return data;

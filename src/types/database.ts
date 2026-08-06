@@ -169,6 +169,7 @@ export type Database = {
           total_amount: number;
           status: Database['public']['Enums']['booking_status'];
           notes: string | null;
+          rejection_reason: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -198,6 +199,7 @@ export type Database = {
           total_amount?: number;
           status?: Database['public']['Enums']['booking_status'];
           notes?: string | null;
+          rejection_reason?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -227,6 +229,7 @@ export type Database = {
           total_amount?: number;
           status?: Database['public']['Enums']['booking_status'];
           notes?: string | null;
+          rejection_reason?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

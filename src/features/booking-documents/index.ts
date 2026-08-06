@@ -16,6 +16,11 @@ export {
   getBookingDocumentService,
   type BookingDocumentService,
 } from './service/booking-document-service';
+export {
+  bookingDocumentRequirementChecklist,
+  formatBookingDocumentCompletenessLabel,
+  getBookingDocumentCompleteness,
+} from './lib/completeness';
 export { formatDocumentFileSize, validateBookingDocumentFileClient } from './lib/file-validation';
 export { BookingDocumentsPanel } from './components/booking-documents-panel';
 export { BookingDocumentsReview } from './components/booking-documents-review';

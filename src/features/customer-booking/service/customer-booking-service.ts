@@ -435,6 +435,8 @@ export function createCustomerBookingService(
           throw createBookingDatabaseFailureError(error);
         }
 
+        // Own booking SELECT covers draft / confirmed / denied / cancelled.
+        // Vehicle embed is readable via vehicles_select_own_booking_history.
         return (data ?? []).filter((row): row is BookingWithVehicle => row.vehicle != null);
       });
     },

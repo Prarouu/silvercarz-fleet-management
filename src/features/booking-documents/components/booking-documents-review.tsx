@@ -25,10 +25,16 @@ export function BookingDocumentsReview({
   bookingId,
   documents,
   documentSubmitted,
+  checklist = [],
 }: {
   readonly bookingId: string;
   readonly documents: readonly BookingDocumentSummary[];
   readonly documentSubmitted: boolean;
+  readonly checklist?: readonly {
+    readonly type: string;
+    readonly label: string;
+    readonly present: boolean;
+  }[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +73,27 @@ export function BookingDocumentsReview({
 
   return (
     <div className="space-y-4">
+      {checklist.length > 0 ? (
+        <ul className="grid gap-2 sm:grid-cols-3" aria-label="Required documents">
+          {checklist.map((item) => (
+            <li
+              key={item.type}
+              className="flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm"
+            >
+              <span className="font-medium">{item.label}</span>
+              <span
+                className={cn(
+                  'text-xs font-semibold tracking-wide uppercase',
+                  item.present ? 'text-success' : 'text-destructive',
+                )}
+              >
+                {item.present ? 'Submitted' : 'Missing'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {documentSubmitted

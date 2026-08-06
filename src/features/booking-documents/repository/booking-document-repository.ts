@@ -22,6 +22,8 @@ export interface BookingDocumentRepository {
   listForBooking(bookingId: string): Promise<BookingDocument[]>;
   findByBookingAndType(bookingId: string, documentType: string): Promise<BookingDocument | null>;
   findById(id: string): Promise<BookingDocument | null>;
+  /** Counts uploaded documents per booking id (for admin pending list completeness). */
+  countByBookingIds(bookingIds: readonly string[]): Promise<ReadonlyMap<string, number>>;
   create(input: BookingDocumentCreateInput): Promise<BookingDocument>;
   update(id: string, input: BookingDocumentUpdateInput): Promise<BookingDocument>;
   delete(id: string): Promise<void>;
@@ -77,6 +79,29 @@ export function createBookingDocumentRepository(
       }
 
       return data;
+    },
+
+    async countByBookingIds(bookingIds) {
+      const counts = new Map<string, number>();
+      if (bookingIds.length === 0) {
+        return counts;
+      }
+
+      const supabase = await getClient();
+      const { data, error } = await supabase
+        .from('booking_documents')
+        .select('booking_id')
+        .in('booking_id', [...bookingIds]);
+
+      if (error) {
+        throw mapPersistenceError(error);
+      }
+
+      for (const row of data ?? []) {
+        counts.set(row.booking_id, (counts.get(row.booking_id) ?? 0) + 1);
+      }
+
+      return counts;
     },
 
     async findById(id) {
