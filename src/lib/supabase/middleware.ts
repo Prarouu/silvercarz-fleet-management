@@ -12,9 +12,13 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import {
+  buildCustomerLoginRedirectPath,
   buildLoginRedirectPath,
-  isAuthRoute,
+  isAdminAuthRoute,
+  isCustomerAuthRoute,
+  isCustomerProtectedRoute,
   isProtectedRoute,
+  resolveCustomerPostLoginPath,
   resolvePostLoginPath,
 } from '@/lib/auth/route-guards';
 import { supabaseConfig } from '@/lib/supabase/config';
@@ -68,6 +72,9 @@ function redirectWithSession(request: NextRequest, sessionResponse: NextResponse
  * Important: call `getUser()` immediately after creating the client — do not
  * run other logic in between. Always return a response derived from
  * `getResponse()` so refreshed cookies reach the browser.
+ *
+ * Role checks for customers on `/admin/*` run in the admin layout
+ * (`requireStaffAuth`) — the proxy stays authentication-focused.
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const { supabase, getResponse } = createSupabaseMiddlewareClient(request);
@@ -79,15 +86,24 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   const sessionResponse = getResponse();
   const { pathname, search } = request.nextUrl;
+  const nextPath = `${pathname}${search}`;
 
   if (!user && isProtectedRoute(pathname)) {
-    const nextPath = `${pathname}${search}`;
     return redirectWithSession(request, sessionResponse, buildLoginRedirectPath(nextPath));
   }
 
-  if (user && isAuthRoute(pathname)) {
+  if (!user && isCustomerProtectedRoute(pathname)) {
+    return redirectWithSession(request, sessionResponse, buildCustomerLoginRedirectPath(nextPath));
+  }
+
+  if (user && isAdminAuthRoute(pathname)) {
     const nextParam = request.nextUrl.searchParams.get('next');
     return redirectWithSession(request, sessionResponse, resolvePostLoginPath(nextParam));
+  }
+
+  if (user && isCustomerAuthRoute(pathname)) {
+    const nextParam = request.nextUrl.searchParams.get('next');
+    return redirectWithSession(request, sessionResponse, resolveCustomerPostLoginPath(nextParam));
   }
 
   return sessionResponse;

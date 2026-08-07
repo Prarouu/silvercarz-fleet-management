@@ -22,6 +22,8 @@ export const BOOKING_LIFECYCLE_STATUSES = {
 /** Terminal statuses — stored; override lifecycle calculation. */
 export const BOOKING_TERMINAL_STATUSES = {
   cancelled: 'cancelled',
+  /** Rejected customer request — historic, never schedule-blocking. */
+  denied: 'denied',
   /** Future-ready — not in Postgres enum yet. */
   no_show: 'no_show',
   /** Future-ready — not in Postgres enum yet. */
@@ -52,6 +54,7 @@ export const BOOKING_DISPLAY_STATUS_VALUES = [
   BOOKING_DISPLAY_STATUSES.active,
   BOOKING_DISPLAY_STATUSES.completed,
   BOOKING_DISPLAY_STATUSES.cancelled,
+  BOOKING_DISPLAY_STATUSES.denied,
   BOOKING_DISPLAY_STATUSES.draft,
   BOOKING_DISPLAY_STATUSES.no_show,
   BOOKING_DISPLAY_STATUSES.closed,
@@ -62,7 +65,8 @@ export const BOOKING_DISPLAY_STATUS_LABELS: Record<BookingDisplayStatus, string>
   active: 'Active',
   completed: 'Completed',
   cancelled: 'Cancelled',
-  draft: 'Draft',
+  denied: 'Denied',
+  draft: 'Pending approval',
   no_show: 'No show',
   closed: 'Closed',
 };
@@ -72,7 +76,8 @@ export const BOOKING_DISPLAY_STATUS_DESCRIPTIONS: Record<BookingDisplayStatus, s
   active: 'The rental is in progress (delivery through return day inclusive).',
   completed: 'The return date has passed. This hire is finished.',
   cancelled: 'This booking was cancelled and no longer occupies the vehicle calendar.',
-  draft: 'Draft booking — not yet confirmed on the vehicle calendar.',
+  denied: 'This customer request was denied and is kept only as historic proof.',
+  draft: 'Customer booking request awaiting staff review and document verification.',
   no_show: 'Customer did not take delivery (terminal). Reserved for a future release.',
   closed: 'Administratively closed (terminal). Reserved for a future release.',
 };
@@ -105,7 +110,8 @@ export const BOOKING_DISPLAY_STATUS_BADGE_VARIANTS: Record<
   active: 'success',
   completed: 'secondary',
   cancelled: 'destructive',
-  draft: 'outline',
+  denied: 'destructive',
+  draft: 'warning',
   no_show: 'warning',
   closed: 'secondary',
 };
@@ -116,6 +122,7 @@ export const BOOKING_DISPLAY_STATUS_OPTIONS: SelectOption<BookingDisplayStatus>[
   BOOKING_DISPLAY_STATUSES.active,
   BOOKING_DISPLAY_STATUSES.completed,
   BOOKING_DISPLAY_STATUSES.cancelled,
+  BOOKING_DISPLAY_STATUSES.denied,
   BOOKING_DISPLAY_STATUSES.draft,
 ].map((value) => ({
   value,
@@ -149,6 +156,7 @@ export interface BookingStatusMetrics {
   readonly active: number;
   readonly completed: number;
   readonly cancelled: number;
+  readonly denied: number;
   readonly draft: number;
   readonly other: number;
   readonly total: number;
@@ -158,6 +166,7 @@ const DISPLAY_STATUS_SET = new Set<string>(BOOKING_DISPLAY_STATUS_VALUES);
 
 const TERMINAL_STORED = new Set<string>([
   BOOKING_STATUSES.cancelled,
+  BOOKING_STATUSES.denied,
   BOOKING_TERMINAL_STATUSES.no_show,
   BOOKING_TERMINAL_STATUSES.closed,
 ]);
@@ -194,6 +203,8 @@ export function toPersistedBookingStatus(display: BookingDisplayStatus): Booking
       return BOOKING_STATUSES.completed;
     case BOOKING_DISPLAY_STATUSES.cancelled:
       return BOOKING_STATUSES.cancelled;
+    case BOOKING_DISPLAY_STATUSES.denied:
+      return BOOKING_STATUSES.denied;
     case BOOKING_DISPLAY_STATUSES.draft:
       return BOOKING_STATUSES.draft;
     case BOOKING_DISPLAY_STATUSES.no_show:
@@ -259,6 +270,10 @@ export function resolveBookingDisplayStatus(
     return BOOKING_DISPLAY_STATUSES.cancelled;
   }
 
+  if (stored === BOOKING_STATUSES.denied || stored === BOOKING_TERMINAL_STATUSES.denied) {
+    return BOOKING_DISPLAY_STATUSES.denied;
+  }
+
   if (stored === BOOKING_TERMINAL_STATUSES.no_show) {
     return BOOKING_DISPLAY_STATUSES.no_show;
   }
@@ -283,6 +298,7 @@ export function getBookingStatusPresentation(
     status === BOOKING_DISPLAY_STATUSES.draft
       ? 'draft'
       : status === BOOKING_DISPLAY_STATUSES.cancelled ||
+          status === BOOKING_DISPLAY_STATUSES.denied ||
           status === BOOKING_DISPLAY_STATUSES.no_show ||
           status === BOOKING_DISPLAY_STATUSES.closed
         ? 'terminal'
@@ -335,6 +351,7 @@ export function countBookingsByDisplayStatus(
   let active = 0;
   let completed = 0;
   let cancelled = 0;
+  let denied = 0;
   let draft = 0;
   let other = 0;
 
@@ -353,6 +370,9 @@ export function countBookingsByDisplayStatus(
       case BOOKING_DISPLAY_STATUSES.cancelled:
         cancelled += 1;
         break;
+      case BOOKING_DISPLAY_STATUSES.denied:
+        denied += 1;
+        break;
       case BOOKING_DISPLAY_STATUSES.draft:
         draft += 1;
         break;
@@ -367,6 +387,7 @@ export function countBookingsByDisplayStatus(
     active,
     completed,
     cancelled,
+    denied,
     draft,
     other,
     total: bookings.length,

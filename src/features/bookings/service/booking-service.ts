@@ -8,6 +8,9 @@
 import 'server-only';
 
 import {
+  BOOKING_ERROR_CODES,
+  createBookingAlreadyProcessedError,
+  createBookingDocumentsIncompleteError,
   createBookingNotFoundError,
   createBookingValidationError,
   createDuplicateInvoiceError,
@@ -15,6 +18,13 @@ import {
   createUnauthorizedBookingAccessError,
   createVehicleUnavailableError,
 } from '@/features/bookings/errors';
+import { bookingDocumentLabel, requiredBookingDocumentTypes } from '@/constants/booking-documents';
+import { getBookingDocumentCompleteness } from '@/features/booking-documents/lib/completeness';
+import {
+  createBookingDocumentRepository,
+  getBookingDocumentRepository,
+  type BookingDocumentRepository,
+} from '@/features/booking-documents/repository/booking-document-repository';
 import {
   createBookingRepository,
   getBookingRepository,
@@ -70,6 +80,7 @@ import { BOOKING_STATUSES } from '@/types/enums';
 
 export interface BookingServiceDeps {
   readonly repository?: BookingRepository;
+  readonly documentRepository?: BookingDocumentRepository;
   readonly client?: TypedSupabaseClient;
   readonly invoiceNumberService?: InvoiceNumberService;
   readonly availabilityService?: AvailabilityService;
@@ -84,6 +95,10 @@ export interface BookingService {
   updateBooking(id: string, input: unknown): Promise<ApiResponse<Booking>>;
   /** Soft-delete (status → cancelled). Preferred application delete. */
   deleteBooking(id: string): Promise<ApiResponse<Booking>>;
+  /** Graduate a draft customer request into a confirmed fleet booking (payment-eligible). */
+  approveBooking(id: string): Promise<ApiResponse<Booking>>;
+  /** Deny a draft customer request (status → denied, historic only). */
+  rejectBooking(id: string, reason: string): Promise<ApiResponse<Booking>>;
   /** Permanent delete — reserved for trusted admin flows. */
   permanentlyDeleteBooking(id: string): Promise<ApiResponse<null>>;
   getBooking(id: string): Promise<ApiResponse<Booking>>;
@@ -155,7 +170,11 @@ async function ensureVehicleScheduleClear(
     status?: string | null;
   },
 ): Promise<void> {
-  if (params.status === BOOKING_STATUSES.cancelled || params.status === BOOKING_STATUSES.draft) {
+  if (
+    params.status === BOOKING_STATUSES.cancelled ||
+    params.status === BOOKING_STATUSES.denied ||
+    params.status === BOOKING_STATUSES.draft
+  ) {
     return;
   }
 
@@ -235,17 +254,19 @@ function applyUpdateDerivedFields(
   });
   const priced = pricingToPersistedFields(pricing);
 
-  // Manual status edits are ignored. Cancelled stays cancelled; otherwise
+  // Manual status edits are ignored. Terminal statuses stay terminal; otherwise
   // Status Service recomputes lifecycle from dates (drafts graduate on save).
   const { status: _ignoredClientStatus, ...safeWithoutStatus } = values;
   const status =
     existing.status === BOOKING_STATUSES.cancelled
       ? BOOKING_STATUSES.cancelled
-      : resolvePersistedBookingStatus({
-          status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
-          delivery_date: deliveryDate,
-          return_date: returnDate,
-        });
+      : existing.status === BOOKING_STATUSES.denied
+        ? BOOKING_STATUSES.denied
+        : resolvePersistedBookingStatus({
+            status: existing.status === BOOKING_STATUSES.draft ? undefined : existing.status,
+            delivery_date: deliveryDate,
+            return_date: returnDate,
+          });
 
   return {
     ...safeWithoutStatus,
@@ -318,12 +339,34 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
     return getBookingStatusService();
   }
 
+  async function getDocuments(): Promise<BookingDocumentRepository> {
+    if (deps.documentRepository) {
+      return deps.documentRepository;
+    }
+
+    if (deps.client) {
+      return createBookingDocumentRepository(deps.client);
+    }
+
+    return getBookingDocumentRepository();
+  }
+
   async function syncVehicleAvailability(vehicleId: string | null | undefined): Promise<void> {
     if (!vehicleId) {
       return;
     }
 
     await getAvailability().syncAvailabilityFromBookings(vehicleId);
+  }
+
+  async function assertRequiredDocumentsComplete(bookingId: string): Promise<void> {
+    const documents = await getDocuments();
+    const rows = await documents.listForBooking(bookingId);
+    const completeness = getBookingDocumentCompleteness(rows.map((row) => row.document_type));
+
+    if (!completeness.isComplete) {
+      throw createBookingDocumentsIncompleteError(completeness.missingLabels);
+    }
   }
 
   const service: BookingService = {
@@ -422,6 +465,108 @@ export function createBookingService(deps: BookingServiceDeps = {}): BookingServ
         const cancelled = await repository.softDelete(id);
         await syncVehicleAvailability(existing.vehicle_id);
         return cancelled;
+      });
+    },
+
+    approveBooking(id) {
+      return fromPromise(async () => {
+        await requirePerm(PERMISSIONS.bookingsWrite);
+        const repository = await getRepository();
+        const availability = getAvailability();
+        const conflict = getConflict();
+        const statusEngine = getStatus();
+        const existing = await repository.findById(id);
+
+        if (!existing) {
+          throw createBookingNotFoundError();
+        }
+
+        if (existing.status !== BOOKING_STATUSES.draft) {
+          throw createBookingAlreadyProcessedError();
+        }
+
+        if (!existing.document_submitted) {
+          const requiredLabels = requiredBookingDocumentTypes().map((type) =>
+            bookingDocumentLabel(type),
+          );
+          throw createBookingDocumentsIncompleteError(requiredLabels);
+        }
+
+        await assertRequiredDocumentsComplete(id);
+
+        // Existing architecture: approval graduates draft → schedule-blocking
+        // confirmed/ongoing/completed. Payment collection (C6) uses booking_amount.
+        const status = statusEngine.resolvePersistedStatus({
+          status: undefined,
+          delivery_date: existing.delivery_date,
+          return_date: existing.return_date,
+        });
+
+        try {
+          await ensureVehicleScheduleClear(availability, conflict, {
+            vehicleId: existing.vehicle_id,
+            deliveryDate: existing.delivery_date,
+            returnDate: existing.return_date,
+            excludeBookingId: id,
+            status,
+          });
+        } catch (error) {
+          if (error instanceof AppError && error.code === BOOKING_ERROR_CODES.vehicleUnavailable) {
+            throw createVehicleUnavailableError(
+              'This vehicle is no longer available for the requested dates.',
+            );
+          }
+          throw error;
+        }
+
+        const approved = await repository.updateIfStatus(id, BOOKING_STATUSES.draft, {
+          status,
+          rejection_reason: null,
+        });
+
+        if (!approved) {
+          throw createBookingAlreadyProcessedError();
+        }
+
+        await syncVehicleAvailability(existing.vehicle_id);
+        return approved;
+      });
+    },
+
+    rejectBooking(id, reason) {
+      return fromPromise(async () => {
+        await requirePerm(PERMISSIONS.bookingsWrite);
+        const repository = await getRepository();
+        const existing = await repository.findById(id);
+
+        if (!existing) {
+          throw createBookingNotFoundError();
+        }
+
+        if (existing.status !== BOOKING_STATUSES.draft) {
+          throw createBookingAlreadyProcessedError();
+        }
+
+        const trimmedReason = reason.trim();
+        if (!trimmedReason) {
+          throw createBookingValidationError('A rejection reason is required.');
+        }
+
+        if (trimmedReason.length > 1000) {
+          throw createBookingValidationError('Rejection reason must be 1000 characters or fewer.');
+        }
+
+        const denied = await repository.updateIfStatus(id, BOOKING_STATUSES.draft, {
+          status: BOOKING_STATUSES.denied,
+          rejection_reason: trimmedReason,
+        });
+
+        if (!denied) {
+          throw createBookingAlreadyProcessedError();
+        }
+
+        await syncVehicleAvailability(existing.vehicle_id);
+        return denied;
       });
     },
 

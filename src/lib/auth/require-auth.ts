@@ -10,7 +10,7 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 
 import { ROUTES } from '@/constants/routes';
-import { can, hasRole } from '@/lib/auth/authorization';
+import { can, hasRole, isStaff } from '@/lib/auth/authorization';
 import {
   AUTH_ERROR_CODES,
   createForbiddenError,
@@ -20,6 +20,7 @@ import {
 import type { Permission } from '@/lib/auth/permissions';
 import { ensureCurrentProfile, toAuthUserFromProfile } from '@/lib/auth/profile';
 import type { AppRole } from '@/lib/auth/roles';
+import { buildCustomerLoginRedirectPath } from '@/lib/auth/route-guards';
 import { getAuthState } from '@/lib/auth/session';
 import { signOut } from '@/lib/auth/sign-out';
 import type { AuthUser, UserProfile } from '@/lib/auth/types';
@@ -73,7 +74,7 @@ export async function requireUser(): Promise<AuthUser> {
  * Use in Server Components / layouts that gate rendered UI.
  *
  * Signs out before redirecting when the profile is missing or inactive so
- * the proxy does not bounce the user between `/login` and the app shell.
+ * the proxy does not bounce the user between `/admin/login` and the app shell.
  */
 export async function requireAuth(nextPath?: string): Promise<AuthUser> {
   const { user, profile } = await getAuthState();
@@ -131,4 +132,48 @@ export async function requirePermission(permission: Permission): Promise<AuthUse
   }
 
   return toAuthUserFromProfile(profile);
+}
+
+/**
+ * Admin Portal gate: active staff profile (`owner` | `manager`).
+ * Customers are redirected to the public site — never into the admin shell.
+ */
+export async function requireStaffAuth(nextPath?: string): Promise<AuthUser> {
+  const user = await requireAuth(nextPath);
+
+  if (!isStaff(user)) {
+    redirect(ROUTES.home);
+  }
+
+  return user;
+}
+
+/**
+ * Customer booking-flow gate: active authenticated profile.
+ * Redirects unauthenticated users to the customer login with a safe `next`.
+ */
+export async function requireCustomerAuth(nextPath?: string): Promise<AuthUser> {
+  const { user, profile } = await getAuthState();
+
+  if (!user) {
+    redirect(buildCustomerLoginRedirectPath(nextPath));
+  }
+
+  let resolved = profile;
+
+  if (!resolved) {
+    try {
+      resolved = await ensureCurrentProfile();
+    } catch {
+      await signOut().catch(() => undefined);
+      redirect(buildCustomerLoginRedirectPath(nextPath));
+    }
+  }
+
+  if (!resolved.isActive) {
+    await signOut().catch(() => undefined);
+    redirect(buildCustomerLoginRedirectPath(nextPath));
+  }
+
+  return toAuthUserFromProfile(resolved);
 }

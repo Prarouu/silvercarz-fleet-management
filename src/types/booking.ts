@@ -52,6 +52,11 @@ export interface BookingListFilters {
   /** When false (default), soft-deleted (`cancelled`) rows are excluded. */
   readonly includeCancelled?: boolean;
   /**
+   * When true, exclude `draft` rows (admin "Confirmed" bookings queue).
+   * Ignored when `status` is set explicitly.
+   */
+  readonly excludeDraft?: boolean;
+  /**
    * Cursor-ready token for keyset pagination (unused by offset pagination today).
    * Reserved so list APIs can adopt cursors without breaking callers.
    */

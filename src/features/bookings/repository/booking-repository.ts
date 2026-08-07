@@ -45,6 +45,16 @@ const DEFAULT_SORT: BookingSortField = 'created_at';
 export interface BookingRepository {
   create(input: BookingCreateInput): Promise<Booking>;
   update(id: string, input: BookingUpdateInput): Promise<Booking>;
+  /**
+   * Conditional update for draft → approved/denied transitions.
+   * Returns null when the row is missing or no longer in `expectedStatus`
+   * (concurrent admin action / already processed).
+   */
+  updateIfStatus(
+    id: string,
+    expectedStatus: Booking['status'],
+    input: BookingUpdateInput,
+  ): Promise<Booking | null>;
   /** Permanent delete. Prefer `softDelete` for application flows. */
   delete(id: string): Promise<void>;
   softDelete(id: string): Promise<Booking>;
@@ -85,10 +95,6 @@ const BOOKING_VEHICLE_EMBED =
 
 /** Columns needed to resolve display lifecycle status. */
 const LIFECYCLE_BOOKING_COLUMNS = 'id, vehicle_id, status, delivery_date, return_date';
-
-/** Columns needed by Conflict Detection Engine overlap results. */
-const CONFLICT_BOOKING_COLUMNS =
-  'id, vehicle_id, status, delivery_date, return_date, invoice_number, customer_name';
 
 function escapeIlike(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -195,22 +201,27 @@ function applyStatusFilter(builder: FilterableBuilder, status: string): Filterab
   switch (status) {
     case 'cancelled':
       return builder.eq('status', BOOKING_STATUSES.cancelled);
+    case 'denied':
+      return builder.eq('status', BOOKING_STATUSES.denied);
     case 'draft':
       return builder.eq('status', BOOKING_STATUSES.draft);
     case 'upcoming':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .gt('delivery_date', today);
     case 'active':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .lte('delivery_date', today)
         .gte('return_date', today);
     case 'completed':
       return builder
         .neq('status', BOOKING_STATUSES.cancelled)
+        .neq('status', BOOKING_STATUSES.denied)
         .neq('status', BOOKING_STATUSES.draft)
         .lt('return_date', today);
     // Legacy persisted-enum filters (still accepted for older URLs / callers)
@@ -231,8 +242,13 @@ function applyNonSearchFilters(
 
   if (filters?.status) {
     next = applyStatusFilter(next, filters.status);
-  } else if (!filters?.includeCancelled) {
-    next = next.neq('status', BOOKING_STATUSES.cancelled);
+  } else {
+    if (!filters?.includeCancelled) {
+      next = next.neq('status', BOOKING_STATUSES.cancelled).neq('status', BOOKING_STATUSES.denied);
+    }
+    if (filters?.excludeDraft) {
+      next = next.neq('status', BOOKING_STATUSES.draft);
+    }
   }
 
   if (filters?.vehicleId) {
@@ -292,6 +308,22 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
 
       if (!data) {
         throw createBookingNotFoundError();
+      }
+
+      return data;
+    },
+
+    async updateIfStatus(id, expectedStatus, input) {
+      const { data, error } = await client
+        .from('bookings')
+        .update(input)
+        .eq('id', id)
+        .eq('status', expectedStatus)
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        throw mapPersistenceError(error, input.invoice_number);
       }
 
       return data;
@@ -462,21 +494,14 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
     },
 
     async findOverlappingForVehicle(params) {
-      // Closed-interval overlap + blocking statuses only (indexed partial query).
-      let builder = client
-        .from('bookings')
-        .select(CONFLICT_BOOKING_COLUMNS)
-        .eq('vehicle_id', params.vehicleId)
-        .in('status', [BOOKING_STATUSES.confirmed, BOOKING_STATUSES.ongoing])
-        .lte('delivery_date', params.returnDate)
-        .gte('return_date', params.deliveryDate)
-        .order('delivery_date', { ascending: true });
-
-      if (params.excludeBookingId) {
-        builder = builder.neq('id', params.excludeBookingId);
-      }
-
-      const { data, error } = await builder;
+      // SECURITY DEFINER RPC — works for staff and customer JWTs (C3).
+      // Closed-interval overlap + confirmed/ongoing only.
+      const { data, error } = await client.rpc('list_vehicle_booking_conflicts', {
+        p_vehicle_id: params.vehicleId,
+        p_delivery_date: params.deliveryDate,
+        p_return_date: params.returnDate,
+        p_exclude_booking_id: params.excludeBookingId ?? null,
+      });
 
       if (error) {
         throw mapPersistenceError(error);
@@ -498,7 +523,9 @@ export function createBookingRepository(client: TypedSupabaseClient): BookingRep
         .limit(limit);
 
       if (!params.includeCancelled) {
-        builder = builder.neq('status', BOOKING_STATUSES.cancelled);
+        builder = builder
+          .neq('status', BOOKING_STATUSES.cancelled)
+          .neq('status', BOOKING_STATUSES.denied);
       }
 
       if (excludeDraft) {

@@ -4,7 +4,7 @@
  * Runs before matched requests reach the App Router. Responsibilities:
  *   1. Refresh Supabase Auth cookies via `updateSession`
  *   2. Redirect unauthenticated users away from protected routes
- *   3. Redirect authenticated users away from auth screens (e.g. /login)
+ *   3. Redirect authenticated users away from auth screens (e.g. /admin/login)
  *
  * Route classification lives in `@/lib/auth/route-guards` (via `ROUTES`).
  */

@@ -50,6 +50,24 @@ export type Database = {
           },
         ];
       };
+      staff_allowlist: {
+        Row: {
+          email: string;
+          role: Database['public']['Enums']['app_role'];
+          created_at: string;
+        };
+        Insert: {
+          email: string;
+          role: Database['public']['Enums']['app_role'];
+          created_at?: string;
+        };
+        Update: {
+          email?: string;
+          role?: Database['public']['Enums']['app_role'];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       vehicles: {
         Row: {
           id: string;
@@ -151,6 +169,7 @@ export type Database = {
           total_amount: number;
           status: Database['public']['Enums']['booking_status'];
           notes: string | null;
+          rejection_reason: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -180,6 +199,7 @@ export type Database = {
           total_amount?: number;
           status?: Database['public']['Enums']['booking_status'];
           notes?: string | null;
+          rejection_reason?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -209,6 +229,7 @@ export type Database = {
           total_amount?: number;
           status?: Database['public']['Enums']['booking_status'];
           notes?: string | null;
+          rejection_reason?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -230,9 +251,70 @@ export type Database = {
           },
         ];
       };
+      booking_documents: {
+        Row: {
+          id: string;
+          booking_id: string;
+          customer_id: string;
+          document_type: string;
+          file_name: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          customer_id: string;
+          document_type: string;
+          file_name: string;
+          storage_path: string;
+          mime_type: string;
+          file_size: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          customer_id?: string;
+          document_type?: string;
+          file_name?: string;
+          storage_path?: string;
+          mime_type?: string;
+          file_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'booking_documents_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'booking_documents_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      apply_staff_allowlist: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          promoted: number;
+          demoted: number;
+        }[];
+      };
       current_user_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database['public']['Enums']['app_role'];
@@ -245,12 +327,47 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      normalize_staff_email: {
+        Args: {
+          p_email: string;
+        };
+        Returns: string;
+      };
+      resolve_profile_role_for_email: {
+        Args: {
+          p_email: string;
+        };
+        Returns: Database['public']['Enums']['app_role'];
+      };
       max_booking_invoice_sequence: {
         Args: {
           p_prefix: string;
           p_year: number;
         };
         Returns: number;
+      };
+      list_vehicle_booking_conflicts: {
+        Args: {
+          p_vehicle_id: string;
+          p_delivery_date: string;
+          p_return_date: string;
+          p_exclude_booking_id?: string | null;
+        };
+        Returns: {
+          id: string;
+          vehicle_id: string;
+          status: Database['public']['Enums']['booking_status'];
+          delivery_date: string;
+          return_date: string;
+          invoice_number: string;
+          customer_name: string;
+        }[];
+      };
+      mark_booking_documents_submitted: {
+        Args: {
+          p_booking_id: string;
+        };
+        Returns: Database['public']['Tables']['bookings']['Row'];
       };
       next_invoice_sequence: {
         Args: {
@@ -268,13 +385,13 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: 'owner' | 'manager';
+      app_role: 'owner' | 'manager' | 'customer';
       fuel_type: 'petrol' | 'diesel' | 'cng' | 'electric' | 'hybrid';
       transmission_type: 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct';
       vehicle_availability: 'available' | 'booked' | 'maintenance' | 'reserved' | 'inactive';
       rental_mode: 'with_driver' | 'without_driver';
       payment_method: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'cheque' | 'other';
-      booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
+      booking_status: 'draft' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled' | 'denied';
     };
     CompositeTypes: Record<string, never>;
   };

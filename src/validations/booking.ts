@@ -83,6 +83,7 @@ export const bookingListFiltersSchema = z.object({
   returnDateFrom: isoDateSchema.optional(),
   returnDateTo: isoDateSchema.optional(),
   includeCancelled: z.boolean().optional(),
+  excludeDraft: z.boolean().optional(),
   cursor: z.string().trim().min(1).optional(),
 });
 

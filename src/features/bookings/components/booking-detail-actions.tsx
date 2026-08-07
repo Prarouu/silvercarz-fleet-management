@@ -1,35 +1,132 @@
 'use client';
 
-import { Ban, Pencil, Printer } from 'lucide-react';
+/**
+ * Detail workspace action bar (C5 approval / rejection dialogs).
+ */
+
+import { Ban, Check, Pencil, Printer } from 'lucide-react';
 import Link from 'next/link';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { bookingEditPath, ROUTES } from '@/constants/routes';
+import { approveBooking } from '@/features/bookings/actions/approve-booking';
 import { deleteBooking } from '@/features/bookings/actions/delete-booking';
+import { rejectBooking } from '@/features/bookings/actions/reject-booking';
 import {
   BOOKING_DISPLAY_STATUSES,
   resolveBookingDisplayStatus,
   type BookingStatusInput,
 } from '@/features/bookings/service/status.service';
+import { formatDate } from '@/lib/format';
 
 type BookingDetailActionsProps = {
   readonly bookingId: string;
-  readonly booking: BookingStatusInput;
+  readonly booking: BookingStatusInput & {
+    readonly invoice_number: string;
+    readonly customer_name: string;
+  };
+  readonly vehicleName: string;
+  readonly documentsComplete: boolean;
+  readonly documentsIncompleteMessage?: string | null;
 };
 
-/**
- * Detail workspace action bar.
- * Lifecycle status is automatic; Cancel Booking is the terminal action.
- */
-export function BookingDetailActions({ bookingId, booking }: BookingDetailActionsProps) {
+export function BookingDetailActions({
+  bookingId,
+  booking,
+  vehicleName,
+  documentsComplete,
+  documentsIncompleteMessage,
+}: BookingDetailActionsProps) {
   const [isPending, startTransition] = useTransition();
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectError, setRejectError] = useState<string | null>(null);
+
   const display = resolveBookingDisplayStatus(booking);
-  const isCancelled = display === BOOKING_DISPLAY_STATUSES.cancelled;
+  const isDraft = display === BOOKING_DISPLAY_STATUSES.draft;
+  const isTerminal =
+    display === BOOKING_DISPLAY_STATUSES.cancelled || display === BOOKING_DISPLAY_STATUSES.denied;
+
+  const handleApproveRequest = () => {
+    if (!isDraft) {
+      return;
+    }
+
+    if (!documentsComplete) {
+      toast.error('Unable to approve request', {
+        description: documentsIncompleteMessage ?? 'Required documents are incomplete.',
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await approveBooking(bookingId);
+
+      if (!result.success) {
+        toast.error('Unable to approve request', { description: result.error.message });
+        return;
+      }
+
+      toast.success('Request approved', {
+        description: `Invoice ${result.data.invoice_number} is approved. Payment is now available for the customer.`,
+      });
+      window.location.assign(ROUTES.bookingsConfirmed);
+    });
+  };
+
+  const handleRejectRequest = () => {
+    if (!isDraft) {
+      return;
+    }
+
+    const trimmed = rejectionReason.trim();
+    if (!trimmed) {
+      setRejectError('A rejection reason is required.');
+      return;
+    }
+
+    setRejectError(null);
+    startTransition(async () => {
+      const result = await rejectBooking(bookingId, trimmed);
+
+      if (!result.success) {
+        toast.error('Unable to reject request', { description: result.error.message });
+        return;
+      }
+
+      toast.success('Request rejected', {
+        description: `Invoice ${result.data.invoice_number} was marked as Denied.`,
+      });
+      window.location.assign(ROUTES.bookings);
+    });
+  };
 
   const handleCancelBooking = () => {
-    if (isCancelled) {
+    if (isTerminal || isDraft) {
       return;
     }
 
@@ -52,7 +149,6 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
       toast.success('Booking cancelled', {
         description: `Invoice ${result.data.invoice_number} was cancelled.`,
       });
-      // Full navigation avoids soft-nav loops that leave the action bar stuck.
       window.location.assign(ROUTES.bookings);
     });
   };
@@ -63,8 +159,164 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
       role="toolbar"
       aria-label="Booking actions"
     >
-      {!isCancelled ? (
-        <Button asChild size="sm">
+      {isDraft ? (
+        <>
+          <AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isPending || !documentsComplete}
+                aria-busy={isPending}
+                aria-label="Approve booking request"
+                title={
+                  documentsComplete
+                    ? undefined
+                    : (documentsIncompleteMessage ?? 'Required documents are incomplete.')
+                }
+              >
+                <Check className="size-4" aria-hidden="true" />
+                Approve Booking
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent size="default" className="sm:max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Approve this booking request?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>
+                      The customer will become eligible for payment. The booking number stays{' '}
+                      {booking.invoice_number}.
+                    </p>
+                    <dl className="space-y-1 rounded-xl border bg-muted/30 p-3 text-left text-foreground">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Customer</dt>
+                        <dd className="font-medium">{booking.customer_name}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Vehicle</dt>
+                        <dd className="font-medium">{vehicleName}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Pickup</dt>
+                        <dd className="font-medium tabular-nums">
+                          {formatDate(booking.delivery_date)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Return</dt>
+                        <dd className="font-medium tabular-nums">
+                          {formatDate(booking.return_date)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+                <Button
+                  type="button"
+                  disabled={isPending}
+                  aria-busy={isPending}
+                  onClick={handleApproveRequest}
+                >
+                  Approve Booking
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Dialog
+            open={rejectOpen}
+            onOpenChange={(open) => {
+              setRejectOpen(open);
+              if (!open) {
+                setRejectError(null);
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive"
+                disabled={isPending}
+                aria-busy={isPending}
+                aria-label="Reject booking request"
+              >
+                <Ban className="size-4" aria-hidden="true" />
+                Reject Booking
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Reject Booking</DialogTitle>
+                <DialogDescription>
+                  Provide a reason for denying this request. The customer will see this reason.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor={`detail-reject-reason-${bookingId}`}>Reason</Label>
+                <Textarea
+                  id={`detail-reject-reason-${bookingId}`}
+                  value={rejectionReason}
+                  onChange={(event) => {
+                    setRejectionReason(event.target.value);
+                    if (rejectError) {
+                      setRejectError(null);
+                    }
+                  }}
+                  placeholder="Explain why this request cannot be approved…"
+                  rows={4}
+                  maxLength={1000}
+                  aria-invalid={rejectError ? true : undefined}
+                  aria-describedby={rejectError ? `detail-reject-error-${bookingId}` : undefined}
+                  disabled={isPending}
+                />
+                {rejectError ? (
+                  <p
+                    id={`detail-reject-error-${bookingId}`}
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
+                    {rejectError}
+                  </p>
+                ) : null}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => setRejectOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={isPending}
+                  aria-busy={isPending}
+                  onClick={handleRejectRequest}
+                >
+                  Reject Booking
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
+
+      {!documentsComplete && isDraft && documentsIncompleteMessage ? (
+        <p className="col-span-2 text-sm text-destructive sm:basis-full" role="status">
+          {documentsIncompleteMessage}
+        </p>
+      ) : null}
+
+      {!isTerminal ? (
+        <Button asChild size="sm" variant={isDraft ? 'outline' : 'default'}>
           <Link href={bookingEditPath(bookingId)}>
             <Pencil className="size-4" aria-hidden="true" />
             Edit Booking
@@ -97,26 +349,32 @@ export function BookingDetailActions({ bookingId, booking }: BookingDetailAction
         <span className="hidden sm:inline">Print Invoice</span>
       </Button>
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="text-destructive"
-        disabled={isPending || isCancelled}
-        aria-busy={isPending}
-        onClick={handleCancelBooking}
-        aria-label="Cancel booking"
-      >
-        <Ban className="size-4" aria-hidden="true" />
-        {isCancelled ? (
-          'Cancelled'
-        ) : (
-          <>
-            <span className="sm:hidden">Cancel</span>
-            <span className="hidden sm:inline">Cancel Booking</span>
-          </>
-        )}
-      </Button>
+      {!isDraft ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-destructive"
+          disabled={isPending || isTerminal}
+          aria-busy={isPending}
+          onClick={handleCancelBooking}
+          aria-label="Cancel booking"
+        >
+          <Ban className="size-4" aria-hidden="true" />
+          {isTerminal ? (
+            display === BOOKING_DISPLAY_STATUSES.denied ? (
+              'Denied'
+            ) : (
+              'Cancelled'
+            )
+          ) : (
+            <>
+              <span className="sm:hidden">Cancel</span>
+              <span className="hidden sm:inline">Cancel Booking</span>
+            </>
+          )}
+        </Button>
+      ) : null}
     </div>
   );
 }

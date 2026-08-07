@@ -6,6 +6,8 @@ import 'server-only';
  * Profiles are the source of truth for role and active status.
  * Rows are created by the `handle_new_user` database trigger, and
  * `ensureCurrentProfile` covers Auth Dashboard users if a row is missing.
+ *
+ * Public signups become `customer` unless the email is in `staff_allowlist`.
  */
 
 import { cache } from 'react';

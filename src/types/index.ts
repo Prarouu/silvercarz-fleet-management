@@ -88,6 +88,15 @@ export type {
 } from './booking';
 
 export type {
+  BookingDocument,
+  BookingDocumentCreateInput,
+  BookingDocumentSummary,
+  BookingDocumentUpdateInput,
+} from './booking-document';
+
+export { toBookingDocumentSummary } from './booking-document';
+export type {
+  PublicVehicle,
   Vehicle,
   VehicleAvailabilityQuery,
   VehicleCreateInput,

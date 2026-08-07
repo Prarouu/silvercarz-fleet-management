@@ -7,6 +7,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ROUTES } from '@/constants/routes';
+import { BookingDocumentsReview } from '@/features/booking-documents';
+import {
+  bookingDocumentRequirementChecklist,
+  getBookingDocumentCompleteness,
+} from '@/features/booking-documents/lib/completeness';
 import { BookingBreadcrumb } from '@/features/bookings/components/booking-breadcrumb';
 import { BookingDetailActions } from '@/features/bookings/components/booking-detail-actions';
 import { BookingDetailField } from '@/features/bookings/components/booking-detail-field';
@@ -14,19 +19,26 @@ import { BookingDetailSection } from '@/features/bookings/components/booking-det
 import { BookingPricingSummary } from '@/features/bookings/components/booking-pricing-summary';
 import { BookingStatusBadge } from '@/features/bookings/components/booking-status-badge';
 import { pricingFromBooking } from '@/features/bookings/service/pricing.service';
-import { getBookingStatusPresentation } from '@/features/bookings/service/status.service';
+import {
+  BOOKING_DISPLAY_STATUSES,
+  getBookingStatusPresentation,
+} from '@/features/bookings/service/status.service';
 import { VehicleThumbnail } from '@/features/vehicles/components/vehicle-thumbnail';
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import {
+  BOOKING_STATUSES,
   FUEL_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
   RENTAL_MODE_LABELS,
+  type BookingDocumentSummary,
   type BookingWithVehicle,
 } from '@/types';
 
 type BookingDetailPageProps = {
   readonly booking?: BookingWithVehicle;
   readonly createdByLabel?: string | null;
+  readonly customerEmail?: string | null;
+  readonly documents?: readonly BookingDocumentSummary[];
   readonly loadError?: string;
 };
 
@@ -43,7 +55,13 @@ function formatDuration(days: number | null | undefined): string {
   return days === 1 ? '1 day' : `${formatNumber(days)} days`;
 }
 
-export function BookingDetailPage({ booking, createdByLabel, loadError }: BookingDetailPageProps) {
+export function BookingDetailPage({
+  booking,
+  createdByLabel,
+  customerEmail,
+  documents = [],
+  loadError,
+}: BookingDetailPageProps) {
   if (loadError || !booking) {
     return (
       <PageContainer className="max-w-5xl">
@@ -78,6 +96,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
   }
 
   const notes = booking.notes?.trim() ?? '';
+  const rejectionReason = booking.rejection_reason?.trim() ?? '';
   const paymentMethodLabel = booking.payment_method
     ? PAYMENT_METHOD_LABELS[booking.payment_method]
     : null;
@@ -85,6 +104,30 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
   const pricing = pricingFromBooking(booking);
   const totalLabel = formatOptionalCurrency(pricing.grandTotal);
   const statusPresentation = getBookingStatusPresentation(booking);
+  const documentCompleteness = getBookingDocumentCompleteness(
+    documents.map((document) => document.documentType),
+  );
+  const documentsComplete = booking.document_submitted && documentCompleteness.isComplete;
+  const documentsIncompleteMessage = documentsComplete
+    ? null
+    : `Required documents are incomplete.${
+        documentCompleteness.missingLabels.length > 0
+          ? ` Missing: ${documentCompleteness.missingLabels.join(', ')}.`
+          : ''
+      }`;
+  const isDenied = booking.status === BOOKING_STATUSES.denied;
+  const isScheduleBooking =
+    statusPresentation.status === BOOKING_DISPLAY_STATUSES.upcoming ||
+    statusPresentation.status === BOOKING_DISPLAY_STATUSES.active ||
+    statusPresentation.status === BOOKING_DISPLAY_STATUSES.completed;
+  const paymentAvailabilityLabel =
+    isScheduleBooking && Number(booking.booking_amount) <= 0
+      ? 'Available'
+      : isScheduleBooking
+        ? 'Collected'
+        : isDenied
+          ? 'Not payable'
+          : '—';
 
   return (
     <PageContainer className="max-w-5xl">
@@ -125,7 +168,13 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             </div>
           </div>
 
-          <BookingDetailActions bookingId={booking.id} booking={booking} />
+          <BookingDetailActions
+            bookingId={booking.id}
+            booking={booking}
+            vehicleName={booking.vehicle.vehicle_name}
+            documentsComplete={documentsComplete}
+            documentsIncompleteMessage={documentsIncompleteMessage}
+          />
         </header>
       </div>
 
@@ -172,14 +221,19 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
         <BookingDetailSection title="Customer Information">
           <dl className="grid gap-4 sm:grid-cols-2">
             <BookingDetailField label="Customer Name" value={booking.customer_name} />
+            <BookingDetailField label="Email" value={customerEmail} />
             <BookingDetailField label="Contact Number" value={booking.contact_number} />
             <BookingDetailField label="Address" value={booking.address} className="sm:col-span-2" />
             <BookingDetailField label="City" value={booking.city} />
             <BookingDetailField label="State" value={booking.state} />
-            <BookingDetailField label="ZIP Code" value={booking.zip_code} />
+            <BookingDetailField label="PIN / ZIP" value={booking.zip_code} />
             <BookingDetailField
-              label="Document Submitted"
-              value={booking.document_submitted ? 'Yes' : 'No'}
+              label="Documents"
+              value={
+                documentsComplete
+                  ? 'Complete'
+                  : `${documentCompleteness.submittedCount} / ${documentCompleteness.requiredCount}`
+              }
             />
           </dl>
         </BookingDetailSection>
@@ -207,6 +261,12 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
             <BookingDetailField
               label="Fuel Type"
               value={FUEL_TYPE_LABELS[booking.vehicle.fuel_type]}
+            />
+            <BookingDetailField
+              label="Daily Rate"
+              value={
+                <span className="tabular-nums">{formatOptionalCurrency(pricing.dailyRate)}</span>
+              }
             />
             <BookingDetailField label="Driver Name" value={booking.driver_name} />
           </dl>
@@ -249,6 +309,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
               }
             />
             <BookingDetailField label="Payment Method" value={paymentMethodLabel} />
+            <BookingDetailField label="Payment" value={paymentAvailabilityLabel} />
             <BookingDetailField
               label="Remaining Balance"
               value={
@@ -258,7 +319,7 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
               }
             />
             <BookingDetailField
-              label="Grand Total"
+              label="Estimated Amount"
               value={
                 <span className="font-semibold tabular-nums">
                   {formatOptionalCurrency(pricing.grandTotal)}
@@ -268,6 +329,29 @@ export function BookingDetailPage({ booking, createdByLabel, loadError }: Bookin
           </dl>
         </BookingDetailSection>
       </div>
+
+      {isDenied && rejectionReason ? (
+        <BookingDetailSection
+          title="Rejection reason"
+          description="Shared with the customer when this request was denied."
+        >
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{rejectionReason}</p>
+        </BookingDetailSection>
+      ) : null}
+
+      <BookingDetailSection
+        title="Identity documents"
+        description="Open uploaded files to cross-check customer identity documents."
+      >
+        <BookingDocumentsReview
+          bookingId={booking.id}
+          documents={documents}
+          documentSubmitted={booking.document_submitted}
+          checklist={bookingDocumentRequirementChecklist(
+            documents.map((document) => document.documentType),
+          )}
+        />
+      </BookingDetailSection>
 
       <BookingPricingSummary pricing={pricing} />
 

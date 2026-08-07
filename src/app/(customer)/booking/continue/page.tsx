@@ -1,0 +1,137 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+
+import { BookingProgressSteps } from '@/components/customer/book-a-car/booking-progress-steps';
+import { CustomerContainer } from '@/components/customer/shared/customer-container';
+import { Button } from '@/components/ui/button';
+import { appConfig } from '@/config';
+import { customerBookingContinuePath, ROUTES } from '@/constants/routes';
+import { BookingRequestWizard } from '@/features/customer-booking/components/booking-request-wizard';
+import { parseBookingWizardStep } from '@/features/customer-booking/lib/wizard-step';
+import { getPublicVehicle } from '@/features/vehicles/actions/list-public-vehicles';
+import { APP_ROLES, requireCustomerAuth } from '@/lib/auth';
+
+export const metadata: Metadata = {
+  title: `Book a car | ${appConfig.companyName}`,
+  description: 'Select dates and submit your Silver Carz booking request.',
+};
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * Authenticated booking request wizard (C3).
+ * Preserves vehicle selection from Book a Car and creates a draft request.
+ */
+export default async function BookingContinuePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const vehicleId = firstParam(params.vehicle);
+  const step = parseBookingWizardStep(params.step);
+  const nextPath = vehicleId ? customerBookingContinuePath(vehicleId) : ROUTES.bookingContinue;
+
+  const user = await requireCustomerAuth(nextPath);
+
+  if (!vehicleId) {
+    return (
+      <>
+        <BookingProgressSteps activeStep={2} />
+        <CustomerContainer className="max-w-2xl py-10 sm:py-14">
+          <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+            Booking
+          </p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground uppercase sm:text-4xl">
+            Select a car first
+          </h1>
+          <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
+          <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+            Choose a vehicle on Book a Car before selecting dates and submitting a request.
+          </p>
+          <div className="mt-8">
+            <Button
+              asChild
+              className="h-11 rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
+            >
+              <Link href={ROUTES.bookACar}>Browse cars</Link>
+            </Button>
+          </div>
+        </CustomerContainer>
+      </>
+    );
+  }
+
+  if (user.role !== APP_ROLES.customer) {
+    return (
+      <>
+        <BookingProgressSteps activeStep={2} />
+        <CustomerContainer className="max-w-2xl py-10 sm:py-14">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">
+            Customer account required
+          </h1>
+          <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
+          <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+            Booking requests are submitted from a customer account. Staff should create bookings in
+            the Admin Portal.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button
+              asChild
+              className="h-11 rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
+            >
+              <Link href={ROUTES.bookingsNew}>Admin new booking</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11 rounded-md">
+              <Link href={ROUTES.bookACar}>Back to Book a Car</Link>
+            </Button>
+          </div>
+        </CustomerContainer>
+      </>
+    );
+  }
+
+  const vehicleResult = await getPublicVehicle(vehicleId);
+
+  if (!vehicleResult.success) {
+    return (
+      <>
+        <BookingProgressSteps activeStep={2} />
+        <CustomerContainer className="max-w-2xl py-10 sm:py-14">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">
+            Vehicle unavailable
+          </h1>
+          <div className="mt-3 h-1 w-12 bg-primary" aria-hidden="true" />
+          <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+            {vehicleResult.error.message ||
+              'This vehicle is no longer available. Please choose another car.'}
+          </p>
+          <div className="mt-8">
+            <Button
+              asChild
+              className="h-11 rounded-md bg-primary font-bold tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
+            >
+              <Link href={ROUTES.bookACar}>Browse cars</Link>
+            </Button>
+          </div>
+        </CustomerContainer>
+      </>
+    );
+  }
+
+  return (
+    <BookingRequestWizard
+      vehicle={vehicleResult.data}
+      initialCustomerName={user.fullName?.trim() || ''}
+      customerEmail={user.email ?? ''}
+      initialStep={step}
+    />
+  );
+}
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}

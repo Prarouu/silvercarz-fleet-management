@@ -12,6 +12,22 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 /** Persisted vehicle row (`public.vehicles`). */
 export type Vehicle = Tables<'vehicles'>;
 
+/** Columns safe to expose on the customer portal. */
+export type PublicVehicle = Pick<
+  Vehicle,
+  | 'id'
+  | 'vehicle_name'
+  | 'vehicle_number'
+  | 'brand'
+  | 'fuel_type'
+  | 'transmission_type'
+  | 'default_daily_rate'
+  | 'color'
+  | 'availability_status'
+  | 'image_path'
+  | 'is_active'
+>;
+
 /** Payload for inserting a vehicle (Supabase insert shape). */
 export type VehicleCreateInput = TablesInsert<'vehicles'>;
 
@@ -40,6 +56,10 @@ export interface VehicleListFilters {
   readonly available?: boolean;
   /** Exact match on `availability_status`. */
   readonly availabilityStatus?: VehicleAvailabilityStatus;
+  /** Inclusive minimum on `default_daily_rate` (customer browse). */
+  readonly minDailyRate?: number;
+  /** Inclusive maximum on `default_daily_rate` (customer browse). */
+  readonly maxDailyRate?: number;
   readonly createdFrom?: string;
   readonly createdTo?: string;
   /**

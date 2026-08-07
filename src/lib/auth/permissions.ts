@@ -45,6 +45,8 @@ type RoleGrant = 'all' | readonly Permission[];
 const ROLE_PERMISSIONS: Record<AppRole, RoleGrant> = {
   [APP_ROLES.owner]: 'all',
   [APP_ROLES.manager]: 'all',
+  /** Customers never receive Admin Portal permissions. */
+  [APP_ROLES.customer]: [],
 };
 
 /** Returns true when `role` is granted `permission`. */

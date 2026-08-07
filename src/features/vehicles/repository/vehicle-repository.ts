@@ -169,6 +169,14 @@ function applyNonSearchFilters(
     next = next.eq('is_active', true);
   }
 
+  if (filters?.minDailyRate !== undefined && Number.isFinite(filters.minDailyRate)) {
+    next = next.gte('default_daily_rate', filters.minDailyRate);
+  }
+
+  if (filters?.maxDailyRate !== undefined && Number.isFinite(filters.maxDailyRate)) {
+    next = next.lte('default_daily_rate', filters.maxDailyRate);
+  }
+
   if (filters?.createdFrom) {
     next = next.gte('created_at', filters.createdFrom);
   }

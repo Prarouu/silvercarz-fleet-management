@@ -15,8 +15,10 @@ import {
   type SignInCredentials,
 } from '@/features/auth/validations/credentials';
 import {
+  createForbiddenError,
   createInactiveAccountError,
   ensureCurrentProfile,
+  isStaff,
   resolvePostLoginPath,
   signOut,
   toAuthError,
@@ -72,6 +74,15 @@ export async function signInAction(
     if (!profile.isActive) {
       await signOut().catch(() => undefined);
       return fail(createInactiveAccountError());
+    }
+
+    if (!isStaff(profile)) {
+      await signOut().catch(() => undefined);
+      return fail(
+        createForbiddenError(
+          'This account cannot access the admin portal. Please use customer login.',
+        ),
+      );
     }
   } catch (error) {
     if (error instanceof AppError) {

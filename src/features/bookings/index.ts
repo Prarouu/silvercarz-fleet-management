@@ -111,6 +111,7 @@ export {
 } from './service';
 
 export {
+  approveBooking,
   countBookings,
   createBooking,
   deleteBooking,
@@ -118,6 +119,7 @@ export {
   getBookingByInvoiceNumber,
   getBookingWithVehicle,
   listBookings,
+  rejectBooking,
   searchBookings,
   updateBooking,
 } from './actions';
